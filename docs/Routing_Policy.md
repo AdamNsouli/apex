@@ -14,3 +14,5 @@ The heuristic optimizes a comparable model/effort cohort. It does not establish 
 The receipt stores mode, revision, original/requested pair, task/risk, reason, top ten ranked comparisons, response-reported model and observed token cost when all needed prices are known. Rejected runtime models are excluded for the current joined catalogue; a later verified refresh can rebuild it. No automatic retry is performed by APEX.
 
 AA's benchmark USD/task is the average cost of its Intelligence Index evaluation, not the predicted cost of your prompt. Request forecasts and observed API equivalents are separate. No subscription usage percentage or actual credit balance is fabricated.
+
+Quality once changes only the captured preference for the next main dispatch. It preserves base mode and follows all steps above, including hysteresis, consent and budget checks. Consumption is atomic before forwarding; agents cannot claim it. A main dispatch consumes it even when a guard holds native settings. Restart/clear cancels an unused token. Receipts freeze the exact baseline/selected evidence, prices, methodology and fetch time; refresh cannot alter a historical explanation.

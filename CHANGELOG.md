@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.0-beta.1
+
+Replaced the five-tab interface with a 34-column compact native rail, an integrated history/receipt/evidence inspector and contextual setup/consent. The two-row prompt strip preserves other mods and native surveys, adapts to width and avoids duplicate controls while docked. Historical selection and Follow live are explicit. Added honest readiness states and separate mode acknowledgment/dispatch consumption.
+
+Rebuilt the browser as a route workspace with stepped request history, recorded-time view, scoped agents, frozen receipts, guided exact mappings, complete pagination, local licensed fonts, dark/light themes and compact display. Added original APEX vectors and the monochrome Kavren publisher mark.
+
+Added main-only Quality once with atomic consumption, explicit cancellation, unchanged base preference and ordinary guards. Receipt snapshots freeze evidence and pricing at dispatch. Runtime discovery and the first native AA fetch have separate refresh clocks.
+
+Offline routing/transport, official native harness, browser controls and genuine terminal painting were checked. No paid inference, real-key AA ingestion, billing or measured quality/savings verification. Existing 0.2.0-beta.1 remains available.
+
 ## 0.2.0-beta.1
 
 Refined the Claude Code integration: a persistent terminal prompt dock, five-tab native inspector, selectable request/tool receipts, readable routing explanations, native credit budget/consent, account/backend/mapping/task controls, and saved full/compact/hidden dock preferences. The dock preserves downstream mod UI and yields to native question surveys. Terminal and desktop pane primitives pass the official native harness; actual desktop paint remains unverified.

@@ -59,12 +59,15 @@ test("prompt dock preserves downstream UI, opens inspector and yields to surveys
   expect(
     await ui.find({ type: "Text", text: "Another mod's controls" }),
   ).toBeDefined();
+  await ui.press({ key: "mode-toggle" });
   const sports = await ui.find({ key: "mode-sports" });
   expect(sports).toBeDefined();
   await ui.press({ key: "mode-sports" });
-  expect(await ui.find({ type: "Text", text: "Sports" })).toBeDefined();
+  expect(await ui.find({ type: "Text", text: /Sports saved/ })).toBeDefined();
   await ui.press({ key: "dock-inspect" });
   expect(opened.id).toBe("apex");
+  expect(opened.columns).toBe(34);
+  expect(opened.focus).toBeUndefined();
   await ui.redraw({ ...dockProps(), hasSurvey: true });
   expect(await ui.find({ key: "dock-inspect" })).toBeUndefined();
   expect(
@@ -84,7 +87,8 @@ test("native controls validate credit budget, persist dock preference and save r
     requestId: "apex",
     props: paneProps(36),
   });
-  await ui.press({ key: "tab-controls" });
+  await ui.press({ key: "settings" });
+  await ui.press({ key: "credits" });
   await ui.input({ key: "credit-budget", text: "invalid" });
   expect(await ui.find({ type: "Text", text: /positive USD/ })).toBeDefined();
   expect(writes.control).toBeUndefined();
@@ -96,6 +100,8 @@ test("native controls validate credit budget, persist dock preference and save r
   await ui.press({ key: "credits-revoke" });
   saved = writes.control;
   expect(saved.creditsConsent).toBe(false);
+  await ui.press({ key: "back-compact" });
+  await ui.press({ key: "settings" });
   await ui.press({ key: "dock-compact" });
   expect(writes.display).toEqual({ dock: "compact" });
   await ui.input({ key: "available-models", text: "model-new" });
@@ -117,11 +123,11 @@ test("native controls validate credit budget, persist dock preference and save r
   await ui.unmount();
 });
 
-test("native terminal and desktop panes mount every tab at narrow and wide widths", async ($, on) => {
+test("native terminal and desktop panes mount compact, inspector, settings and evidence at narrow and wide widths", async ($, on) => {
   setup(on);
   await startSession($);
   for (const surface of ["terminal", "desktop"] as const) {
-    for (const width of [32, 96]) {
+    for (const width of [32, 48, 80, 120]) {
       const ui = await $.ui.mount({
         plugin: "apex",
         surface,
@@ -129,11 +135,16 @@ test("native terminal and desktop panes mount every tab at narrow and wide width
         requestId: "apex",
         props: paneProps(width),
       });
-      for (const tab of ["live", "timeline", "receipt", "models", "controls"]) {
-        await ui.press({ key: "tab-" + tab });
-        expect((await ui.drawn()).type).toBe("Box");
-        expect(await ui.find({ key: "mode-sports" })).toBeDefined();
-      }
+      await ui.press({ key: "mode-toggle" });
+      expect(await ui.find({ key: "mode-sports" })).toBeDefined();
+      await ui.press({ key: "mode-sports" });
+      await ui.press({ key: "inspect" });
+      expect((await ui.drawn()).type).toBe("Box");
+      await ui.press({ key: "settings" });
+      expect(await ui.find({ key: "backend" })).toBeDefined();
+      await ui.press({ key: "evidence" });
+      expect((await ui.drawn()).type).toBe("Box");
+      await ui.press({ key: "back-compact" });
       await ui.unmount();
     }
   }
@@ -156,6 +167,8 @@ test("dock hiding and compact layout remain recoverable through slash command", 
   expect(await ui.find({ key: "dock-inspect" })).toBeDefined();
   expect(await ui.find({ key: "mode-sports" })).toBeUndefined();
   await $.command.run({ command: "apex", args: "dock expanded" });
+  expect(await ui.find({ key: "mode-toggle" })).toBeDefined();
+  await ui.press({ key: "mode-toggle" });
   expect(await ui.find({ key: "mode-sports" })).toBeDefined();
   await ui.unmount();
 });

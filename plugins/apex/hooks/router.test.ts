@@ -1,4 +1,110 @@
 import { test, expect, mock } from "claude-code/testing";
+test("Quality once is main-only, consumed under hold and cleared on session restart", async ($, on) => {
+  const writes = {
+    control: {
+      revision: 0,
+      mode: "eco",
+      routing: "manual_hold",
+      backend: "unknown",
+      verifiedIds: [],
+      mappings: [],
+      taskOverride: null,
+    },
+  };
+  on("store.get", (_$, e) => ({ value: writes[e.key] }));
+  on("store.set", (_$, e) => {
+    writes[e.key] = e.value;
+    return { value: undefined };
+  });
+  mock.clock(on, { now: 2000000000000 });
+  mock.env(on, {});
+  on("session.version", () => ({ value: { version: "2.1.292" } }));
+  on("settings.read", () => ({ value: {} }));
+  on("session.authorize", () => ({ value: null }));
+  on("command.register", () => ({ value: {} }));
+  on("session.start", (_$, e) => ({ cwd: e.cwd }));
+  on("session.usage", () => ({
+    value: { context: { tokens: 1000, window: 100000 }, rateLimits: [] },
+  }));
+  const forwarded = [];
+  on("turn.step", async function* (_$, e) {
+    forwarded.push(e);
+    yield { kind: "text", index: 0, text: "retained" };
+    return {
+      turnId: e.turnId,
+      index: e.index,
+      answer: "retained",
+      toolUses: [],
+      stopReason: "end_turn",
+      usage: {
+        model: e.model,
+        input_tokens: 10,
+        output_tokens: 2,
+        cache_read_input_tokens: 0,
+        cache_creation_input_tokens: 0,
+      },
+    };
+  });
+  const start = () =>
+    $.session.start({
+      cwd: "/tmp/apex-once-test",
+      surface: "terminal",
+      isInteractive: true,
+    });
+  const dispatch = async (agentId, index) => {
+    const stream = $.turn.step({
+      turnId: "once",
+      index,
+      model: "native-pair",
+      effort: "high",
+      messageCount: 2,
+      ...(agentId ? { agentId } : {}),
+    });
+    let r = await stream.next();
+    while (!r.done) r = await stream.next();
+  };
+  await start();
+  await $.command.run({ command: "apex", args: "quality-once" });
+  expect(writes.control.qualityOnce.revision).toBe(1);
+  await dispatch("agent-a", 0);
+  expect(writes.control.qualityOnce.revision).toBe(1);
+  await dispatch(null, 1);
+  expect(writes.control.qualityOnce).toBe(null);
+  expect(writes.control.mode).toBe("eco");
+  expect(writes.control.consumedBy).toBe("once:1:main");
+  expect(forwarded.length).toBe(2);
+  expect(forwarded[1].model).toBe("native-pair");
+  expect(forwarded[1].effort).toBe("high");
+  const ui = await $.ui.mount({
+    plugin: "apex",
+    surface: "terminal",
+    component: "Pane",
+    requestId: "apex",
+    props: {
+      title: "APEX",
+      isFocused: true,
+      bodyColumns: 72,
+      placement: "inline",
+    },
+  });
+  await ui.press({ key: "receipt-once:1:main" });
+  expect(
+    await ui.find({ type: "Text", text: /High Quality · Quality once/ }),
+  ).toBeDefined();
+  expect(
+    await ui.find({
+      type: "Text",
+      text: /native model and effort settings are in control/,
+    }),
+  ).toBeDefined();
+  await $.command.run({ command: "apex", args: "quality-once" });
+  await start();
+  expect(writes.control.qualityOnce).toBeDefined();
+  // Restart clears the in-memory arm even before the next persisted dispatch.
+  await dispatch(null, 2);
+  expect(writes.control.consumedOnceRevision).toBe(null);
+  await ui.unmount();
+});
 test("main request routes through the actual host hook chain; stream retained", async ($, on) => {
   mock.clock(on, { now: 2000000000000 });
   mock.env(on, {});
@@ -112,10 +218,10 @@ test("main request routes through the actual host hook chain; stream retained", 
       placement: "inline",
     },
   });
-  await inspector.press({ key: "tab-timeline" });
+  await inspector.press({ key: "inspect" });
   await inspector.press({ key: "receipt-turn-1:0:main" });
   expect(
-    await inspector.find({ type: "Text", text: "Outgoing: model-b / high" }),
+    await inspector.find({ type: "Text", text: "Outgoing: model-b / High" }),
   ).toBeDefined();
   expect(
     await inspector.find({ type: "Text", text: "Response: model-b" }),
@@ -126,9 +232,10 @@ test("main request routes through the actual host hook chain; stream retained", 
       text: "Effective effort: not reported",
     }),
   ).toBeDefined();
-  await inspector.press({ key: "tab-models" });
+  await inspector.press({ key: "settings" });
+  await inspector.press({ key: "evidence" });
   expect(
-    await inspector.find({ type: "Text", text: "Intelligence 60" }),
+    await inspector.find({ type: "Text", text: /Intelligence 60/ }),
   ).toBeDefined();
   await inspector.unmount();
 
@@ -161,6 +268,7 @@ test("native pane mode controls exist and change state", async ($, on) => {
       placement: "inline",
     },
   });
+  await ui.press({ key: "mode-toggle" });
   expect(await ui.find({ key: "mode-sports" })).toBeDefined();
   await ui.press({ key: "mode-sports" });
   expect(await ui.find({ type: "Text", text: /revision 1/ })).toBeDefined();
@@ -279,6 +387,7 @@ test("mode changed during a stream affects the next request and changes effort",
       placement: "inline",
     },
   });
+  await ui.press({ key: "mode-toggle" });
   await ui.press({ key: "mode-sports" });
   expect((await stream.next()).value.text).toBe("second");
   expect((await stream.next()).done).toBe(true);
@@ -319,8 +428,8 @@ test("manual model command suspends auto routing until explicitly resumed", asyn
       placement: "inline",
     },
   });
-  expect(await ui.find({ type: "Text", text: /manual_hold/ })).toBeDefined();
+  expect(await ui.find({ type: "Text", text: /Held/ })).toBeDefined();
   await $.command.run({ command: "apex", args: "auto" });
-  expect(await ui.find({ type: "Text", text: /· auto/ })).toBeDefined();
+  expect(await ui.find({ type: "Text", text: /Observing only/ })).toBeDefined();
   await ui.unmount();
 });

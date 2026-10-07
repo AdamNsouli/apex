@@ -110,10 +110,14 @@ export async function createCompanion({
   }
   const publicState = () => ({
     ...state,
+    now: Date.now(),
     accountBilling: "unknown",
     connected: state.connected && Date.now() - lastHeartbeat < 6000,
     aaStatus,
     aa,
+    nextRefreshAt: nextRefresh || state.nextRefreshAt || null,
+    refreshBusy: refreshing || state.refreshBusy || false,
+    lastHeartbeat,
     csrf: undefined,
   });
   const headers = {
@@ -186,7 +190,7 @@ export async function createCompanion({
           return json(res, 200, publicState());
         if (req.method === "GET" && url.pathname === "/api/export")
           return json(res, 200, {
-            format: "apex-receipt-1",
+            format: "apex-receipt-2",
             events: state.events,
             accountBilling: "unknown",
           });
@@ -199,10 +203,10 @@ export async function createCompanion({
           )
             return json(res, 400, { error: "invalid_key" });
           aaKey = data.aaKey;
-          nextRefresh = 0;
+          // A key edit is not a bypass of the source cooldown.
           void refresh();
           return json(res, 202, {
-            status: "refreshing",
+            status: refreshing ? "refreshing" : "cached_or_rate_limited",
             storage: "memory_only",
           });
         }
@@ -227,6 +231,7 @@ export async function createCompanion({
               "task",
               "availability",
               "mapping",
+              "quality_once",
             ].includes(c.kind)
           )
             return json(res, 400, { error: "invalid_control" });
@@ -252,7 +257,16 @@ export async function createCompanion({
         "/index.html": "index.html",
         "/app.js": "app.js",
         "/style.css": "style.css",
+        "/tokens.css": "tokens.css",
         "/mode-glyphs.svg": "mode-glyphs.svg",
+        "/presentation.mjs": "../core/presentation.mjs",
+        "/receipt.mjs": "../core/receipt.mjs",
+        "/assets/marks.svg": "assets/marks.svg",
+        "/assets/apex-mark.svg": "assets/apex-mark.svg",
+        "/assets/kavren-mark.svg": "assets/kavren-mark.svg",
+        "/assets/inter.ttf": "assets/inter.ttf",
+        "/assets/space-grotesk.ttf": "assets/space-grotesk.ttf",
+        "/assets/jetbrains-mono.ttf": "assets/jetbrains-mono.ttf",
       };
       const file = files[url.pathname];
       if (req.method !== "GET" || !file)
@@ -263,9 +277,11 @@ export async function createCompanion({
           ? "text/html"
           : file.endsWith(".css")
             ? "text/css"
-            : file.endsWith(".svg")
-              ? "image/svg+xml"
-              : "text/javascript",
+            : file.endsWith(".ttf")
+              ? "font/ttf"
+              : file.endsWith(".svg")
+                ? "image/svg+xml"
+                : "text/javascript",
       });
       res.end(content);
     } catch (e) {

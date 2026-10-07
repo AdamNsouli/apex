@@ -10,12 +10,19 @@ export const initialControl = () => ({
   verifiedIds: [],
   mappings: [],
   backend: "unknown",
+  modeRevision: 0,
+  modeConsumedRevision: 0,
+  qualityOnce: null,
 });
 export function applyControl(state, c) {
   if (c.expectedRevision !== state.revision)
     throw new Error("revision_conflict");
   const next = { ...state };
-  if (c.kind === "mode" && Object.hasOwn(MODES, c.mode)) next.mode = c.mode;
+  if (c.kind === "mode" && Object.hasOwn(MODES, c.mode)) {
+    next.mode = c.mode;
+    next.modeRevision = state.revision + 1;
+  } else if (c.kind === "quality_once" && typeof c.armed === "boolean")
+    next.qualityOnce = c.armed ? { revision: state.revision + 1 } : null;
   else if (
     c.kind === "routing" &&
     ["auto", "manual_hold", "disabled"].includes(c.value)
@@ -63,6 +70,23 @@ export function applyControl(state, c) {
   } else throw new Error("invalid_control");
   next.revision++;
   return next;
+}
+// Called synchronously at a MAIN dispatch boundary, before any await. Subagents
+// never call this. Consumption does not change the user's acknowledged intent
+// revision: a new arm/cancel still requires the ordinary revision check.
+export function captureDispatch(control, requestId) {
+  const once = control.qualityOnce;
+  return {
+    effective: once ? { ...control, mode: "quality" } : { ...control },
+    onceRevision: once?.revision ?? null,
+    next: {
+      ...control,
+      qualityOnce: null,
+      modeConsumedRevision: control.modeRevision ?? 0,
+      consumedBy: requestId,
+      consumedOnceRevision: once?.revision ?? null,
+    },
+  };
 }
 export function classifyIntent(text, previous) {
   const t = String(text ?? "")
@@ -143,7 +167,7 @@ const hold = (original, reason) => ({
   estimate: null,
   ranked: [],
 });
-const forecastCost = (evidence, input, output) => {
+export const forecastCost = (evidence, input, output) => {
   const p = evidence?.prices;
   if (
     !p ||
@@ -325,13 +349,14 @@ export class Ledger {
     this.events = this.events.slice(-1000);
     return event;
   }
-  finish(id, usage, cost, status = "complete") {
+  finish(id, usage, cost, status = "complete", completedAt = Date.now()) {
     const e = this.events.find((e) => e.id === id);
     if (!e || this.finished.has(id)) return;
     this.finished.add(id);
     if (this.finished.size > 2000)
       this.finished.delete(this.finished.values().next().value);
     e.status = status;
+    e.completedAt = completedAt;
     e.responseModel = usage?.model ?? null;
     e.usage = usage
       ? {

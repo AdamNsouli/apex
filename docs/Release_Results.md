@@ -1,12 +1,21 @@
-# Release results — APEX 0.2.0-beta.1
+# Release results — APEX 0.3.0-beta.1
 
-Verified 7 October 2026. The public repository is [AdamNsouli/apex](https://github.com/AdamNsouli/apex).
+7 October 2026. Public repository: [AdamNsouli/apex](https://github.com/AdamNsouli/apex). Based on the preserved `v0.2.0-beta.1` tag in a separate checkout.
 
-- **33 Node tests passed**: routing, evidence adapters, cost reconciliation, risk/capability guards, control revisions, authenticated HTTP/Unix transport, and actual detached companion startup/shutdown.
-- **8 official native harness tests passed on Claude Code 2.1.292**: main-request model forwarding and stream retention; subagent native settings preserved; native mode controls; in-flight mode change followed by a different outgoing model/effort; manual model hold/resume; dock preservation and survey yield; native budget/setup/display controls; all five tabs on terminal/desktop at 32/96 columns; populated receipt/evidence selection.
-- **Browser integration passed**: actual local control transport with synthetic native bridge data, consent and mapping forms, export, reload authentication, disconnected controls, four views at four viewport widths, light theme and compact console. Captures label fixture provenance visibly.
-- Official plugin and marketplace validation passed. Source checks cover syntax, JSON, matching release versions and private-material patterns.
-- GitHub's [initial independent Linux run](https://github.com/AdamNsouli/apex/actions/runs/37565710991) passed all checks. [Current verification runs](https://github.com/AdamNsouli/apex/actions/workflows/verify.yml) cover subsequent release commits too.
-- Public GitHub marketplace add and user-scope install succeeded using an isolated temporary Claude configuration. `plugin list` reported APEX enabled. The user's real Claude installation/settings were not changed.
+The story under verification is mode/consent/setup UI → authenticated loopback companion → revisioned native host acknowledgment → main dispatch → frozen readable receipt. Native UI also works without the companion.
 
-These checks use mocked inference and synthetic benchmark fixtures. **Live provider acceptance, real-key AA ingestion, task-quality gains, measured savings and billing remain unverified.** No paid inference or account billing activation was performed. This is an executable beta with documented setup requirements and boundaries.
+| Boundary                  | Evidence                                                                                                                                                                                                                                                                               |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Routing/core/transport    | 44 Node tests: existing 31 routing safeguards, private HTTP/Unix bridge, detached startup/shutdown, shared presentation/receipt/dispatch contracts and AA first-connect/cooldown                                                                                                       |
+| Official native runtime   | 9 tests on Claude Code 2.1.292: actual hook forwarding, unchanged stream, mode during stream, next-request effort change, main-only Quality once, holds, dock/survey/downstream preservation, setup/consent, terminal/desktop trees at 32/48/80/120 body columns                       |
+| Browser → bridge → UI     | Chromium checks with real local companion and labeled synthetic native state: queued/consumed controls, history preservation, frozen evidence, agents, exact-effort setup, consent/revoke, export, pagination, timing, compact mode, themes, viewport reflow and disconnected controls |
+| Actual terminal rendering | Genuine isolated host PTY output at 144×40 (right dock, requested 34-column body) and 80×40 (inline). Saved mode pending label and composer preserved. ANSI output rasterized using pyte and a local font; not an OS screenshot                                                        |
+| Release hygiene           | Plugin/marketplace validation, JavaScript syntax, JSON, release-version agreement and private-material pattern checks                                                                                                                                                                  |
+
+Browser layout checks cover widths 320, 390, 768, 1024 and 1440px. The reduced 720px CSS viewport exercises reflow equivalent to a 1440px window at 200%; actual browser chrome zoom and assistive-technology behavior are not certified by that check. Dialog Escape and focus restoration, menu bounds, horizontal page overflow and browser/CSP errors are checked.
+
+The terminal capture used empty temporary workspace/configuration, a dummy credential, an unreachable loopback inference endpoint and local slash commands only. The user's installed Claude version/settings and account billing were not changed. Native event-bearing views have official harness and reference-tree coverage; these actual PTY captures intentionally contain no real request/benchmark telemetry. Live desktop paint and terminal/theme matrices beyond the recorded configurations remain unverified.
+
+No paid inference was run. Live provider acceptance, authenticated AA ingestion with a real key, subscription entitlement, account billing, task-quality gains and measured savings remain unverified. This is an executable beta, not a guarantee of optimum decisions or a zero-maintenance future host integration.
+
+[Current independent Linux checks](https://github.com/AdamNsouli/apex/actions/workflows/verify.yml) run the same core/native/browser paths. A clean local marketplace installation in isolated temporary Claude configuration reported APEX 0.3.0-beta.1 enabled. Public marketplace installation is checked separately during publication.

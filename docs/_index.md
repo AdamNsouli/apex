@@ -1,6 +1,6 @@
 # docs — Index
 
-Current status: APEX 0.2.0-beta.1, native interface refinement.
+Current status: APEX 0.3.0-beta.1, premium native rail and route workspace.
 Code and assets are public; dataset and inference fixtures are synthetic.
 See the root README and verification document for actual limits.
 
@@ -12,3 +12,6 @@ See the root README and verification document for actual limits.
 - [Release_Results.md](./Release_Results.md) — actual local/native/browser/installation verification and limitations.
 
 - [Native_Interface.md](./Native_Interface.md) — native surface contract, focus, shortcuts, controls and screenshot provenance.
+
+- [UI_Specification.md](./UI_Specification.md) — shipped hierarchy, tokens, geometry, responsive behavior and interaction contract.
+- [Asset_Inventory.md](./Asset_Inventory.md) — original marks, pinned font sources, licenses and release checksums.

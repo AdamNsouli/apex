@@ -14,6 +14,13 @@ async function walk(dir) {
     )
       continue;
     const p = path.join(dir, e.name);
+    if (
+      path.relative(root, p).replaceAll(path.sep, "/") ===
+        "plugins/apex/.claude-plugin/types" ||
+      path.relative(root, p).replaceAll(path.sep, "/") ===
+        "plugins/apex/tsconfig.json"
+    )
+      continue;
     if (e.isDirectory()) await walk(p);
     else files.push(p);
   }
@@ -29,6 +36,8 @@ const pkg = JSON.parse(await readFile(path.join(root, "package.json")));
 assert.equal(manifest.name, "apex");
 assert.equal(market.name, "apex-tools");
 assert.equal(manifest.version, pkg.version);
+const { VERSION } = await import("../plugins/apex/core/presentation.mjs");
+assert.equal(VERSION, pkg.version);
 assert.equal(market.plugins[0].version, pkg.version);
 assert.deepEqual(
   JSON.parse(await readFile(path.join(root, "plugins/apex/hooks/hooks.json")))

@@ -3,456 +3,349 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>APEX · routing console</title>
+    <meta name="color-scheme" content="dark light" />
+    <title>APEX · Route workspace</title>
+    <link rel="icon" href="/assets/apex-mark.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="/style.css" />
+    <script type="module" src="/app.js"></script>
   </head>
   <body>
-    <header>
-      <div class="brand">
-        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
-          <path
-            d="M4 25 16 5l12 20h-8l-4-7-4 7H4Z"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linejoin="round"
-          /></svg
-        ><span>APEX</span><span class="brand-sub">ROUTING INSTRUMENT</span>
+    <a class="skip-link" href="#history">Skip to request history</a>
+    <header class="command-bar">
+      <div class="identity">
+        <svg aria-hidden="true" class="brand-mark">
+          <use href="/assets/marks.svg#apex"></use></svg
+        ><span class="wordmark">APEX</span>
       </div>
-      <div class="header-meta">
-        <span class="small" id="connection"
-          ><span class="dot"></span>Connecting to local session…</span
-        ><button id="density" aria-pressed="false">Compact view</button
-        ><span class="badge">NATIVE MOD · BETA</span>
+      <div class="scope-picker">
+        <label class="sr-only" for="scope">Conversation scope</label
+        ><select id="scope">
+          <option value="main">Main</option>
+        </select>
+      </div>
+      <span id="connection" class="connection">Connecting…</span>
+      <div class="command-actions">
+        <div class="mode-wrap">
+          <button
+            id="mode-toggle"
+            aria-expanded="false"
+            aria-controls="mode-menu"
+          >
+            Balanced <span aria-hidden="true">⌄</span>
+          </button>
+          <div
+            id="mode-menu"
+            class="mode-menu"
+            hidden
+            role="group"
+            aria-label="Routing modes"
+          >
+            <button data-mode="eco" aria-pressed="false">
+              <span>Eco</span
+              ><small
+                >Lower cost within the protected quality floor.</small
+              ></button
+            ><button data-mode="balanced" aria-pressed="true">
+              <span>Balanced</span
+              ><small>Balance quality, forecast cost and speed.</small></button
+            ><button data-mode="quality" aria-pressed="false">
+              <span>High Quality</span
+              ><small
+                >Favor the strongest comparable task evidence.</small
+              ></button
+            ><button data-mode="sports" aria-pressed="false">
+              <span>Sports</span
+              ><small>Favor speed close to the strongest evidence.</small>
+            </button>
+            <p id="mode-protection">
+              Baseline protection still applies when required.
+            </p>
+          </div>
+        </div>
+        <button id="credits">Credits</button
+        ><button id="settings">Settings</button
+        ><button id="export">Export</button>
       </div>
     </header>
-    <div class="shell">
-      <aside class="sidebar" aria-label="Navigation">
-        <div class="side-label">SESSION CONSOLE</div>
-        <button class="nav active" data-view="overview">
-          <svg
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <rect x="3" y="3" width="7" height="7" rx="1" />
-            <rect x="14" y="3" width="7" height="7" rx="1" />
-            <rect x="3" y="14" width="7" height="7" rx="1" />
-            <rect x="14" y="14" width="7" height="7" rx="1" /></svg
-          >Overview</button
-        ><button class="nav" data-view="timeline">
-          <svg
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M4 6h16M4 12h16M4 18h16" />
-            <path d="M8 3v18" /></svg
-          >Timeline</button
-        ><button class="nav" data-view="models">
-          <svg
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="m12 3 9 5-9 5-9-5 9-5ZM3 12l9 5 9-5M3 16l9 5 9-5" /></svg
-          >Models</button
-        ><button class="nav" data-view="settings">
-          <svg
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M4 7h16M4 17h16" />
-            <circle cx="9" cy="7" r="3" />
-            <circle cx="15" cy="17" r="3" /></svg
-          >Settings
-        </button>
-        <div class="side-bottom">
-          <div class="small">Local session only</div>
-          <p class="small">
-            No transcript or reasoning stored.<br />Account billing stays
-            separate.
+    <main>
+      <section class="session-line" aria-label="Current session">
+        <div>
+          <p class="eyebrow">
+            ROUTE HISTORY / <span id="scope-name">MAIN</span>
+          </p>
+          <h1 id="active-model">Waiting for a request</h1>
+          <p id="active-meta">
+            Native settings remain active until evidence is verified.
           </p>
         </div>
-      </aside>
-      <main>
-        <div class="page-head">
-          <div>
-            <div class="eyebrow">CLAUDE CODE / LIVE SESSION</div>
-            <h1 id="heading">Routing, in focus.</h1>
-            <p>Follow the work. See each model, effort and decision.</p>
-          </div>
-          <div class="actions">
-            <button id="auto" class="button-auto">Auto</button
-            ><button id="credits">Allow credits</button>
-          </div>
+        <div class="session-status">
+          <strong id="routing-status">Observing only</strong
+          ><span id="observed">Not yet observed</span
+          ><small>Observed API-equivalent · actual bill unknown</small>
         </div>
-        <div class="mode-strip" role="radiogroup" aria-label="Routing mode">
-          <button
-            class="mode"
-            role="radio"
-            aria-checked="false"
-            data-mode="eco"
-          >
-            <div>
-              <strong>Eco</strong><span>Lower cost within a quality floor</span>
-            </div></button
-          ><button
-            class="mode selected"
-            role="radio"
-            aria-checked="true"
-            data-mode="balanced"
-          >
-            <div>
-              <strong>Balanced</strong><span>Quality, speed and cost</span>
-            </div></button
-          ><button
-            class="mode"
-            role="radio"
-            aria-checked="false"
-            data-mode="quality"
-          >
-            <div>
-              <strong>High Quality</strong><span>Strongest task evidence</span>
-            </div></button
-          ><button
-            class="mode"
-            role="radio"
-            aria-checked="false"
-            data-mode="sports"
-          >
-            <div>
-              <strong>Sports</strong
-              ><span>Near-best quality. Faster delivery.</span>
-            </div>
-          </button>
-        </div>
-        <div class="status-band" role="status" aria-live="polite">
-          <span id="status">Connecting to local session…</span
-          ><span class="status-chip" id="revision">Waiting for host</span>
-        </div>
-        <section class="content-view" id="view-overview">
-          <div class="native-note">
-            <div>
-              <strong>Keep it in Claude.</strong
-              ><span
-                >The prompt dock and /apex inspector give you live controls
-                without this page.</span
-              >
-            </div>
-            <button id="copy-native">Copy /apex</button>
-          </div>
-          <div class="metrics">
-            <div class="metric primary-metric">
-              <div class="metric-label">ACTIVE REQUEST</div>
-              <div class="metric-value model-value" id="active-model">
-                No requests yet
-              </div>
-              <div class="metric-sub" id="active-effort">
-                Requested effort: unavailable
-              </div>
-            </div>
-            <div class="metric">
-              <div class="metric-label">OBSERVED API-EQUIVALENT</div>
-              <div class="metric-value mono" id="observed">
-                Not yet observed
-              </div>
-              <div class="metric-sub" id="cost-provenance">
-                Token pricing estimate · not a bill
-              </div>
-            </div>
-            <div class="metric">
-              <div class="metric-label">NEXT / RESERVED ESTIMATE</div>
-              <div class="metric-value mono" id="estimate">Unavailable</div>
-              <div class="metric-sub">
-                Upper forecast · not a guaranteed bill cap
-              </div>
-            </div>
-            <div class="metric">
-              <div class="metric-label">BENCHMARK DATA</div>
-              <div class="metric-value model-value" id="data-state">
-                Not connected
-              </div>
-              <div class="metric-sub" id="data-age">
-                Artificial Analysis · key needed
-              </div>
-            </div>
-          </div>
-          <div class="grid">
-            <div>
-              <section class="card">
-                <div class="card-head">
-                  <h2>Work timeline</h2>
-                  <button id="export">Export receipt</button>
-                </div>
-                <div class="timeline" id="events">
-                  <div class="empty">
-                    No requests yet. Routing begins with your next Claude
-                    request.
-                  </div>
-                </div>
-              </section>
-              <section class="card chart-card">
-                <div class="card-head"><h2>Cost provenance</h2></div>
-                <div class="card-body">
-                  <div class="pair">
-                    <span>Observed API-equivalent cost</span
-                    ><span id="cost-detail">Unknown</span>
-                  </div>
-                  <div class="pair">
-                    <span>Actual billed credits</span><span>Unknown</span>
-                  </div>
-                  <p class="small">
-                    API list-price estimates do not measure subscription usage
-                    or prove a billed charge.
-                  </p>
-                </div>
-              </section>
-            </div>
-            <section class="card">
-              <div class="card-head">
-                <h2>Last decision</h2>
-                <span class="badge" id="decision-mode">WAITING</span>
-              </div>
-              <div class="card-body">
-                <div class="decision-model" id="next-model">
-                  Awaiting a request
-                </div>
-                <div class="pair">
-                  <span>Task</span><span id="task-label">Unknown</span>
-                </div>
-                <div class="decision-reason" id="why">
-                  Connect evidence and confirm account availability. Native
-                  settings remain active until a switch can be justified.
-                </div>
-                <div id="candidates" class="evidence-list"></div>
-                <div class="pair">
-                  <span>APEX credit consent</span
-                  ><span id="consent">Not allowed</span>
-                </div>
-                <button id="inspect">Inspect evidence & tradeoffs</button>
-                <p class="small">
-                  Benchmark source:
-                  <a
-                    href="https://artificialanalysis.ai/leaderboards/models"
-                    target="_blank"
-                    rel="noreferrer"
-                    >Artificial Analysis</a
-                  >
-                  · <span id="benchmark-version">no dataset loaded</span>
-                </p>
-              </div>
-            </section>
-          </div>
-        </section>
-        <section class="content-view" id="view-timeline" hidden>
-          <div class="card">
-            <div class="card-head">
-              <h2>All retained events</h2>
-              <select id="filter" aria-label="Event filter">
-                <option value="all">All</option>
-                <option value="request">Requests</option>
-                <option value="tool">Tools</option>
-                <option value="error">Errors</option>
-              </select>
-            </div>
-            <div class="timeline" id="all-events"></div>
-          </div>
-        </section>
-        <section class="content-view" id="view-models" hidden>
-          <div class="notice">
-            Confirm models your account may use, then verify exact benchmark and
-            effort mappings. New unmatched models remain excluded. No inference
-            probes or automatic credit purchases are performed.
-          </div>
-          <div class="card">
-            <div class="card-head">
-              <h2>Model evidence</h2>
-              <button id="refresh">Refresh data</button>
-            </div>
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Runtime model</th>
-                    <th>Effort</th>
-                    <th>Intelligence</th>
-                    <th>Coding</th>
-                    <th>Current task index</th>
-                    <th>Input USD/1M</th>
-                    <th>Output USD/1M</th>
-                    <th>AA median response</th>
-                    <th>AA benchmark USD/task</th>
-                    <th>Routing</th>
-                  </tr>
-                </thead>
-                <tbody id="model-rows"></tbody>
-              </table>
-            </div>
-            <div class="card-body">
-              <h3>Confirm account availability</h3>
-              <label for="backend">Account backend</label
-              ><select id="backend">
-                <option value="subscription">Claude subscription</option>
-                <option value="api">Direct Anthropic API</option>
-              </select>
-              <p class="small">
-                The API model list is not proof of subscription entitlement.
-                Select only models your account permits.
-              </p>
-              <div id="availability-list"></div>
-              <button id="confirm-models">Confirm selected models</button>
-              <h3 class="mt24">Exact benchmark mapping</h3>
-              <label for="runtime-id">Runtime model</label
-              ><select id="runtime-id"></select
-              ><label for="aa-slug">Artificial Analysis variant</label
-              ><select id="aa-slug"></select
-              ><label for="effort"
-                >Benchmark effort (verify before saving)</label
-              ><select id="effort">
-                <option value="high">high</option>
-                <option value="low">low</option>
-                <option value="medium">medium</option>
-                <option value="xhigh">xhigh</option>
-                <option value="max">max</option>
-                <option value="default">
-                  default / no effort parameter
-                </option></select
-              ><button id="map" class="mt16">Save verified mapping</button>
-            </div>
-          </div>
-        </section>
-        <section class="content-view" id="view-settings" hidden>
-          <div class="card">
-            <div class="card-head"><h2>Data and policy</h2></div>
-            <div class="card-body">
-              <h3>Connect Artificial Analysis</h3>
-              <p class="small">
-                Use your own licensed key. Stored in this local companion's
-                memory only; lost when it closes. Alternatively start Claude
-                with APEX_AA_API_KEY in its environment. Never enter your Claude
-                login token here.
-              </p>
-              <label for="aa-key">Artificial Analysis API key</label
-              ><input
-                id="aa-key"
-                type="password"
-                autocomplete="off"
-                spellcheck="false"
-              /><button id="connect-aa" class="mt12">
-                Connect and refresh
+      </section>
+      <div class="state-line">
+        <span id="state-detail">Connect to the Claude host.</span
+        ><button id="setup-action">Set up</button>
+      </div>
+      <div class="workspace">
+        <section
+          class="history-region"
+          id="history"
+          aria-label="Request and tool history"
+        >
+          <div class="history-toolbar">
+            <div class="view-controls">
+              <button id="sequence-view" aria-pressed="true">Sequence</button
+              ><button id="time-view" aria-pressed="false" disabled>
+                Time
               </button>
-              <div class="settings-row">
-                <div>
-                  <h3>Task override</h3>
-                  <p>Current intent only; high-risk safeguards remain.</p>
-                </div>
-                <select id="task">
-                  <option value="">Automatic</option>
-                  <option value="general">General</option>
-                  <option value="coding">Coding</option>
-                  <option value="agentic_coding">Agentic coding</option>
-                  <option value="math">Math</option>
-                  <option value="engineering">Engineering</option>
-                  <option value="finance">Finance</option>
-                  <option value="strategy">Strategy</option>
-                  <option value="legal">Legal</option>
-                  <option value="healthcare">Healthcare</option>
-                  <option value="economics">Economics</option>
-                </select>
-              </div>
-              <div class="settings-row">
-                <div>
-                  <h3>Theme</h3>
-                  <p>Local browser theme.</p>
-                </div>
-                <button id="theme">Use light theme</button>
-              </div>
-              <p class="small" id="doctor"></p>
             </div>
+            <button id="follow" aria-pressed="true">Following live</button>
+          </div>
+          <div id="timing" class="timing" hidden></div>
+          <div
+            id="history-rows"
+            tabindex="0"
+            role="region"
+            aria-label="Scrollable request history"
+          ></div>
+          <div class="history-pagination">
+            <button id="older">Older</button><span id="history-range"></span
+            ><button id="newer">Newer</button>
+          </div>
+          <div id="next-intention" class="intention">
+            Next main request · preference evaluated at dispatch
           </div>
         </section>
-        <footer class="foot">
-          <span
-            >APEX · private local dashboard · requested settings and response
-            facts shown separately</span
-          ><span id="host-version" class="mono"></span>
-        </footer>
-      </main>
-    </div>
-    <div class="dialog-backdrop" id="credit-dialog" hidden>
-      <section
-        class="dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="credit-title"
-      >
-        <h2 id="credit-title">Permit credit-funded routing</h2>
-        <p>APEX consent and Claude account billing are separate.</p>
-        <div class="notice">
-          Account billing is unverified. The estimate budget is not a guaranteed
-          billed-dollar cap. No credits are bought by this button.
+        <aside class="inspector" id="inspector" aria-label="Selected request">
+          <header class="inspector-header">
+            <span class="eyebrow" id="selected-label">REQUEST / RECEIPT</span
+            ><button id="inspect-close">Hide detail</button>
+          </header>
+          <p class="verdict" id="verdict">No request selected</p>
+          <h2 id="selected-model">Your first decision appears here.</h2>
+          <p id="selected-effort" class="secondary">
+            Requested effort will be shown explicitly.
+          </p>
+          <dl class="receipt-facts" id="receipt-facts"></dl>
+          <section class="receipt-section">
+            <h3>Decision reason</h3>
+            <p id="receipt-reason">
+              APEX records requests and tools without storing your transcript.
+            </p>
+            <p id="receipt-protection" class="secondary"></p>
+          </section>
+          <section class="receipt-section">
+            <h3>Costs and evidence</h3>
+            <dl id="evidence-facts" class="evidence-facts"></dl>
+            <p id="evidence-note" class="secondary">
+              Unknown fields stay unknown.
+            </p>
+          </section>
+          <div class="interventions">
+            <button id="auto">Hold native settings</button
+            ><button id="quality-once">Quality once</button
+            ><button id="receipt-export">Export selected receipt</button
+            ><button id="receipt-json-toggle">Show JSON</button>
+          </div>
+          <pre id="receipt-json" hidden></pre>
+        </aside>
+      </div>
+      <div class="compact-controls">
+        <span id="compact-pair">Waiting for a request</span
+        ><button id="inspect">Inspect</button>
+      </div>
+    </main>
+    <footer class="workspace-footer">
+      <span id="event-count">No events yet</span>
+      <div>
+        <button id="density" aria-pressed="false">Compact view</button
+        ><button id="theme">Use light theme</button
+        ><button id="copy-native">Open in Claude</button>
+      </div>
+    </footer>
+    <dialog id="settings-dialog" class="sheet">
+      <header class="sheet-header">
+        <div>
+          <p class="eyebrow">APEX / SETUP</p>
+          <h2>Make routing ready.</h2>
         </div>
-        <label for="budget">Session API-equivalent budget (USD)</label
+        <button data-close="settings-dialog">Close</button>
+      </header>
+      <nav class="setup-nav" aria-label="Setup steps">
+        <button data-step="host-step">Host</button
+        ><button data-step="evidence-step">Evidence</button
+        ><button data-step="account-step">Access</button
+        ><button data-step="routing-step">Routing</button>
+      </nav>
+      <section id="host-step" class="setup-step">
+        <h3>1 · Host compatibility</h3>
+        <p id="host-status">Waiting for host metadata.</p>
+        <p class="secondary">
+          The compact rail uses Claude's native pane. The host controls
+          placement and size; narrow layouts use the prompt strip.
+        </p>
+      </section>
+      <section id="evidence-step" class="setup-step">
+        <h3>2 · Benchmark evidence</h3>
+        <p id="aa-status">Not connected</p>
+        <form id="aa-form">
+          <label for="aa-key">Your Artificial Analysis API key</label>
+          <div class="field-row">
+            <input
+              id="aa-key"
+              type="password"
+              autocomplete="off"
+              minlength="8"
+              maxlength="512"
+              required
+              placeholder="Held in local companion memory"
+            /><button id="connect-aa" type="submit">Connect AA</button>
+          </div>
+        </form>
+        <p class="secondary">
+          Native alternative: set APEX_AA_API_KEY before starting Claude. Never
+          paste a key into its conversation.
+        </p>
+        <div class="source-status">
+          <span id="fetched-at">Last successful fetch: none</span
+          ><span id="next-refresh">Next eligible refresh: unknown</span
+          ><button id="refresh">Refresh evidence</button>
+        </div>
+        <details class="comparison">
+          <summary>Compare discovered model evidence</summary>
+          <p class="secondary">
+            Task indices are benchmark evidence, not probabilities of success.
+            Math uses the intelligence index as a proxy. USD/task is AA's
+            benchmark unit.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Model / effort</th>
+                  <th>Intelligence</th>
+                  <th>Task index</th>
+                  <th>Input / 1M</th>
+                  <th>Output / 1M</th>
+                  <th>Latency</th>
+                  <th>AA USD/task</th>
+                  <th>Eligibility</th>
+                </tr>
+              </thead>
+              <tbody id="model-rows"></tbody>
+            </table>
+          </div>
+        </details>
+      </section>
+      <section id="account-step" class="setup-step">
+        <h3>3 · Confirm account access</h3>
+        <label for="backend">Your confirmed billing backend</label
+        ><select id="backend">
+          <option value="unknown">Select your backend</option>
+          <option value="subscription">Claude subscription</option>
+          <option value="api">Anthropic API</option>
+        </select>
+        <p class="secondary">
+          Discovery does not establish account entitlement. Confirm only models
+          you can actually use.
+        </p>
+        <fieldset id="availability-list">
+          <legend>Discovered model IDs</legend>
+        </fieldset>
+        <button id="confirm-models">Confirm selected models</button>
+        <h4>Exact benchmark mapping</h4>
+        <div class="mapping-fields">
+          <label
+            >Runtime model<select id="runtime-id">
+              <option value="">Select runtime</option>
+            </select></label
+          ><label
+            >AA variant<select id="aa-slug">
+              <option value="">Select AA variant</option>
+            </select></label
+          ><label
+            >Requested effort<select id="effort">
+              <option value="default">Default</option>
+            </select></label
+          >
+        </div>
+        <p id="mapping-preview" class="secondary">
+          Select the exact runtime, AA variant and effort; incompatible evidence
+          stays excluded.
+        </p>
+        <button id="map">Confirm exact mapping</button>
+      </section>
+      <section id="routing-step" class="setup-step">
+        <h3>4 · Routing and display</h3>
+        <label for="task">Task evidence</label
+        ><select id="task">
+          <option value="">Auto classify</option>
+          <option value="general">General</option>
+          <option value="coding">Coding</option>
+          <option value="agentic_coding">Agentic coding</option>
+          <option value="math">Math · intelligence proxy</option>
+          <option value="healthcare">Healthcare</option>
+          <option value="legal">Legal</option>
+          <option value="finance">Finance</option>
+          <option value="economics">Economics</option>
+          <option value="engineering">Engineering</option>
+          <option value="strategy">Strategy</option>
+        </select>
+        <p class="secondary">
+          The task override resets on a new prompt. Mode changes apply at the
+          next main dispatch, keeping existing safeguards.
+        </p>
+        <button id="setup-credits">Configure APEX routing consent</button>
+        <p class="secondary">
+          Native display settings are available under /apex setup. Use /apex
+          rail for the compact side pane.
+        </p>
+      </section>
+      <footer class="publisher">
+        <svg aria-hidden="true">
+          <use href="/assets/marks.svg#kavren"></use>
+        </svg>
+        <div>
+          <strong>APEX by Kavren Labs</strong>
+          <p id="version">Adaptive model routing for Claude Code.</p>
+        </div>
+      </footer>
+    </dialog>
+    <dialog id="credit-dialog" class="sheet credit-sheet">
+      <header class="sheet-header">
+        <div>
+          <p class="eyebrow">APEX / CONSENT</p>
+          <h2>Allow routing within a budget.</h2>
+        </div>
+        <button data-close="credit-dialog">Close</button>
+      </header>
+      <p>
+        This grants APEX permission to change API-funded requests. It does not
+        buy credits or activate Claude account extra usage.
+      </p>
+      <p id="consent-status">Consent off</p>
+      <p id="credit-liabilities" class="secondary"></p>
+      <form id="credit-form">
+        <label for="budget">API-equivalent estimate budget · USD</label
         ><input
           id="budget"
           type="number"
-          min="0.01"
-          step="0.01"
-          value="1"
-        /><button id="billing" class="wide mt12">
-          Copy Claude billing command
-        </button>
-        <p class="small">
-          Run /usage-credits in Claude yourself. Account controls may wait until
-          the active turn ends.
-        </p>
-        <div class="dialog-actions">
-          <button data-close="credit-dialog">Cancel</button
-          ><button id="allow" class="primary">
-            Allow within estimate budget
-          </button>
-        </div>
-      </section>
-    </div>
-    <div class="dialog-backdrop drawer-backdrop" id="evidence-dialog" hidden>
-      <section
-        class="dialog drawer"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="receipt-title"
-      >
-        <div class="card-head">
-          <h2 id="receipt-title">Request receipt</h2>
-          <button data-close="evidence-dialog" aria-label="Close receipt">
-            ×
-          </button>
-        </div>
-        <p class="small">
-          Requested effort is not proof of the provider's internal reasoning.
-          Costs here are API equivalents, not billed credits.
-        </p>
-        <pre id="receipt-json"></pre>
-      </section>
-    </div>
-    <div class="toast" id="toast" role="status" hidden></div>
-    <script src="/app.js"></script>
+          min="0.0001"
+          step="any"
+          required
+          inputmode="decimal"
+          placeholder="Enter a positive amount"
+        /><button id="allow" type="submit">Allow within estimate budget</button>
+      </form>
+      <button id="revoke">Revoke APEX consent</button>
+      <p class="secondary">
+        Unknown-cost reservations remain accounted for. This budget limits APEX
+        changes; actual account charges remain unknown.
+      </p>
+      <button id="billing">Copy /usage-credits</button>
+    </dialog>
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
   </body>
 </html>

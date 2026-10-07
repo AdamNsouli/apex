@@ -6,7 +6,10 @@ import {
   route,
   estimatedCost,
   Ledger,
+  captureDispatch,
+  forecastCost,
 } from "../core/router.mjs";
+import { freezeDecision } from "../core/receipt.mjs";
 import {
   runtimeModels,
   joinCatalogue,
@@ -30,6 +33,7 @@ let control = initialControl(),
   refreshTimer = null,
   refreshBusy = false,
   lastRefresh = 0,
+  lastAARefresh = 0,
   refreshError = null,
   contextTokens = null,
   pins = false,
@@ -46,6 +50,17 @@ let nativeUi = {
   budget: "",
   backend: "unknown",
   ids: "",
+  view: "compact",
+  scope: "auto",
+  modeMenu: false,
+  mapRuntimeId: "",
+  mapSlug: "",
+  mapEffort: "default",
+  accessId: "",
+  evidencePage: 0,
+  historyPage: 0,
+  paneShown: false,
+  placement: null,
   notice: "",
   noticeError: false,
 };
@@ -59,6 +74,14 @@ const rebuild = () => {
 };
 const publicState = () => ({
   control,
+  connected: true,
+  now,
+  pins,
+  evidenceFetchedAt: aa?.fetchedAt ?? null,
+  nextRefreshAt: lastAARefresh
+    ? Math.min(lastAARefresh + 86400000, lastRefresh + 86400000)
+    : null,
+  refreshBusy,
   events: ledger.events,
   runtime,
   catalogue: models,
@@ -80,6 +103,7 @@ const draw = ($) => $.ui.invalidate("ui.render");
 async function change($, command) {
   control = applyControl(control, command);
   if (command.kind === "mode") stepsOnModel = 2;
+  if (command.kind === "routing" && command.value === "auto") pins = false;
   rebuild();
   await $.store.set("control", control);
   draw($);
@@ -101,8 +125,14 @@ async function sync($) {
       const body = JSON.parse(r.text);
       if (body.aa && body.aa.fetchedAt !== aa?.fetchedAt) {
         aa = body.aa;
+        lastAARefresh = Math.max(lastAARefresh, body.aa.fetchedAt);
         rebuild();
-        await $.store.set("catalogue", { runtime, aa, lastRefresh });
+        await $.store.set("catalogue", {
+          runtime,
+          aa,
+          lastRefresh,
+          lastAARefresh,
+        });
       }
       for (const c of body.controls ?? []) {
         try {
@@ -134,11 +164,16 @@ async function sync($) {
   })();
   await syncing;
 }
-async function refresh($, force = false) {
-  if (refreshBusy || now - lastRefresh < 86400000) return;
+async function refresh($) {
+  if (refreshBusy) return;
   refreshBusy = true;
+  const discover = !lastRefresh || now - lastRefresh >= 86400000;
   try {
-    const auth = await $.session.authorize();
+    const key = await $.env.get("APEX_AA_API_KEY");
+    const fetchAA =
+      key && !descriptor && (!lastAARefresh || now - lastAARefresh >= 86400000);
+    if (!discover && !fetchAA) return;
+    const auth = discover ? await $.session.authorize() : null;
     if (auth) {
       let all = [],
         cursor = "";
@@ -160,8 +195,9 @@ async function refresh($, force = false) {
         cursor = body.last_id;
       }
     }
-    const key = await $.env.get("APEX_AA_API_KEY");
-    if (key && !descriptor) {
+    if (discover) lastRefresh = now;
+    if (fetchAA) {
+      lastAARefresh = now;
       const result = await fetchAAPages(async (page) => {
         const r = await $.http.fetch(
           "https://artificialanalysis.ai/api/v2/language/models/free?page=" +
@@ -179,15 +215,15 @@ async function refresh($, force = false) {
         source: "https://artificialanalysis.ai/data-api",
       };
     }
-    lastRefresh = now;
     refreshError = null;
     rebuild();
-    await $.store.set("catalogue", { runtime, aa, lastRefresh });
+    await $.store.set("catalogue", { runtime, aa, lastRefresh, lastAARefresh });
     await sync($);
     draw($);
   } catch {
     refreshError = "Catalogue refresh failed; previous evidence retained";
-    lastRefresh = now;
+    if (discover) lastRefresh = now;
+    await $.store.set("catalogue", { runtime, aa, lastRefresh, lastAARefresh });
     draw($);
   } finally {
     refreshBusy = false;
@@ -230,15 +266,43 @@ function nativeActions($) {
           await change($, { ...command, expectedRevision: control.revision });
           await sync($);
         },
-        "Applied to the next request · revision " + (control.revision + 1),
+        "Saved to the host · revision " + (control.revision + 1),
       ),
-    open: () =>
-      $.ui.open({
+    open: async (view = "compact") => {
+      nativeUi.view = view;
+      nativeUi.modeMenu = false;
+      await $.ui.open({
         id: "apex",
         title: "APEX",
-        focus: true,
-        closeOnEscape: true,
-      }),
+        columns: view === "compact" ? 34 : 72,
+        rows: view === "compact" ? 12 : 24,
+      });
+      draw($);
+    },
+    close: () => $.ui.close({ id: "apex" }),
+    modeMenu: () => {
+      nativeUi.modeMenu = !nativeUi.modeMenu;
+      draw($);
+    },
+    view: (view) => {
+      nativeUi.view = view;
+      nativeUi.notice = "";
+      nativeUi.modeMenu = false;
+      draw($);
+    },
+    scope: (scope) => {
+      nativeUi.scope = scope;
+      nativeUi.selectedId = null;
+      draw($);
+    },
+    draft: (key, value) => {
+      nativeUi[key] = value;
+      draw($);
+    },
+    page: (kind, delta) => {
+      nativeUi[kind] = Math.max(0, nativeUi[kind] + delta);
+      draw($);
+    },
     tab: (tab) => {
       nativeUi.tab = tab;
       nativeUi.notice = "";
@@ -246,7 +310,7 @@ function nativeActions($) {
     },
     select: (id) => {
       nativeUi.selectedId = id;
-      nativeUi.tab = "receipt";
+      nativeUi.view = "inspect";
       draw($);
     },
     print: (event) => $.ui.log(JSON.stringify(event, null, 2)),
@@ -323,10 +387,10 @@ function nativeActions($) {
       uiAction(
         $,
         async () => {
-          pins = false;
+          const resume = pins || control.routing !== "auto";
           await change($, {
             kind: "routing",
-            value: control.routing === "auto" ? "manual_hold" : "auto",
+            value: resume ? "auto" : "manual_hold",
             expectedRevision: control.revision,
           });
           await sync($);
@@ -347,7 +411,15 @@ function nativeActions($) {
         $,
         async () => {
           now = await $.clock.now();
-          void refresh($, true);
+          if (
+            refreshBusy ||
+            (lastAARefresh &&
+              now < Math.min(lastAARefresh + 86400000, lastRefresh + 86400000))
+          )
+            throw new Error(
+              "Refresh is not eligible yet; previous evidence is retained.",
+            );
+          await refresh($, true);
         },
         "Refresh requested; daily source limits apply.",
       ),
@@ -367,6 +439,8 @@ export function register(on, config = {}) {
           ...stored,
           creditsConsent: false,
           budgetUsd: 0,
+          qualityOnce: null,
+          modeConsumedRevision: stored.modeRevision ?? 0,
         };
       } catch {}
     }
@@ -374,6 +448,10 @@ export function register(on, config = {}) {
     nativeUi = {
       ...nativeUi,
       tab: "live",
+      view: "compact",
+      modeMenu: false,
+      paneShown: false,
+      scope: "auto",
       selectedId: null,
       notice: "",
       budget: "",
@@ -388,6 +466,7 @@ export function register(on, config = {}) {
       runtime = cache.runtime ?? [];
       aa = cache.aa ?? null;
       lastRefresh = cache.lastRefresh ?? 0;
+      lastAARefresh = cache.lastAARefresh ?? cache.aa?.fetchedAt ?? 0;
       rebuild();
     }
     hostVersion = (await $.session.version()).version;
@@ -428,6 +507,7 @@ export function register(on, config = {}) {
         budgetUsd: 0,
         expectedRevision: control.revision,
       });
+      control = { ...control, qualityOnce: null };
       await sync($);
     } else {
       timer?.cancel();
@@ -485,10 +565,39 @@ export function register(on, config = {}) {
         await nativeActions($).dock(value);
         return { text: "APEX dock: " + value };
       }
-      if (["live", "timeline", "receipt", "controls"].includes(verb)) {
-        nativeUi.tab = verb;
-        await nativeActions($).open();
+      if (
+        [
+          "rail",
+          "inspect",
+          "live",
+          "timeline",
+          "receipt",
+          "controls",
+          "setup",
+        ].includes(verb)
+      ) {
+        const view =
+          verb === "rail" || verb === "live"
+            ? "compact"
+            : verb === "controls" || verb === "setup"
+              ? "settings"
+              : "inspect";
+        await nativeActions($).open(view);
         return { text: "" };
+      }
+      if (verb === "quality-once") {
+        await change($, {
+          kind: "quality_once",
+          armed: value !== "cancel",
+          expectedRevision: control.revision,
+        });
+        await sync($);
+        return {
+          text:
+            value === "cancel"
+              ? "Quality once canceled."
+              : "High Quality once saved for the next main request; base mode unchanged.",
+        };
       }
       if (verb === "mode") {
         await change($, {
@@ -516,7 +625,15 @@ export function register(on, config = {}) {
       }
       if (verb === "refresh") {
         now = await $.clock.now();
-        void refresh($, true);
+        if (
+          refreshBusy ||
+          (lastAARefresh &&
+            now < Math.min(lastAARefresh + 86400000, lastRefresh + 86400000))
+        )
+          return {
+            text: "Refresh is not eligible yet. Daily source limits apply; previous evidence is retained.",
+          };
+        await refresh($, true);
         return {
           text: "Refresh requested; daily source limits apply. Last good evidence stays active.",
         };
@@ -609,7 +726,7 @@ export function register(on, config = {}) {
         });
         return { text: "Account model availability confirmed by user." };
       }
-      await $.ui.open({ id: "apex", title: "APEX", focus: true });
+      await nativeActions($).open();
       return {};
     } catch {
       return {
@@ -646,6 +763,11 @@ export function register(on, config = {}) {
       model: e.model,
       ...(e.effort !== undefined ? { effort: e.effort } : {}),
     };
+    const id = e.turnId + ":" + e.index + ":" + (e.agentId ?? "main");
+    const captured = e.agentId ? null : captureDispatch(control, id);
+    const dispatchControl = captured?.effective ?? { ...control };
+    // Atomic claim: no await between capturing and clearing the one-shot token.
+    if (captured) control = captured.next;
     const decision = e.agentId
       ? {
           pair: original,
@@ -655,7 +777,7 @@ export function register(on, config = {}) {
         }
       : route({
           original,
-          control,
+          control: dispatchControl,
           intent,
           models,
           fetchedAt: aa?.fetchedAt,
@@ -674,16 +796,40 @@ export function register(on, config = {}) {
       stepsOnModel = 1;
     }
     if (!e.agentId) lastEffort = decision.pair.effort;
-    const id = e.turnId + ":" + e.index + ":" + (e.agentId ?? "main");
-    ledger.begin(
+    const task = e.agentId
+      ? "unknown"
+      : (dispatchControl.taskOverride ?? intent.task);
+    const baseline = models.find(
+      (m) =>
+        m.runtimeId === original.model &&
+        m.effort === (original.effort ?? null),
+    );
+    const snapshot = freezeDecision({
+      original,
+      decision,
+      models,
+      task,
+      fetchedAt: aa?.fetchedAt,
+      baselineForecast: baseline
+        ? forecastCost(baseline.evidence, contextTokens, baseline.outputCap)
+        : null,
+    });
+    const event = ledger.begin(
       id,
       {
         turnId: e.turnId,
         step: e.index,
         agentId: e.agentId ?? null,
-        mode: control.mode,
-        revision: control.revision,
-        task: e.agentId ? "unknown" : (control.taskOverride ?? intent.task),
+        kind: "request",
+        timestamp: now,
+        startedAt: now,
+        mode: dispatchControl.mode,
+        baseMode: control.mode,
+        revision: dispatchControl.revision,
+        modeRevision: dispatchControl.modeRevision ?? 0,
+        onceRevision: captured?.onceRevision ?? null,
+        decisionSnapshot: snapshot,
+        task,
         risk: e.agentId ? "unknown" : intent.risk,
         original,
         apexRequested: decision.pair,
@@ -692,6 +838,7 @@ export function register(on, config = {}) {
       },
       decision.estimate,
     );
+    if (captured) await $.store.set("control", control);
     draw($);
     void sync($);
     try {
@@ -700,11 +847,9 @@ export function register(on, config = {}) {
         model: decision.pair.model,
         effort: decision.pair.effort,
       });
-      const evidence = models.find(
-        (m) =>
-          m.runtimeId === (result.usage?.model ?? decision.pair.model) &&
-          m.effort === (decision.pair.effort ?? null),
-      )?.evidence;
+      const reported = result.usage?.model;
+      const evidence =
+        snapshot.selected?.model === reported ? snapshot.selected : null;
       const u = result.usage,
         cost = u
           ? estimatedCost(
@@ -715,12 +860,12 @@ export function register(on, config = {}) {
               u.cache_creation_input_tokens ?? 0,
             )
           : null;
-      ledger.finish(id, u, cost);
+      ledger.finish(id, u, cost, "complete", await $.clock.now());
       draw($);
       void sync($);
       return result;
     } catch (error) {
-      ledger.finish(id, null, null, "error");
+      ledger.finish(id, null, null, "error", await $.clock.now());
       models = models.map((m) =>
         m.runtimeId === decision.pair.model &&
         decision.pair.model !== original.model
@@ -736,11 +881,13 @@ export function register(on, config = {}) {
     }
   });
   on("tool.call", async ($, e, next) => {
+    const startedAt = await $.clock.now();
     const id = "tool:" + e.tool_use_id;
     ledger.events.push({
       id,
       sequence: ++ledger.sequence,
-      timestamp: now,
+      timestamp: startedAt,
+      startedAt,
       kind: "tool",
       tool: e.tool,
       status: "running",
@@ -751,8 +898,10 @@ export function register(on, config = {}) {
     try {
       const result = await next(e);
       const row = ledger.events.find((x) => x.id === id);
-      if (row)
+      if (row) {
         row.status = result.isError || result.deny ? "error" : "complete";
+        row.completedAt = await $.clock.now();
+      }
       if (!e.agentId && (result.isError || result.deny))
         intent = { ...intent, failures: intent.failures + 1 };
       draw($);
@@ -760,13 +909,18 @@ export function register(on, config = {}) {
     } catch (error) {
       if (!e.agentId) intent = { ...intent, failures: intent.failures + 1 };
       const row = ledger.events.find((x) => x.id === id);
-      if (row) row.status = "error";
+      if (row) {
+        row.status = "error";
+        row.completedAt = await $.clock.now();
+      }
       draw($);
       throw error;
     }
   });
   on("ui.render", { component: "Spinner" }, async ($, e, next) => {
-    const active = ledger.events.findLast((x) => x.status === "streaming");
+    const active = ledger.events.findLast(
+      (x) => x.status === "streaming" && !x.agentId,
+    );
     return active
       ? next({
           ...e,
@@ -799,11 +953,22 @@ export function register(on, config = {}) {
   });
   on("ui.render", { component: "Pane" }, async ($, e, next) => {
     if (e.requestId !== "apex") return next(e);
+    nativeUi.paneShown = true;
+    nativeUi.placement = e.props.placement;
     return pane(
       $.ui.resolve(e),
       e.props,
       { ...publicState(), ui: nativeUi, aaVariants: aa?.models ?? [] },
       nativeActions($),
     );
+  });
+  on("ui.close", async ($, e, next) => {
+    const result = await next(e);
+    if (e.id === "apex") {
+      nativeUi.paneShown = false;
+      nativeUi.placement = null;
+      draw($);
+    }
+    return result;
   });
 }

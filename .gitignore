@@ -8,3 +8,7 @@ test-results/
 playwright-report/
 .claude/
 types.generated/
+
+# Claude generates SDK types and editor configuration on a local mod mount.
+plugins/apex/.claude-plugin/types/
+plugins/apex/tsconfig.json

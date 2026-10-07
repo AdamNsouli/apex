@@ -153,3 +153,67 @@ test("detached dashboard starter exits and its private bridge can shut down clea
   });
   assert.equal(reply.status, "closing");
 });
+
+test("first memory-only AA connection fetches once; key edits and refresh cannot bypass cooldown", async () => {
+  let calls = 0;
+  const server = await createCompanion({
+    aaKey: null,
+    fetcher: async () => {
+      calls++;
+      return new Response(
+        JSON.stringify({
+          data: [],
+          intelligence_index_version: 4,
+          pagination: { page: 1, total_pages: 1, has_more: false },
+        }),
+      );
+    },
+  });
+  try {
+    const url = new URL(server.url),
+      base = url.origin;
+    const boot = await fetch(base + "/api/bootstrap", {
+      method: "POST",
+      headers: { Origin: base },
+      body: JSON.stringify({ token: url.hash.slice(1) }),
+    });
+    const cookie = boot.headers.get("set-cookie").split(";")[0],
+      { csrf } = await boot.json();
+    const headers = { Origin: base, Cookie: cookie, "X-Apex-Csrf": csrf };
+    const send = (route, data) =>
+      fetch(base + route, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(data),
+      });
+    await send("/api/credentials", { aaKey: "synthetic-offline-key" });
+    for (let i = 0; i < 20 && !calls; i++)
+      await new Promise((r) => setTimeout(r, 10));
+    assert.equal(calls, 1);
+    const read = () =>
+      fetch(base + "/api/state", { headers: { Cookie: cookie } }).then((r) =>
+        r.json(),
+      );
+    for (let i = 0; i < 20 && (await read()).refreshBusy; i++)
+      await new Promise((r) => setTimeout(r, 10));
+    await send("/api/credentials", { aaKey: "synthetic-replacement-key" });
+    await send("/api/refresh", {});
+    assert.equal(calls, 1);
+    const state = await read();
+    assert.ok(state.nextRefreshAt > Date.now());
+    assert.equal(
+      JSON.stringify(state).includes("synthetic-replacement-key"),
+      false,
+    );
+    for (const asset of [
+      "/presentation.mjs",
+      "/receipt.mjs",
+      "/tokens.css",
+      "/assets/apex-mark.svg",
+      "/assets/inter.ttf",
+    ])
+      assert.equal((await fetch(base + asset)).status, 200);
+  } finally {
+    await server.close();
+  }
+});
