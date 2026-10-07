@@ -6,7 +6,7 @@
 
 APEX is executable middleware, not just instructions to Claude. It wraps the official `turn.step` hook and forwards the selected model and effort while preserving the streamed response and conversation. Eco, Balanced, High Quality and Sports can be selected while work is running.
 
-**0.1.0-beta.2:** native hook tests and local browser integration pass. Live Anthropic inference, authenticated Artificial Analysis data ingestion and account billing have not been verified. There is no claim of guaranteed optimal routing or guaranteed bill savings.
+**0.2.0-beta.1:** native hook tests and local browser integration pass. Live Anthropic inference, authenticated Artificial Analysis data ingestion and account billing have not been verified. There is no claim of guaranteed optimal routing or guaranteed bill savings.
 
 ## Tell Claude to install it
 
@@ -21,7 +21,7 @@ claude plugin marketplace add AdamNsouli/apex
 claude plugin install apex@apex-tools --scope user
 ```
 
-Then reload plugins or restart Claude Code. Open `/apex` for the native pane and `/apex dashboard` for the local browser UI. **A bare name is not globally resolvable: include `AdamNsouli/apex` when asking Claude to install.** No npm install is needed to use the plugin.
+Then reload plugins or restart Claude Code. The terminal prompt dock appears automatically. Open `/apex` for the native inspector and `/apex dashboard` for the optional browser console. **A bare name is not globally resolvable: include `AdamNsouli/apex` when asking Claude to install.** No npm install is needed to use the plugin.
 
 See [INSTALL.md](INSTALL.md) for the complete setup and removal instructions.
 
@@ -49,11 +49,19 @@ These are transparent heuristics, not measured task-success probabilities. Hard,
 
 ## Interface
 
+The **terminal prompt dock** keeps the current model, requested effort, routing mode and inspector shortcut above Claude's composer. Focus it with `ctrl+x tab`; `e`, `b`, `q`, `s` select a mode and `i` opens the inspector. It yields to Claude's native question surveys and preserves downstream mod UI. Choose full, compact or hidden display in Controls or with `/apex dock expanded|compact|hidden`.
+
+The **native inspector** has Live, Timeline, Receipt, Models and Controls tabs. It works without starting the browser companion. Use it to change modes, hold/resume routing, enter a credit estimate budget, confirm backend/model IDs, save exact AA mappings and select task evidence. The terminal host docks it beside the conversation on a wide fullscreen layout and above the composer when narrow. Desktop pane primitives also pass the native harness. The prompt dock is a terminal-only render site; actual desktop paint is not verified.
+
+![Native interface reference from the shipped primitive tree; synthetic fixture, not live terminal paint](docs/screenshots/native-interface-reference.png)
+
+The image above renders the shipped native component functions with synthetic state. It illustrates layout and hierarchy, not a live terminal capture. Host fonts, chrome and scrolling vary. See [Native_Interface.md](docs/Native_Interface.md) for the surface contract and keyboard controls.
+
 Screenshots below come from the working browser UI with an explicitly marked **offline synthetic native bridge**. The separate native harness verifies actual hook forwarding. These are not live benchmark results.
 
 ![APEX dashboard and request receipt](docs/screenshots/dashboard-receipt.png)
 
-[Model evidence](docs/screenshots/model-evidence.png) · [Mobile light theme](docs/screenshots/dashboard-mobile-light.png) · [Original visual specifications, screenshots and sprites](docs/design-pack/_index.md)
+[Compact console](docs/screenshots/dashboard-compact.png) · [Model evidence](docs/screenshots/model-evidence.png) · [Mobile light theme](docs/screenshots/dashboard-mobile-light.png) · [Original visual specifications, screenshots and sprites](docs/design-pack/_index.md)
 
 ## Credits and costs
 
@@ -67,7 +75,7 @@ Artificial Analysis publishes broad task indices, not a forecast of success on e
 
 Catalogues refresh at most once per day while the session is open. Partial refreshes retain the prior snapshot. After 72 hours, automatic quality downgrades stop; after seven days, switching stops. Closed sessions do not run a background monitoring service.
 
-Your AA key is held in local companion memory or supplied via `APEX_AA_API_KEY`. Native login authorization uses Claude's opaque handle only for first-party model discovery. APEX does not export the login token. Native local store holds routing preferences and normalized benchmark cache. Receipts are session-only, capped at 1,000 events; export before closing. No transcript, tool arguments, paths or private reasoning are kept in receipts. Your normal Claude provider still receives the normal conversation.
+Your AA key is held in local companion memory or supplied via `APEX_AA_API_KEY`. Native login authorization uses Claude's opaque handle only for first-party model discovery. APEX does not export the login token. Native local store holds routing preferences, the dock display preference and normalized benchmark cache. Receipts are session-only, capped at 1,000 events; export before closing. No transcript, tool arguments, paths or private reasoning are kept in receipts. Your normal Claude provider still receives the normal conversation.
 
 This public repository contains code and synthetic fixtures, not an AA dataset. Use a key and license appropriate to your use. A hosted/shared redistribution service needs its own authorization from AA.
 

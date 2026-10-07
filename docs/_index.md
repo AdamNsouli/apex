@@ -1,6 +1,6 @@
 # docs — Index
 
-Current status: APEX executable beta release.
+Current status: APEX 0.2.0-beta.1, native interface refinement.
 Code and assets are public; dataset and inference fixtures are synthetic.
 See the root README and verification document for actual limits.
 
@@ -10,3 +10,5 @@ See the root README and verification document for actual limits.
 - [design-pack](./design-pack/_index.md) — original design history and synthetic pictures/sprites; root README describes what shipped.
 - [screenshots](./screenshots/_index.md) — component navigation.
 - [Release_Results.md](./Release_Results.md) — actual local/native/browser/installation verification and limitations.
+
+- [Native_Interface.md](./Native_Interface.md) — native surface contract, focus, shortcuts, controls and screenshot provenance.

@@ -1,6 +1,6 @@
 # apex — Index
 
-Current status: APEX executable beta release.
+Current status: APEX 0.2.0-beta.1, native interface refinement.
 Code and assets are public; dataset and inference fixtures are synthetic.
 See the root README and verification document for actual limits.
 

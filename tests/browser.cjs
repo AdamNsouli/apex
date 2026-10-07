@@ -126,7 +126,7 @@ const path = require("node:path");
         "OFFLINE TEST · synthetic native bridge · no live inference";
       el.setAttribute("id", "test-label");
       el.style.cssText =
-        "position:fixed;top:0;left:0;right:0;z-index:30;background:#634018;color:#fff;text-align:center;font:11px monospace;padding:3px";
+        "position:fixed;top:0;left:0;right:0;z-index:30;background:#634018;color:#fff;text-align:center;font:12px monospace;padding:3px";
       document.body.append(el);
     });
     const out = path.resolve("docs/screenshots");
@@ -145,7 +145,7 @@ const path = require("node:path");
         task: "general",
         risk: "normal",
         apexRequested: { model: "fixture-alpha", effort: "high" },
-        reason: "fixture",
+        reason: "balanced_utility",
       },
       0.003,
     );
@@ -186,6 +186,7 @@ const path = require("node:path");
       .click();
     await page.getByText(/Applied · revision 4/).waitFor();
     assert.equal(control.mappings[0].runtimeId, "fixture-beta");
+    await page.locator("#toast").waitFor({ state: "hidden" });
     await page.screenshot({
       path: path.join(out, "model-evidence.png"),
       fullPage: true,
@@ -229,6 +230,20 @@ const path = require("node:path");
       path: path.join(out, "dashboard-receipt.png"),
       fullPage: true,
     });
+    await page
+      .getByRole("button", { name: "Compact view", exact: true })
+      .click();
+    assert.equal(
+      await page.locator("#density").getAttribute("aria-pressed"),
+      "true",
+    );
+    await page.screenshot({
+      path: path.join(out, "dashboard-compact.png"),
+      fullPage: true,
+    });
+    await page
+      .getByRole("button", { name: "Full console", exact: true })
+      .click();
     for (const width of [1440, 980, 768, 390]) {
       await page.setViewportSize({ width, height: 1000 });
       for (const view of ["Overview", "Timeline", "Models", "Settings"]) {
@@ -252,6 +267,17 @@ const path = require("node:path");
       fullPage: true,
     });
     await page.setViewportSize({ width: 1440, height: 1000 });
+    const { nativePreview } = await import("../scripts/native-preview.mjs");
+    const reference = await browser.newPage({
+      viewport: { width: 1480, height: 1100 },
+      reducedMotion: "reduce",
+    });
+    await reference.setContent(nativePreview());
+    await reference.screenshot({
+      path: path.join(out, "native-interface-reference.png"),
+      fullPage: true,
+    });
+    await reference.close();
     stopped = true;
     await pumping;
     await new Promise((r) => setTimeout(r, 7200));

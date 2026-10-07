@@ -33,6 +33,7 @@ const usd = (x) =>
 async function control(c) {
   if (busy || !state?.connected) return false;
   busy = true;
+  render();
   const id = crypto.randomUUID();
   try {
     await request("/api/control", {
@@ -57,6 +58,7 @@ async function control(c) {
     return false;
   } finally {
     busy = false;
+    render();
   }
 }
 function receipt(event) {
@@ -126,10 +128,11 @@ function events(target, list) {
 function render() {
   if (!state) return;
   const c = state.control ?? {};
+  document.body.dataset.mode = c.mode ?? "balanced";
   document.querySelectorAll("[data-mode]").forEach((b) => {
     b.classList.toggle("selected", c.mode === b.dataset.mode);
     b.setAttribute("aria-checked", c.mode === b.dataset.mode);
-    b.disabled = !state.connected;
+    b.disabled = !state.connected || busy;
   });
   $("connection").textContent = state.connected
     ? "Connected to Claude host"
@@ -186,7 +189,22 @@ function render() {
   ).toUpperCase();
   $("next-model").textContent =
     last?.apexRequested.model ?? "Awaiting a request";
+  const decisionCopy = {
+    balanced_utility: "Selected for the balance of quality, speed and cost.",
+    eco_utility: "Selected for lower cost within the quality floor.",
+    quality_utility: "Selected for the strongest available task evidence.",
+    sports_utility:
+      "Selected for faster delivery near the best available quality.",
+    manual_hold: "Your native model and effort settings are in control.",
+    evidence_missing_or_expired:
+      "Connect fresh Artificial Analysis evidence before automatic switching.",
+    backend_not_confirmed:
+      "Confirm your billing backend and available model IDs in Models.",
+    baseline_evidence_unknown:
+      "The native model and effort need verified benchmark evidence.",
+  };
   $("why").textContent =
+    decisionCopy[last?.reason] ??
     last?.reason?.replaceAll("_", " ") ??
     "Confirm model availability and connect matching benchmark evidence.";
   $("task-label").textContent = state.intent?.task ?? "Unknown";
@@ -196,8 +214,8 @@ function render() {
   $("credits").textContent = c.creditsConsent
     ? "Revoke credit consent"
     : "Allow credits";
-  $("credits").disabled = !state.connected;
-  $("auto").disabled = !state.connected;
+  $("credits").disabled = !state.connected || busy;
+  $("auto").disabled = !state.connected || busy;
   $("auto").textContent = c.routing === "auto" ? "● Auto" : "○ Manual hold";
   $("benchmark-version").textContent = state.aa
     ? "index v" + state.aa.version
@@ -333,7 +351,7 @@ document.querySelectorAll("[data-view]").forEach(
         .querySelectorAll(".content-view")
         .forEach((x) => (x.hidden = x.id !== "view-" + b.dataset.view));
       $("heading").textContent = {
-        overview: "Routing console",
+        overview: "Routing, in focus.",
         timeline: "Work timeline",
         models: "Model evidence",
         settings: "Settings",
@@ -448,6 +466,25 @@ $("map").onclick = () =>
   });
 $("task").onchange = () =>
   control({ kind: "task", task: $("task").value || null });
+$("density").onclick = () => {
+  const compact = document.body.classList.toggle("compact");
+  $("density").textContent = compact ? "Full console" : "Compact view";
+  $("density").setAttribute("aria-pressed", String(compact));
+  localStorage.setItem("apex-density", compact ? "compact" : "full");
+};
+if (localStorage.getItem("apex-density") === "compact") {
+  document.body.classList.add("compact");
+  $("density").textContent = "Full console";
+  $("density").setAttribute("aria-pressed", "true");
+}
+$("copy-native").onclick = async () => {
+  try {
+    await navigator.clipboard.writeText("/apex");
+    toast("Copied /apex · paste into Claude Code");
+  } catch {
+    toast("Enter /apex in Claude Code to open the native inspector.");
+  }
+};
 $("theme").onclick = () => {
   document.body.classList.toggle("light");
   $("theme").textContent = document.body.classList.contains("light")

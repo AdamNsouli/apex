@@ -54,7 +54,6 @@ test("main request routes through the actual host hook chain; stream retained", 
       rateLimits: [],
     },
   }));
-  on("ui.invalidate", async () => ({ value: {} }));
   let forwarded;
   on("turn.step", async function* (_$, e) {
     forwarded = e;
@@ -101,6 +100,38 @@ test("main request routes through the actual host hook chain; stream retained", 
   expect(forwarded.messageCount).toBe(2);
   expect(chunks[0].text).toBe("real hook stream");
   expect(result.usage.model).toBe("model-b");
+  const inspector = await $.ui.mount({
+    plugin: "apex",
+    surface: "terminal",
+    component: "Pane",
+    requestId: "apex",
+    props: {
+      title: "APEX",
+      isFocused: true,
+      bodyColumns: 72,
+      placement: "inline",
+    },
+  });
+  await inspector.press({ key: "tab-timeline" });
+  await inspector.press({ key: "receipt-turn-1:0:main" });
+  expect(
+    await inspector.find({ type: "Text", text: "Outgoing: model-b / high" }),
+  ).toBeDefined();
+  expect(
+    await inspector.find({ type: "Text", text: "Response: model-b" }),
+  ).toBeDefined();
+  expect(
+    await inspector.find({
+      type: "Text",
+      text: "Effective effort: not reported",
+    }),
+  ).toBeDefined();
+  await inspector.press({ key: "tab-models" });
+  expect(
+    await inspector.find({ type: "Text", text: "Intelligence 60" }),
+  ).toBeDefined();
+  await inspector.unmount();
+
   const agent = $.turn.step({
     turnId: "agent-turn",
     index: 0,
@@ -290,6 +321,6 @@ test("manual model command suspends auto routing until explicitly resumed", asyn
   });
   expect(await ui.find({ type: "Text", text: /manual_hold/ })).toBeDefined();
   await $.command.run({ command: "apex", args: "auto" });
-  expect(await ui.find({ type: "Text", text: /APEX · auto/ })).toBeDefined();
+  expect(await ui.find({ type: "Text", text: /· auto/ })).toBeDefined();
   await ui.unmount();
 });

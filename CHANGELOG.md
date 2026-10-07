@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.0-beta.1
+
+Refined the Claude Code integration: a persistent terminal prompt dock, five-tab native inspector, selectable request/tool receipts, readable routing explanations, native credit budget/consent, account/backend/mapping/task controls, and saved full/compact/hidden dock preferences. The dock preserves downstream mod UI and yields to native question surveys. Terminal and desktop pane primitives pass the official native harness; actual desktop paint remains unverified.
+
+Refined the browser console's hierarchy, typography, navigation and mode selector. Added a working compact console, native-inspector command copy, control busy states, fresh responsive screenshots and a visibly labeled native primitive-tree reference. Routing policy and request-boundary semantics are unchanged. No paid inference, real-key AA ingestion or billing verification was performed.
+
 ## 0.1.0-beta.2
 
 The detached dashboard now shuts down immediately on ordinary native session exit through its protected Unix bridge. Added an actual starter-process test.

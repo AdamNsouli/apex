@@ -1,6 +1,6 @@
 {
   "name": "apex",
-  "version": "0.1.0-beta.2",
+  "version": "0.2.0-beta.1",
   "description": "Native main-request model and effort routing with live modes, evidence and receipts. Requires verified account access and your own Artificial Analysis key.",
   "author": {
     "name": "AdamNsouli"

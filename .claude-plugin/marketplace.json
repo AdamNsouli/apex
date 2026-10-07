@@ -8,7 +8,7 @@
       "name": "apex",
       "source": "./plugins/apex",
       "description": "Native model/effort router and live routing console",
-      "version": "0.1.0-beta.2"
+      "version": "0.2.0-beta.1"
     }
   ],
   "description": "APEX native Claude Code routing mods"

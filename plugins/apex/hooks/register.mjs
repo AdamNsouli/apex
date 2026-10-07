@@ -1,3 +1,4 @@
+import { dock, pane } from "./interface.mjs";
 import {
   initialControl,
   applyControl,
@@ -38,6 +39,16 @@ let control = initialControl(),
   acks = [],
   syncing = null,
   now = Date.now();
+let nativeUi = {
+  dock: "expanded",
+  tab: "live",
+  selectedId: null,
+  budget: "",
+  backend: "unknown",
+  ids: "",
+  notice: "",
+  noticeError: false,
+};
 const rebuild = () => {
   models = joinCatalogue(
     runtime,
@@ -196,6 +207,156 @@ async function dashboard($) {
   }
   return descriptor.url;
 }
+async function uiAction($, run, notice = "") {
+  try {
+    await run();
+    nativeUi.notice = notice;
+    nativeUi.noticeError = false;
+  } catch (error) {
+    nativeUi.notice =
+      error.message === "invalid_control"
+        ? "Enter valid values; nothing was changed."
+        : String(error.message ?? "Action failed");
+    nativeUi.noticeError = true;
+  }
+  draw($);
+}
+function nativeActions($) {
+  return {
+    change: (command) =>
+      uiAction(
+        $,
+        async () => {
+          await change($, { ...command, expectedRevision: control.revision });
+          await sync($);
+        },
+        "Applied to the next request · revision " + (control.revision + 1),
+      ),
+    open: () =>
+      $.ui.open({
+        id: "apex",
+        title: "APEX",
+        focus: true,
+        closeOnEscape: true,
+      }),
+    tab: (tab) => {
+      nativeUi.tab = tab;
+      nativeUi.notice = "";
+      draw($);
+    },
+    select: (id) => {
+      nativeUi.selectedId = id;
+      nativeUi.tab = "receipt";
+      draw($);
+    },
+    print: (event) => $.ui.log(JSON.stringify(event, null, 2)),
+    budget: (value) => {
+      nativeUi.budget = value;
+    },
+    backend: (value) => {
+      nativeUi.backend = value;
+    },
+    ids: (value) => {
+      nativeUi.ids = value;
+    },
+    credits: (value) =>
+      uiAction(
+        $,
+        async () => {
+          if (
+            !value.trim() ||
+            !Number.isFinite(Number(value)) ||
+            Number(value) <= 0
+          )
+            throw new Error(
+              "Enter a positive USD estimate budget; consent stays unchanged.",
+            );
+          await change($, {
+            kind: "credits",
+            allowed: true,
+            budgetUsd: Number(value),
+            expectedRevision: control.revision,
+          });
+          nativeUi.budget = value;
+          await sync($);
+        },
+        "APEX consent saved. Account billing remains a separate action.",
+      ),
+    availability: (value) =>
+      uiAction(
+        $,
+        async () => {
+          if (!["api", "subscription"].includes(nativeUi.backend))
+            throw new Error("Select your confirmed billing backend first.");
+          await change($, {
+            kind: "availability",
+            ids: value.trim().split(/\s+/).filter(Boolean),
+            backend: nativeUi.backend,
+            expectedRevision: control.revision,
+          });
+          nativeUi.ids = value;
+          await sync($);
+        },
+        "Account availability saved; exact evidence mappings still apply.",
+      ),
+    mapping: (value) =>
+      uiAction(
+        $,
+        async () => {
+          const [runtimeId, aaSlug, effort, ...extra] = value
+            .trim()
+            .split(/\s+/);
+          if (!runtimeId || !aaSlug || extra.length)
+            throw new Error("Use: runtime-ID AA-slug effort (or default).");
+          await change($, {
+            kind: "mapping",
+            runtimeId,
+            aaSlug,
+            effort: !effort || effort === "default" ? null : effort,
+            expectedRevision: control.revision,
+          });
+          await sync($);
+        },
+        "Verified mapping saved; incompatible effort evidence remains excluded.",
+      ),
+    toggle: () =>
+      uiAction(
+        $,
+        async () => {
+          pins = false;
+          await change($, {
+            kind: "routing",
+            value: control.routing === "auto" ? "manual_hold" : "auto",
+            expectedRevision: control.revision,
+          });
+          await sync($);
+        },
+        "Routing updated for the next request.",
+      ),
+    dock: (value) =>
+      uiAction(
+        $,
+        async () => {
+          nativeUi.dock = value;
+          await $.store.set("display", { dock: value });
+        },
+        "Dock preference saved.",
+      ),
+    refresh: () =>
+      uiAction(
+        $,
+        async () => {
+          now = await $.clock.now();
+          void refresh($, true);
+        },
+        "Refresh requested; daily source limits apply.",
+      ),
+    dashboard: () =>
+      uiAction($, async () => {
+        await $.ui.log("Open local APEX console: " + (await dashboard($)));
+      }),
+  };
+}
 export function register(on, config = {}) {
   on("session.start", async ($, e, next) => {
     const stored = await $.store.get("control");
@@ -209,6 +370,19 @@ export function register(on, config = {}) {
         };
       } catch {}
     }
+    const display = await $.store.get("display");
+    nativeUi = {
+      ...nativeUi,
+      tab: "live",
+      selectedId: null,
+      notice: "",
+      budget: "",
+      backend: control.backend,
+      ids: control.verifiedIds.join(" "),
+      dock: ["expanded", "compact", "hidden"].includes(display?.dock)
+        ? display.dock
+        : "expanded",
+    };
     const cache = await $.store.get("catalogue");
     if (cache && typeof cache === "object") {
       runtime = cache.runtime ?? [];
@@ -305,6 +479,17 @@ export function register(on, config = {}) {
           .split(/\s+/);
     const [verb, value, ...extra] = args;
     try {
+      if (verb === "dock") {
+        if (!["expanded", "compact", "hidden"].includes(value))
+          return { text: "Use /apex dock expanded|compact|hidden" };
+        await nativeActions($).dock(value);
+        return { text: "APEX dock: " + value };
+      }
+      if (["live", "timeline", "receipt", "controls"].includes(verb)) {
+        nativeUi.tab = verb;
+        await nativeActions($).open();
+        return { text: "" };
+      }
       if (verb === "mode") {
         await change($, {
           kind: "mode",
@@ -597,125 +782,28 @@ export function register(on, config = {}) {
         })
       : next(e);
   });
+  on("ui.render", { component: "AbovePrompt" }, async ($, e, next) => {
+    const previous = await next(e);
+    const elements = $.ui.resolve(e);
+    const drawing = dock(
+      elements,
+      e.props,
+      { ...publicState(), ui: nativeUi, aaVariants: aa?.models ?? [] },
+      nativeActions($),
+    );
+    if (!drawing) return previous;
+    return elements.Box({
+      flexDirection: "column",
+      children: [...(previous ? [previous] : []), drawing],
+    });
+  });
   on("ui.render", { component: "Pane" }, async ($, e, next) => {
     if (e.requestId !== "apex") return next(e);
-    const { Box, Text, Button } = $.ui.resolve(e);
-    const modeButtons = ["eco", "balanced", "quality", "sports"].map((mode) =>
-      Button({
-        key: "mode-" + mode,
-        label: (control.mode === mode ? "● " : "○ ") + mode,
-        onPress: async () => {
-          await change($, {
-            kind: "mode",
-            mode,
-            expectedRevision: control.revision,
-          });
-          await sync($);
-        },
-      }),
+    return pane(
+      $.ui.resolve(e),
+      e.props,
+      { ...publicState(), ui: nativeUi, aaVariants: aa?.models ?? [] },
+      nativeActions($),
     );
-    const active = ledger.events.findLast((x) => x.status === "streaming");
-    return Box({
-      flexDirection: "column",
-      gap: 1,
-      padding: 1,
-      children: [
-        Text({
-          bold: true,
-          children:
-            "APEX · " + control.routing + " · revision " + control.revision,
-        }),
-        Box({ flexDirection: "row", gap: 1, children: modeButtons }),
-        Text({
-          children: active
-            ? "Requested: " +
-              active.apexRequested.model +
-              " / " +
-              (active.apexRequested.effort ?? "default") +
-              " · streaming"
-            : "No active request",
-        }),
-        Text({
-          dimColor: true,
-          children:
-            "API≈ " +
-            (ledger.events.some(
-              (x) => x.observedUsd !== null && x.observedUsd !== undefined,
-            )
-              ? ledger.spentUsd.toFixed(4) +
-                " USD" +
-                (ledger.unknownCosts ? " (partial)" : "")
-              : "not yet observed") +
-            " · AA " +
-            (aa ? "connected" : "key needed") +
-            " · Billing unknown",
-        }),
-        Text({
-          children:
-            "Credits: " +
-            (control.creditsConsent
-              ? "APEX allowed; account unverified"
-              : "not allowed by APEX"),
-        }),
-        ...ledger.events.slice(-6).map((row) =>
-          Text({
-            key: row.id,
-            children:
-              row.kind === "tool"
-                ? row.tool + " · " + row.status
-                : "#" +
-                  row.step +
-                  " " +
-                  row.apexRequested.model +
-                  " / " +
-                  (row.apexRequested.effort ?? "default") +
-                  " · " +
-                  row.status,
-          }),
-        ),
-        Box({
-          flexDirection: "row",
-          gap: 1,
-          children: [
-            Button({
-              key: "auto",
-              label: control.routing === "auto" ? "Hold" : "Auto",
-              onPress: async () => {
-                pins = false;
-                await change($, {
-                  kind: "routing",
-                  value: control.routing === "auto" ? "manual_hold" : "auto",
-                  expectedRevision: control.revision,
-                });
-              },
-            }),
-            Button({
-              key: "dashboard",
-              label: "Dashboard",
-              onPress: async () => {
-                await $.ui.log("Open local dashboard: " + (await dashboard($)));
-              },
-            }),
-            Button({
-              key: "credits",
-              label: control.creditsConsent ? "Revoke credits" : "Credits info",
-              onPress: async () => {
-                if (control.creditsConsent)
-                  await change($, {
-                    kind: "credits",
-                    allowed: false,
-                    budgetUsd: 0,
-                    expectedRevision: control.revision,
-                  });
-                else
-                  await $.ui.log(
-                    "Allow via /apex credits allow USD_CAP. Account billing uses /usage-credits and remains a separate action.",
-                  );
-              },
-            }),
-          ],
-        }),
-      ],
-    });
   });
 }
