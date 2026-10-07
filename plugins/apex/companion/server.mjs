@@ -130,6 +130,11 @@ export async function createCompanion({
         if (req.method !== "POST" || url.pathname !== "/native/sync")
           return json(res, 404, { error: "not_found" });
         const data = await body(req, 16 * 1024 * 1024);
+        if (data.shutdown === true) {
+          json(res, 200, { status: "closing" });
+          setTimeout(() => void close(), 0);
+          return;
+        }
         if (data.state) {
           state = data.state;
           lastHeartbeat = Date.now();

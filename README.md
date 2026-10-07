@@ -1,10 +1,12 @@
 # APEX
 
+[![Verify APEX](https://github.com/AdamNsouli/apex/actions/workflows/verify.yml/badge.svg)](https://github.com/AdamNsouli/apex/actions/workflows/verify.yml)
+
 **A native Claude Code mod that changes the model and effort on the next unsent main request, with a live timeline and evidence-backed routing.**
 
 APEX is executable middleware, not just instructions to Claude. It wraps the official `turn.step` hook and forwards the selected model and effort while preserving the streamed response and conversation. Eco, Balanced, High Quality and Sports can be selected while work is running.
 
-**0.1.0-beta.1:** native hook tests and local browser integration pass. Live Anthropic inference, authenticated Artificial Analysis data ingestion and account billing have not been verified. There is no claim of guaranteed optimal routing or guaranteed bill savings.
+**0.1.0-beta.2:** native hook tests and local browser integration pass. Live Anthropic inference, authenticated Artificial Analysis data ingestion and account billing have not been verified. There is no claim of guaranteed optimal routing or guaranteed bill savings.
 
 ## Tell Claude to install it
 

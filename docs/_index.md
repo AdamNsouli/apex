@@ -9,3 +9,4 @@ See the root README and verification document for actual limits.
 - [Verification_And_Limits.md](./Verification_And_Limits.md) — release source or supporting artifact.
 - [design-pack](./design-pack/_index.md) — original design history and synthetic pictures/sprites; root README describes what shipped.
 - [screenshots](./screenshots/_index.md) — component navigation.
+- [Release_Results.md](./Release_Results.md) — actual local/native/browser/installation verification and limitations.

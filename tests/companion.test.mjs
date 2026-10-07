@@ -119,3 +119,37 @@ test("loopback authentication, origin, CSRF and actual queued control transport"
     await server.close();
   }
 });
+test("detached dashboard starter exits and its private bridge can shut down cleanly", async () => {
+  const { execFile } = await import("node:child_process");
+  const { promisify } = await import("node:util");
+  const { fileURLToPath } = await import("node:url");
+  const { stdout } = await promisify(execFile)(
+    process.execPath,
+    [
+      fileURLToPath(
+        new URL("../plugins/apex/companion/server.mjs", import.meta.url),
+      ),
+      "start",
+    ],
+    { timeout: 10000, env: { ...process.env, APEX_AA_API_KEY: "" } },
+  );
+  const descriptor = JSON.parse(stdout);
+  assert.match(descriptor.url, /^http:\/\/127\.0\.0\.1:\d+\/#/);
+  const reply = await new Promise((resolve, reject) => {
+    const req = http.request(
+      {
+        socketPath: descriptor.socketPath,
+        path: "/native/sync",
+        method: "POST",
+      },
+      (r) => {
+        let text = "";
+        r.on("data", (d) => (text += d));
+        r.on("end", () => resolve(JSON.parse(text)));
+      },
+    );
+    req.on("error", reject);
+    req.end(JSON.stringify({ shutdown: true }));
+  });
+  assert.equal(reply.status, "closing");
+});

@@ -260,6 +260,16 @@ export function register(on, config = {}) {
       refreshTimer?.cancel();
       timer = null;
       refreshTimer = null;
+      if (descriptor) {
+        try {
+          await $.http.fetch("http://bridge/native/sync", {
+            socketPath: descriptor.socketPath,
+            method: "POST",
+            body: JSON.stringify({ shutdown: true }),
+          });
+        } catch {}
+        descriptor = null;
+      }
     }
     return next(e);
   });

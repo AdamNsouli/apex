@@ -52,7 +52,7 @@ Native model and effort overrides suspend APEX. Live mode changes acknowledge a 
 
 ## Update or remove
 
-Update with `claude plugin marketplace update apex-tools`, then `claude plugin update apex@apex-tools` and reload/restart. Remove with `claude plugin uninstall apex@apex-tools --scope user`, then `claude plugin marketplace remove apex-tools` if no longer needed. Closing the browser does not stop routing; use `/apex hold` or disable/uninstall the mod. The local companion exits after ten minutes without a native heartbeat.
+Update with `claude plugin marketplace update apex-tools`, then `claude plugin update apex@apex-tools` and reload/restart. Remove with `claude plugin uninstall apex@apex-tools --scope user`, then `claude plugin marketplace remove apex-tools` if no longer needed. Closing the browser does not stop routing; use `/apex hold` or disable/uninstall the mod. The local companion shuts down on normal native session exit, or after ten minutes without a native heartbeat.
 
 Local preferences and cached benchmarks are managed by Claude's plugin store. Export your session receipts before restarting; do not expect the current in-memory timeline to survive reloads.
 
