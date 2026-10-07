@@ -18,4 +18,6 @@ The terminal capture used empty temporary workspace/configuration, a dummy crede
 
 No paid inference was run. Live provider acceptance, authenticated AA ingestion with a real key, subscription entitlement, account billing, task-quality gains and measured savings remain unverified. This is an executable beta, not a guarantee of optimum decisions or a zero-maintenance future host integration.
 
-[Current independent Linux checks](https://github.com/AdamNsouli/apex/actions/workflows/verify.yml) run the same core/native/browser paths. A clean local marketplace installation in isolated temporary Claude configuration reported APEX 0.3.0-beta.1 enabled. Public marketplace installation is checked separately during publication.
+[Current independent Linux checks](https://github.com/AdamNsouli/apex/actions/workflows/verify.yml) run the same core/native/browser paths. A clean local marketplace installation and a fresh **public GitHub marketplace installation** in separate temporary Claude configurations both reported APEX 0.3.0-beta.1 enabled. All nine native harness tests also passed from the downloaded public plugin cache; receipt/presentation modules and local font assets were present.
+
+The independent [Linux verification run](https://github.com/AdamNsouli/apex/actions/runs/37589373659) passed for implementation commit `51debfd97141d971be02cc5f0870878abac8d896`: hygiene, 44 Node tests, marketplace/plugin validation, nine native tests and browser integration. Subsequent release bookkeeping changes do not alter the runtime.

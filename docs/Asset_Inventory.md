@@ -13,7 +13,7 @@ All font sources and OFL notices were retrieved from the official [Google Fonts 
 - JetBrains Mono: `ofl/jetbrainsmono/JetBrainsMono[wght].ttf` and `OFL.txt`.
 - Archivo publisher-outline notice: `ofl/archivo/OFL.txt`.
 
-Files retain their SIL Open Font License notices. Font assets are served from the local companion with `font-display: swap`; there is no font CDN or external runtime request. Original SVG code follows the repository MIT license; font software and derived glyph notice retain their own license.
+Files retain their SIL Open Font License notices byte-for-byte, including upstream line endings. Font assets are served from the local companion with `font-display: swap`; there is no font CDN or external runtime request. Original SVG code follows the repository MIT license; font software and derived glyph notice retain their own license.
 
 The legacy `mode-glyphs.svg` and original design pack remain design history. They do not define current mode colors, buttons or runtime behavior.
 

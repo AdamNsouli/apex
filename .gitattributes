@@ -1,0 +1,2 @@
+# Retain upstream license bytes (including CRLF / trailing spaces) unchanged.
+plugins/apex/web/assets/*-OFL.txt -whitespace

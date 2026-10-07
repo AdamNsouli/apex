@@ -18,3 +18,5 @@ See the root README and verification document for actual limits.
 - [plugins](./plugins/_index.md) — component navigation.
 - [scripts](./scripts/_index.md) — component navigation.
 - [tests](./tests/_index.md) — component navigation.
+
+- [.gitattributes](./.gitattributes) — upstream license bytes are preserved without whitespace normalization.
