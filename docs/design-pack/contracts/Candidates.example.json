@@ -1,0 +1,10 @@
+{
+  "example": true,
+  "notice": "Entirely fictional models, benchmark scores and costs; never route live requests to these IDs.",
+  "candidates": [
+    {"model":"fictional-model-a","effort":"high","rawScore":40,"costUpperUsd":0.03,"latencyMs":1500,"benchmarkVersion":"fictional-v1"},
+    {"model":"fictional-model-b","effort":"high","rawScore":58,"costUpperUsd":0.09,"latencyMs":2200,"benchmarkVersion":"fictional-v1"},
+    {"model":"fictional-model-c","effort":"high","rawScore":59,"costUpperUsd":0.20,"latencyMs":3200,"benchmarkVersion":"fictional-v1"},
+    {"model":"fictional-model-d","effort":"high","rawScore":60,"costUpperUsd":0.28,"latencyMs":5000,"benchmarkVersion":"fictional-v1"}
+  ]
+}

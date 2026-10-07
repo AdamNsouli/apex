@@ -1,0 +1,195 @@
+{
+  "algorithm": "sha256",
+  "files": [
+    {
+      "file": "Architecture_And_Test_Spec.md",
+      "sha256": "89a2476a279c0d0dc4b287a1d068e44f1d64c54132b3c6ab58a9264903916aa3",
+      "bytes": 11784
+    },
+    {
+      "file": "One_Shot_Build_Prompt.md",
+      "sha256": "eee30047654cf62a97cf24cf630571ee907cdcb51623493eb582fe4d4d289c72",
+      "bytes": 6776
+    },
+    {
+      "file": "Product_And_UI_Spec.md",
+      "sha256": "34dc108ac0b65b20b2557c57cd3c669dc9eb40ea9792ff8b9a43833125112023",
+      "bytes": 9598
+    },
+    {
+      "file": "Routing_And_Data_Spec.md",
+      "sha256": "8c7236a1af404f9e65938a1efd3077efba4c931b9463f7e84364e7fdab9a38ae",
+      "bytes": 13528
+    },
+    {
+      "file": "Start_Here.md",
+      "sha256": "f850800a17c93411a1319b1c08a7520563cd2a9d83036bd3a304e0a2dc6f420f",
+      "bytes": 4794
+    },
+    {
+      "file": "Verification_And_Handoff.md",
+      "sha256": "a0a7b50619de77d4d7c61823ac2da3db3cb4694c5bec7e2cc9c8132462bd56dd",
+      "bytes": 3367
+    },
+    {
+      "file": "_index.md",
+      "sha256": "23f1fea471d84d2630a7df190ca1c4bbe3275aaf24e9f91549cf2bf606e93e3a",
+      "bytes": 1349
+    },
+    {
+      "file": "assets/Asset_Provenance.md",
+      "sha256": "b92d719130c8a68cad37a8650b6d8d18f73915889505bd4e11e9fc88035008e8",
+      "bytes": 2543
+    },
+    {
+      "file": "assets/Mode_Glyphs.svg",
+      "sha256": "87740e9eabe2c8006ad4167554b05b38ec20b0e8d4301634dbc8fed6fa4693fe",
+      "bytes": 709
+    },
+    {
+      "file": "assets/Mode_Sprites.png",
+      "sha256": "01bb75daa78db8977c58d20e84d57d472bb83f3744e4dcc716278088e7be0ed7",
+      "bytes": 594081
+    },
+    {
+      "file": "assets/Sprite_Manifest.json",
+      "sha256": "60fdee94f069c840bcd8f6f775ddf801e61cc02a449e19930108e7369a8c5573",
+      "bytes": 954
+    },
+    {
+      "file": "assets/State_Sprites.svg",
+      "sha256": "ef47dba77bea980edf5e85556bf2647e01d445429f840a6aa019e89c954e1b98",
+      "bytes": 449
+    },
+    {
+      "file": "assets/_index.md",
+      "sha256": "f16a955ae4d10430072882c56350ca75dfecf1880e477941e759158516418ed2",
+      "bytes": 746
+    },
+    {
+      "file": "contracts/Candidates.example.json",
+      "sha256": "10288f8e5d490db5047412270835f95788358c4a7c2acbd4cc83a139fd5c0a45",
+      "bytes": 698
+    },
+    {
+      "file": "contracts/Config.example.json",
+      "sha256": "7c3909d0ee5e53d726d0bfa8707e3b097dac25b4a88be44455a201f370438978",
+      "bytes": 744
+    },
+    {
+      "file": "contracts/Contracts.ts",
+      "sha256": "999349839fefd7ae4aff65bc25fac65ff70e26e86c0b6201783e82ba63ead475",
+      "bytes": 2536
+    },
+    {
+      "file": "contracts/Routing_Reference.mjs",
+      "sha256": "b957b2991b4ec91949ba21955e6b57c31f4b3e5a36a4809420d68fed6417f5d9",
+      "bytes": 2964
+    },
+    {
+      "file": "contracts/Routing_Reference.test.mjs",
+      "sha256": "9c257a2cf70ef460cf35596b3a01a9271b700f2937eaf7d14bed5e5ae4878335",
+      "bytes": 1741
+    },
+    {
+      "file": "contracts/_index.md",
+      "sha256": "7faf587bebc4c209bf5fbd93eb8e467bd3672cf6e20e449cdb46a43211605ad8",
+      "bytes": 777
+    },
+    {
+      "file": "research/Catalogue_Screening.json",
+      "sha256": "1d9cf931c6f18ed4a1b82e270aa4e286998954d51b5cb563cb895b8aa1d9b78b",
+      "bytes": 57490
+    },
+    {
+      "file": "research/Research_Findings.md",
+      "sha256": "b73c4fdc0d71aafe843612f677bf62a63ff5f9fc904964be2fee6a6537641c19",
+      "bytes": 7188
+    },
+    {
+      "file": "research/_index.md",
+      "sha256": "73a93f5010fc02092633d74cfaba4d115d07cb9661424f2863bad72cfdf45686",
+      "bytes": 509
+    },
+    {
+      "file": "visuals/Apex_UI_Prototype.html",
+      "sha256": "41ee734d06ce630a6b2635c3cab1f8552f84063bcca639344f943ff31d0b0311",
+      "bytes": 35557
+    },
+    {
+      "file": "visuals/Credits_Dialog.png",
+      "sha256": "b105000594c8ee051d8b284d0510248e458fb2f1458956c5a870938e2ca1f1ae",
+      "bytes": 237005
+    },
+    {
+      "file": "visuals/Desktop_Overview.png",
+      "sha256": "c65f127776b30f265a0b170f8b5a5eba005bd5914d114d47bd9d2049da0db0d4",
+      "bytes": 225840
+    },
+    {
+      "file": "visuals/Desktop_Sports_Queued.png",
+      "sha256": "d1930f04b42e77e1a929d35dac5b4232ef7681dadd495dde4c94d8b3f70d64d3",
+      "bytes": 226674
+    },
+    {
+      "file": "visuals/Disconnected_State.png",
+      "sha256": "bc088d906ef218db3de12ee28bd532c50558530a76781081d653b0058769355d",
+      "bytes": 114660
+    },
+    {
+      "file": "visuals/Empty_State.png",
+      "sha256": "002106e3e4a1fcbc310d12c59e5ee458f6e32782c694598a74d3ce3e4e39bedf",
+      "bytes": 169327
+    },
+    {
+      "file": "visuals/Evidence_Drawer.png",
+      "sha256": "8f14d628101199edd913f2d1dbc7ac72675574325c1a9ea3a147bac448bcdc93",
+      "bytes": 237507
+    },
+    {
+      "file": "visuals/Loading_State.png",
+      "sha256": "0ae9cef3d82e742c6eb72aa7855572a42c38b2d6178caa7fb9c96afdf931c22a",
+      "bytes": 165290
+    },
+    {
+      "file": "visuals/Mobile_Overview.png",
+      "sha256": "92fefd63cbe027b0b0970a1e9cb5c19a77a6788688bd56f874147f782d048278",
+      "bytes": 206111
+    },
+    {
+      "file": "visuals/Models_Catalogue.png",
+      "sha256": "6f75ef6f98856939d7e8372db0dbb611008d256d05a7c672c1133d0426dc5b64",
+      "bytes": 120970
+    },
+    {
+      "file": "visuals/Native_Pane.png",
+      "sha256": "8998baf83b817530fe1179f51beeea7480df519a6a48e4b50fcbef6dcac9c440",
+      "bytes": 62137
+    },
+    {
+      "file": "visuals/Prototype_Checks.json",
+      "sha256": "8cdde8ff960306c5643a8f227a9a5ae8934d348f4d6ab3fc0b4c198ab0fe6d0c",
+      "bytes": 2313
+    },
+    {
+      "file": "visuals/Refresh_Error_State.png",
+      "sha256": "4fe87e82316d9e8c117a55d42eab714792cedced66e76970928c136f584a4a32",
+      "bytes": 225601
+    },
+    {
+      "file": "visuals/Render_And_Check.cjs",
+      "sha256": "2881e1d72e2d1e6f34257ac3be7185abca980b03fe92fe1ebce7a55360111ff3",
+      "bytes": 5577
+    },
+    {
+      "file": "visuals/Stale_Data_State.png",
+      "sha256": "5d0a9d1ea40bd2e9696644698b7a359a0d8b4146a20b4a953a97d6cd21d2f1e1",
+      "bytes": 226839
+    },
+    {
+      "file": "visuals/_index.md",
+      "sha256": "4508641311aa975de5d44db69a76565425089776ce43df8fcfe15b3c702d032d",
+      "bytes": 1716
+    }
+  ]
+}

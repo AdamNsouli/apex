@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "canonicalControlAsset": "Mode_Glyphs.svg",
+  "modeGlyphs": {"width":128,"height":32,"cellWidth":32,"cellHeight":32,"frames":["eco","balanced","quality","sports"]},
+  "stateGlyphs": {"asset":"State_Sprites.svg","width":128,"height":32,"cellWidth":32,"cellHeight":32,"frames":["signal_1","signal_2","signal_3","complete"],"activeFrames":[0,1,2],"fps":1,"loopWhileActive":true,"reducedMotionFrame":1},
+  "decorativeAtlas": {"asset":"Mode_Sprites.png","width":2172,"height":724,"cellWidth":543,"cellHeight":724,"frames":["eco","balanced","quality","sports"],"role":"optional onboarding decoration only","notice":"Raster output has rectangular cells and visible glow; precise vector controls are canonical. Do not infer mode state from raster alone."},
+  "rendering": {"controlCssSize":24,"controlHitTarget":40,"atlasFit":"contain","terminal":"use native text and ASCII fallback; raster unsupported unless host explicitly supports it"}
+}

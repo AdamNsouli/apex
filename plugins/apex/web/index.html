@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>APEX · routing console</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <header>
+      <div class="brand">APEX</div>
+      <div class="header-meta">
+        <span class="small" id="connection"
+          ><span class="dot"></span>Connecting to local session…</span
+        ><span class="badge">NATIVE ROUTER · BETA</span>
+      </div>
+    </header>
+    <div class="shell">
+      <aside class="sidebar" aria-label="Navigation">
+        <div class="side-label">WORKSPACE</div>
+        <button class="nav active" data-view="overview">Overview</button
+        ><button class="nav" data-view="timeline">Timeline</button
+        ><button class="nav" data-view="models">Models</button
+        ><button class="nav" data-view="settings">Settings</button>
+        <div class="side-bottom">
+          <div class="small">Local session only</div>
+          <p class="small">
+            No transcript or reasoning stored.<br />Account billing stays
+            separate.
+          </p>
+        </div>
+      </aside>
+      <main>
+        <div class="page-head">
+          <div>
+            <h1 id="heading">Routing console</h1>
+            <p>Every request. The right model. A visible receipt.</p>
+          </div>
+          <div class="actions">
+            <button id="auto" class="button-auto">Auto</button
+            ><button id="credits">Allow credits</button>
+          </div>
+        </div>
+        <div class="mode-strip" role="radiogroup" aria-label="Routing mode">
+          <button
+            class="mode"
+            role="radio"
+            aria-checked="false"
+            data-mode="eco"
+          >
+            <div>
+              <strong>Eco</strong><span>Lower cost within a quality floor</span>
+            </div></button
+          ><button
+            class="mode selected"
+            role="radio"
+            aria-checked="true"
+            data-mode="balanced"
+          >
+            <div>
+              <strong>Balanced</strong><span>Quality, speed and cost</span>
+            </div></button
+          ><button
+            class="mode"
+            role="radio"
+            aria-checked="false"
+            data-mode="quality"
+          >
+            <div>
+              <strong>High Quality</strong><span>Strongest task evidence</span>
+            </div></button
+          ><button
+            class="mode"
+            role="radio"
+            aria-checked="false"
+            data-mode="sports"
+          >
+            <div>
+              <strong>Sports</strong
+              ><span>Near-best quality. Faster delivery.</span>
+            </div>
+          </button>
+        </div>
+        <div class="status-band" role="status" aria-live="polite">
+          <span id="status">Connecting to local session…</span
+          ><span class="status-chip" id="revision">Waiting for host</span>
+        </div>
+        <section class="content-view" id="view-overview">
+          <div class="metrics">
+            <div class="metric">
+              <div class="metric-label">ACTIVE REQUEST</div>
+              <div class="metric-value model-value" id="active-model">
+                No requests yet
+              </div>
+              <div class="metric-sub" id="active-effort">
+                Requested effort: unavailable
+              </div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">OBSERVED API-EQUIVALENT</div>
+              <div class="metric-value mono" id="observed">
+                Not yet observed
+              </div>
+              <div class="metric-sub" id="cost-provenance">
+                Token pricing estimate · not a bill
+              </div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">NEXT / RESERVED ESTIMATE</div>
+              <div class="metric-value mono" id="estimate">Unavailable</div>
+              <div class="metric-sub">
+                Upper forecast · not a guaranteed bill cap
+              </div>
+            </div>
+            <div class="metric">
+              <div class="metric-label">BENCHMARK DATA</div>
+              <div class="metric-value model-value" id="data-state">
+                Not connected
+              </div>
+              <div class="metric-sub" id="data-age">
+                Artificial Analysis · key needed
+              </div>
+            </div>
+          </div>
+          <div class="grid">
+            <div>
+              <section class="card">
+                <div class="card-head">
+                  <h2>Work timeline</h2>
+                  <button id="export">Export receipt</button>
+                </div>
+                <div class="timeline" id="events">
+                  <div class="empty">
+                    No requests yet. Routing begins with your next Claude
+                    request.
+                  </div>
+                </div>
+              </section>
+              <section class="card chart-card">
+                <div class="card-head"><h2>Cost provenance</h2></div>
+                <div class="card-body">
+                  <div class="pair">
+                    <span>Observed API-equivalent cost</span
+                    ><span id="cost-detail">Unknown</span>
+                  </div>
+                  <div class="pair">
+                    <span>Actual billed credits</span><span>Unknown</span>
+                  </div>
+                  <p class="small">
+                    API list-price estimates do not measure subscription usage
+                    or prove a billed charge.
+                  </p>
+                </div>
+              </section>
+            </div>
+            <section class="card">
+              <div class="card-head">
+                <h2>Last decision</h2>
+                <span class="badge" id="decision-mode">WAITING</span>
+              </div>
+              <div class="card-body">
+                <div class="decision-model" id="next-model">
+                  Awaiting a request
+                </div>
+                <div class="pair">
+                  <span>Task</span><span id="task-label">Unknown</span>
+                </div>
+                <div class="decision-reason" id="why">
+                  Connect evidence and confirm account availability. Native
+                  settings remain active until a switch can be justified.
+                </div>
+                <div id="candidates" class="evidence-list"></div>
+                <div class="pair">
+                  <span>APEX credit consent</span
+                  ><span id="consent">Not allowed</span>
+                </div>
+                <button id="inspect">Inspect evidence & tradeoffs</button>
+                <p class="small">
+                  Benchmark source:
+                  <a
+                    href="https://artificialanalysis.ai/leaderboards/models"
+                    target="_blank"
+                    rel="noreferrer"
+                    >Artificial Analysis</a
+                  >
+                  · <span id="benchmark-version">no dataset loaded</span>
+                </p>
+              </div>
+            </section>
+          </div>
+        </section>
+        <section class="content-view" id="view-timeline" hidden>
+          <div class="card">
+            <div class="card-head">
+              <h2>All retained events</h2>
+              <select id="filter" aria-label="Event filter">
+                <option value="all">All</option>
+                <option value="request">Requests</option>
+                <option value="tool">Tools</option>
+                <option value="error">Errors</option>
+              </select>
+            </div>
+            <div class="timeline" id="all-events"></div>
+          </div>
+        </section>
+        <section class="content-view" id="view-models" hidden>
+          <div class="notice">
+            Confirm models your account may use, then verify exact benchmark and
+            effort mappings. New unmatched models remain excluded. No inference
+            probes or automatic credit purchases are performed.
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <h2>Model evidence</h2>
+              <button id="refresh">Refresh data</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Runtime model</th>
+                    <th>Effort</th>
+                    <th>Intelligence</th>
+                    <th>Coding</th>
+                    <th>Current task index</th>
+                    <th>Input USD/1M</th>
+                    <th>Output USD/1M</th>
+                    <th>AA median response</th>
+                    <th>AA benchmark USD/task</th>
+                    <th>Routing</th>
+                  </tr>
+                </thead>
+                <tbody id="model-rows"></tbody>
+              </table>
+            </div>
+            <div class="card-body">
+              <h3>Confirm account availability</h3>
+              <label for="backend">Account backend</label
+              ><select id="backend">
+                <option value="subscription">Claude subscription</option>
+                <option value="api">Direct Anthropic API</option>
+              </select>
+              <p class="small">
+                The API model list is not proof of subscription entitlement.
+                Select only models your account permits.
+              </p>
+              <div id="availability-list"></div>
+              <button id="confirm-models">Confirm selected models</button>
+              <h3 class="mt24">Exact benchmark mapping</h3>
+              <label for="runtime-id">Runtime model</label
+              ><select id="runtime-id"></select
+              ><label for="aa-slug">Artificial Analysis variant</label
+              ><select id="aa-slug"></select
+              ><label for="effort"
+                >Benchmark effort (verify before saving)</label
+              ><select id="effort">
+                <option value="high">high</option>
+                <option value="low">low</option>
+                <option value="medium">medium</option>
+                <option value="xhigh">xhigh</option>
+                <option value="max">max</option>
+                <option value="default">
+                  default / no effort parameter
+                </option></select
+              ><button id="map" class="mt16">Save verified mapping</button>
+            </div>
+          </div>
+        </section>
+        <section class="content-view" id="view-settings" hidden>
+          <div class="card">
+            <div class="card-head"><h2>Data and policy</h2></div>
+            <div class="card-body">
+              <h3>Connect Artificial Analysis</h3>
+              <p class="small">
+                Use your own licensed key. Stored in this local companion's
+                memory only; lost when it closes. Alternatively start Claude
+                with APEX_AA_API_KEY in its environment. Never enter your Claude
+                login token here.
+              </p>
+              <label for="aa-key">Artificial Analysis API key</label
+              ><input
+                id="aa-key"
+                type="password"
+                autocomplete="off"
+                spellcheck="false"
+              /><button id="connect-aa" class="mt12">
+                Connect and refresh
+              </button>
+              <div class="settings-row">
+                <div>
+                  <h3>Task override</h3>
+                  <p>Current intent only; high-risk safeguards remain.</p>
+                </div>
+                <select id="task">
+                  <option value="">Automatic</option>
+                  <option value="general">General</option>
+                  <option value="coding">Coding</option>
+                  <option value="agentic_coding">Agentic coding</option>
+                  <option value="math">Math</option>
+                  <option value="engineering">Engineering</option>
+                  <option value="finance">Finance</option>
+                  <option value="strategy">Strategy</option>
+                  <option value="legal">Legal</option>
+                  <option value="healthcare">Healthcare</option>
+                  <option value="economics">Economics</option>
+                </select>
+              </div>
+              <div class="settings-row">
+                <div>
+                  <h3>Theme</h3>
+                  <p>Local browser theme.</p>
+                </div>
+                <button id="theme">Use light theme</button>
+              </div>
+              <p class="small" id="doctor"></p>
+            </div>
+          </div>
+        </section>
+        <footer class="foot">
+          <span
+            >APEX · private local dashboard · requested settings and response
+            facts shown separately</span
+          ><span id="host-version" class="mono"></span>
+        </footer>
+      </main>
+    </div>
+    <div class="dialog-backdrop" id="credit-dialog" hidden>
+      <section
+        class="dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="credit-title"
+      >
+        <h2 id="credit-title">Permit credit-funded routing</h2>
+        <p>APEX consent and Claude account billing are separate.</p>
+        <div class="notice">
+          Account billing is unverified. The estimate budget is not a guaranteed
+          billed-dollar cap. No credits are bought by this button.
+        </div>
+        <label for="budget">Session API-equivalent budget (USD)</label
+        ><input
+          id="budget"
+          type="number"
+          min="0.01"
+          step="0.01"
+          value="1"
+        /><button id="billing" class="wide mt12">
+          Copy Claude billing command
+        </button>
+        <p class="small">
+          Run /usage-credits in Claude yourself. Account controls may wait until
+          the active turn ends.
+        </p>
+        <div class="dialog-actions">
+          <button data-close="credit-dialog">Cancel</button
+          ><button id="allow" class="primary">
+            Allow within estimate budget
+          </button>
+        </div>
+      </section>
+    </div>
+    <div class="dialog-backdrop drawer-backdrop" id="evidence-dialog" hidden>
+      <section
+        class="dialog drawer"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="receipt-title"
+      >
+        <div class="card-head">
+          <h2 id="receipt-title">Request receipt</h2>
+          <button data-close="evidence-dialog" aria-label="Close receipt">
+            ×
+          </button>
+        </div>
+        <p class="small">
+          Requested effort is not proof of the provider's internal reasoning.
+          Costs here are API equivalents, not billed credits.
+        </p>
+        <pre id="receipt-json"></pre>
+      </section>
+    </div>
+    <div class="toast" id="toast" role="status" hidden></div>
+    <script src="/app.js"></script>
+  </body>
+</html>

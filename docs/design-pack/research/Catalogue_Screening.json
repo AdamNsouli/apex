@@ -1,0 +1,1508 @@
+{
+  "screened_at": "2026-10-07",
+  "source": "https://github.com/karanb192/awesome-claude-code-mods/blob/main/catalogue.md",
+  "catalogue_date": "2026-10-06",
+  "catalogue_sha256": "1ad8bd1c142c6d7c0876458709fc0b28ca90763fb6a8d024bd14ef50ae6207dc",
+  "parsed_listings": 2685,
+  "method": "Case-insensitive relevance screening of every name and catalogue description; no full-source audit of all listings. Output retains names and links only. Stars are not quality.",
+  "keywords": "router|routing|effort|timeline|flightdeck|token.ledger|cost|quota|usage|agent.flow|statuspane|hud|receipt|model.switch|model.pick|model.select|burn.meter|weektoken",
+  "matched_listings": 374,
+  "matches": [
+    {
+      "name": "ruflo-federation",
+      "url": "https://github.com/ruvnet/ruflo/blob/main/plugins/ruflo-federation/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "ruflo-intelligence",
+      "url": "https://github.com/ruvnet/ruflo/blob/main/plugins/ruflo-intelligence/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "ruflo-mods",
+      "url": "https://github.com/ruvnet/ruflo/blob/main/plugins/ruflo-mods/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "claude-council",
+      "url": "https://github.com/hex/claude-council/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-meter",
+      "url": "https://github.com/hamzafer/claude-code-mods/blob/main/mods/usage-meter/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "rnb-terminal-routing",
+      "url": "https://github.com/stuinfla/ruvnet-brain/blob/main/config/model-router/claude-terminal-mod/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "harness-mods",
+      "url": "https://github.com/ucsandman/Agnostic-AI/blob/master/engine/mods/harness-mods/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "blackbox",
+      "url": "https://github.com/ucsandman/Agnostic-AI/blob/master/labs/claude-mods/lab/demos/blackbox/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "tunnel-cost",
+      "url": "https://github.com/ucsandman/Agnostic-AI/blob/master/labs/claude-mods/lab/demos/tunnel/cost/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "probe3",
+      "url": "https://github.com/ucsandman/Agnostic-AI/blob/master/labs/claude-mods/lab/probe3/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "costclaw-live",
+      "url": "https://github.com/ucsandman/Agnostic-AI/blob/master/labs/claude-mods/prototypes/costclaw-live/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "supervisor",
+      "url": "https://github.com/ucsandman/Agnostic-AI/blob/master/labs/claude-mods/prototypes/supervisor/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "classifier-telemetry",
+      "url": "https://github.com/bendrucker/claude/blob/main/plugins/classifier-telemetry/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-meter",
+      "url": "https://github.com/HolyGrail/claude-mods/blob/main/plugins/usage-meter/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "lemo-meter",
+      "url": "https://github.com/lemomo-ai/lemo-mod/blob/main/plugins/lemo-meter/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "flightdeck",
+      "url": "https://github.com/scasella/claude-flightdeck/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "changes-receipt",
+      "url": "https://github.com/promptadvisers/claude-mods-starter-kit/blob/main/plugins/changes-receipt/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "context-meter",
+      "url": "https://github.com/promptadvisers/claude-mods-starter-kit/blob/main/plugins/context-meter/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "flight-recorder",
+      "url": "https://github.com/promptadvisers/claude-mods-starter-kit/blob/main/plugins/flight-recorder/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "model-router",
+      "url": "https://github.com/promptadvisers/claude-mods-starter-kit/blob/main/plugins/model-router/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "claude-image-generation",
+      "url": "https://github.com/hex/claude-image-generation/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "jev-pilot",
+      "url": "https://github.com/Akramovic1/jev-pilot/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "agent-flow",
+      "url": "https://github.com/Charlie0113-T/claude-agent-flow/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-band",
+      "url": "https://github.com/JetsonChan/CC-Usage-Band/blob/main/usage-band/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "flowpane",
+      "url": "https://github.com/mpolatcan/flowpane/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "claude-code-usage-quota",
+      "url": "https://github.com/anantraghunath/claude-code-usage-quota-mod/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-band",
+      "url": "https://github.com/KhadeerBasha1232/claude-usage-mod/blob/main/plugins/usage-band/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "effort-auto",
+      "url": "https://github.com/KilimcininKorOglu/claude-code-mods/blob/main/plugins/effort-auto/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "limit-watch",
+      "url": "https://github.com/KilimcininKorOglu/claude-code-mods/blob/main/plugins/limit-watch/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "session-watch",
+      "url": "https://github.com/KilimcininKorOglu/claude-code-mods/blob/main/plugins/session-watch/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "subagent-ledger",
+      "url": "https://github.com/KilimcininKorOglu/claude-code-mods/blob/main/plugins/subagent-ledger/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "taxi-meter",
+      "url": "https://github.com/devbrother2024/devbrothers-mods/blob/main/plugins/taxi-meter/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "mod-usage",
+      "url": "https://github.com/jack21/claude-mod-usage/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "session-meter",
+      "url": "https://github.com/arasovic/claude-code-mods/blob/main/session-meter/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "turn-timeline",
+      "url": "https://github.com/arasovic/claude-code-mods/blob/main/turn-timeline/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "session-hud",
+      "url": "https://github.com/ofeklevy11/claude-code-hud/blob/main/session-hud/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "quota-meter",
+      "url": "https://github.com/Arunjay4213/claude-mods/blob/main/plugins/quota-meter/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "token-ledger",
+      "url": "https://github.com/Arunjay4213/claude-mods/blob/main/plugins/token-ledger/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "hud",
+      "url": "https://github.com/hoobnn/hoobnn-agent-mods/blob/main/claude-code/hud/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "receipt",
+      "url": "https://github.com/hoobnn/hoobnn-agent-mods/blob/main/claude-code/receipt/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-hud",
+      "url": "https://github.com/lucassimzq/claude-usage-mod/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "claude-cat",
+      "url": "https://github.com/matthlh/claude-cat-mod/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "deck",
+      "url": "https://github.com/nvr0x5/claude-deck/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "jev-router",
+      "url": "https://github.com/satviksinha/jev-model-router/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "jev",
+      "url": "https://github.com/savinofiore/lexi/blob/main/jev/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "token-weather-usage",
+      "url": "https://github.com/augiefra/claude-mods/blob/main/plugins/token-weather-usage/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "wavy-usage",
+      "url": "https://github.com/BatuhanCakmakk/wavy-usage/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-meter",
+      "url": "https://github.com/mishgoldenberg/claude-mods/blob/main/plugins/usage-meter/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "jev-gate-router",
+      "url": "https://github.com/MongLong0214/jev-gate/blob/main/mods/router/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "context-card",
+      "url": "https://github.com/Nongfsq/frank-claude-cockpit/blob/main/context-card/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "sessclone",
+      "url": "https://github.com/NotTahaAli/sessclone/blob/main/packages/plugin/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "catalyst-statusline",
+      "url": "https://github.com/TransmuteLabs/Catalyst/blob/main/plugins/catalyst-statusline/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "agentpane",
+      "url": "https://github.com/xuanji86/claude-agentpane/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-bar",
+      "url": "https://github.com/abyigiter/claude-usage-bar/blob/main/usage-bar/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "agent-router",
+      "url": "https://github.com/alexandernicholson/agent-router/blob/main/agent-router/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "effort-cycle",
+      "url": "https://github.com/Anerco/effort-cycle-mod/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "safe-delete",
+      "url": "https://github.com/charlie947/mod-maker/blob/main/plugins/safe-delete/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "claude-stats",
+      "url": "https://github.com/estruyf/claude-stats-mod/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "jev-claude-router",
+      "url": "https://github.com/Flam1ngFir3ball/jev-claude-router/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "gsd-status-mod",
+      "url": "https://github.com/helenkwok/gsd-status-mod/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-pet",
+      "url": "https://github.com/manson341349-beep/claude-desktop-mods/blob/main/plugins/usage-pet/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "status-band",
+      "url": "https://github.com/MichaelP17/claude-mods/blob/main/status-band/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "codecraft",
+      "url": "https://github.com/mkpvishnu/claude-mods/blob/main/codecraft/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "omp-quota",
+      "url": "https://github.com/musingfox/cc-plugins/blob/main/omp-quota/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "cache-refresher",
+      "url": "https://github.com/olddonkey/cache-refresher/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "burn-meter",
+      "url": "https://github.com/OneWave-AI/claude-code-mods/blob/main/burn-meter/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usageline",
+      "url": "https://github.com/Sma1lboy/claude-mods/blob/main/usageline/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "dotclaude",
+      "url": "https://github.com/xsyetopz/dotclaude/blob/main/plugins/dotclaude/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "statuspane",
+      "url": "https://github.com/xuanji86/claude-statuspane/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "subagent-models",
+      "url": "https://github.com/ahbanavi/claude-mods/blob/main/subagent-models/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "agent-models",
+      "url": "https://github.com/alex2481kobe/claude-mods/blob/main/plugins/agent-models/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-limits",
+      "url": "https://github.com/Amnesiac9/claude-mods/blob/main/usage-limits/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-panel",
+      "url": "https://github.com/andrewbakercloudscale/claude-code-cost-sidebar/blob/main/mods/usage-panel/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "auto-effort",
+      "url": "https://github.com/arthur-fontaine/cc-mod-auto-effort/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-band",
+      "url": "https://github.com/Auspexlabs/usage-band/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "band-pack",
+      "url": "https://github.com/baselane-sh/mods/blob/main/plugins/band-pack/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "command-pack",
+      "url": "https://github.com/baselane-sh/mods/blob/main/plugins/command-pack/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "cost-meter",
+      "url": "https://github.com/baselane-sh/mods/blob/main/plugins/cost-meter/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "cost-pane",
+      "url": "https://github.com/baselane-sh/mods/blob/main/plugins/cost-pane/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "daily-spend",
+      "url": "https://github.com/baselane-sh/mods/blob/main/plugins/daily-spend/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "latte-meter",
+      "url": "https://github.com/baselane-sh/mods/blob/main/plugins/latte-meter/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "readme-check",
+      "url": "https://github.com/baselane-sh/mods/blob/main/plugins/readme-check/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "receipt",
+      "url": "https://github.com/baselane-sh/mods/blob/main/plugins/receipt/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "sounds-office",
+      "url": "https://github.com/baselane-sh/mods/blob/main/plugins/sounds-office/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "timeline-pane",
+      "url": "https://github.com/baselane-sh/mods/blob/main/plugins/timeline-pane/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "cockpit",
+      "url": "https://github.com/Brxerq/claude-cockpit/blob/main/plugins/cockpit/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-wrapup",
+      "url": "https://github.com/DaKev/usage-wrapup/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "clubhouse",
+      "url": "https://github.com/dcglanton-stack/claude-clubhouse/blob/main/clubhouse/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "status-band",
+      "url": "https://github.com/dukechain2333/cc-status-band/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "magic-router",
+      "url": "https://github.com/DustinVerzal/magic-router/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "burn-baby-burn",
+      "url": "https://github.com/eel-brah/burn-baby-burn/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "context-band",
+      "url": "https://github.com/EricJamie/claude-code-mods/blob/main/plugins/context-band/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "cache-keeper",
+      "url": "https://github.com/etding/cache-keeper/blob/main/cache-keeper/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "subagents-monitor",
+      "url": "https://github.com/Fazzani/claude-mods/blob/main/plugins/subagents-monitor/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "tools-usage",
+      "url": "https://github.com/Fazzani/claude-mods/blob/main/plugins/tools-usage/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "pet",
+      "url": "https://github.com/Firefade0329/claude-code-pet/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-meter",
+      "url": "https://github.com/g-campillo/claude-mods/blob/main/plugins/usage-meter/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "jev-effort",
+      "url": "https://github.com/gebeer/jev-effort/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "task-planner",
+      "url": "https://github.com/Gorossy/task-planner/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-band",
+      "url": "https://github.com/iamkhalid2/usage-band/blob/main/plugins/usage-band/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "jev-context",
+      "url": "https://github.com/JayDoubleu/cc-mod-jev/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "cost-bar",
+      "url": "https://github.com/Justmalhar/awesome-claude-mods/blob/main/mods/cost-bar/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "jev-model-router",
+      "url": "https://github.com/Kiy-K/oxide/blob/main/.agents/skills/jev-model-router/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-bell",
+      "url": "https://github.com/KTCrisis/flux7-mods/blob/main/usage-bell/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "no-limit",
+      "url": "https://github.com/longmaba/no-limit/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "model-band",
+      "url": "https://github.com/Lunik/gmz-claude-marketplace/blob/master/model-band/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "rtk-quota",
+      "url": "https://github.com/Lunik/gmz-claude-marketplace/blob/master/rtk-quota/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-tracker",
+      "url": "https://github.com/Lunik/gmz-claude-marketplace/blob/master/usage-tracker/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "session-hud",
+      "url": "https://github.com/lurenxing628/claude-code-mod-statusline/blob/main/mod/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "ledger-widget",
+      "url": "https://github.com/oMaN-Rod/claude-code-widgets/blob/main/plugins/ledger-widget/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "timeline-widget",
+      "url": "https://github.com/oMaN-Rod/claude-code-widgets/blob/main/plugins/timeline-widget/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-widget",
+      "url": "https://github.com/oMaN-Rod/claude-code-widgets/blob/main/plugins/usage-widget/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "weather-widget",
+      "url": "https://github.com/oMaN-Rod/claude-code-widgets/blob/main/plugins/weather-widget/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-band",
+      "url": "https://github.com/pawandeepdhall/claude-mods/blob/main/plugins/usage-band/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-bars",
+      "url": "https://github.com/pepperonas/usage-bars/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "clawd-dash",
+      "url": "https://github.com/pinkpixel-dev/clawd-dash/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "spell-bar",
+      "url": "https://github.com/powerofjinbo/claude-code-spell-bar/blob/main/plugins/spell-bar/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "clawd-buddy",
+      "url": "https://github.com/prabowosd/clawd-buddy/blob/main/plugins/clawd-buddy/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "leo-mods",
+      "url": "https://github.com/quango2304/leo_claude_mod/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "cache-timer",
+      "url": "https://github.com/Sanexxxx777/claude-cache-timer/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "effort-guard",
+      "url": "https://github.com/stefanochieli/claude-effort-guard/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "noctis",
+      "url": "https://github.com/synex1437/noctis/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "token-weather",
+      "url": "https://github.com/travisoa/claude-mods/blob/main/token-weather/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "overalls",
+      "url": "https://github.com/Troepster/overalls/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "jevshift",
+      "url": "https://github.com/unclecode/jevshift/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "budget-guard",
+      "url": "https://github.com/VedantAndhale/claude-pro-kit/blob/main/plugins/budget-guard/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "pro-hud",
+      "url": "https://github.com/VedantAndhale/claude-pro-kit/blob/main/plugins/pro-hud/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "session-receipt",
+      "url": "https://github.com/VedantAndhale/claude-pro-kit/blob/main/plugins/session-receipt/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "ship-hud",
+      "url": "https://github.com/void2610/dotfiles/blob/main/.claude/mods/ship-hud/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "desktop-cost-watch",
+      "url": "https://github.com/whyashthakker/awesome-claude-code-mods/blob/main/mods/desktop-cost-watch/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "desktop-quota-clock",
+      "url": "https://github.com/whyashthakker/awesome-claude-code-mods/blob/main/mods/desktop-quota-clock/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "desktop-usage-strip",
+      "url": "https://github.com/whyashthakker/awesome-claude-code-mods/blob/main/mods/desktop-usage-strip/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "desktop-workspace-home",
+      "url": "https://github.com/whyashthakker/awesome-claude-code-mods/blob/main/mods/desktop-workspace-home/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "quota-watch",
+      "url": "https://github.com/whyashthakker/awesome-claude-code-mods/blob/main/mods/quota-watch/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "turn-timeline",
+      "url": "https://github.com/whyashthakker/awesome-claude-code-mods/blob/main/mods/turn-timeline/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "cache-ttl-timer",
+      "url": "https://github.com/WQGGSEY/cache-ttl-timer/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "clawdy",
+      "url": "https://github.com/Xiuu404/clawdy/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "receipt",
+      "url": "https://github.com/yash-gadodia/claude-mods/blob/main/receipt/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-band",
+      "url": "https://github.com/yash-gadodia/claude-mods/blob/main/usage-band/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "turn-receipt",
+      "url": "https://github.com/yoshihiko555/dotfiles/blob/main/claude/plugins/turn-receipt/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "cost-meter",
+      "url": "https://github.com/zaferayan/claude-cost-meter/blob/main/cost-meter/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-meter",
+      "url": "https://github.com/0xGondarxyz/claude-code-mods/blob/main/usage-meter/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "weektoken",
+      "url": "https://github.com/3dnow/claude-mods/blob/main/weektoken/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "clef-model-router",
+      "url": "https://github.com/AbelNavarro/clef-model-router/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-limits",
+      "url": "https://github.com/AbhiramDwivedi/claude-mods/blob/main/plugins/usage-limits/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-line",
+      "url": "https://github.com/achapla/cc-mods/blob/main/usage-line/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "dreeft",
+      "url": "https://github.com/achiurizo/dreeft/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-status",
+      "url": "https://github.com/adriancoman/claude-code-mods/blob/main/usage-status/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "cache-guard",
+      "url": "https://github.com/Agulhas-Labs/claude-plugins/blob/main/plugins/cache-guard/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-meter",
+      "url": "https://github.com/aikworks/claude-code-usage-meter/blob/main/usage-meter/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "dispatch-pilot",
+      "url": "https://github.com/alexcz-a11y/claude-mods/blob/main/dispatch-pilot/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "neon-usage",
+      "url": "https://github.com/allianceoptima/claude-theme-studio/blob/main/neon-usage/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "limit-meter",
+      "url": "https://github.com/Alyan-khattak/Claude-Code-Mods/blob/master/limit-meter/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "token-weather",
+      "url": "https://github.com/Alyan-khattak/Claude-Code-Mods/blob/master/token-weather/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "quota-band",
+      "url": "https://github.com/andras-gyarmati/claude-quota-band/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-bars",
+      "url": "https://github.com/AndreasOA/claude-code-mods/blob/main/plugins/usage-bars/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "cache-watch",
+      "url": "https://github.com/anthonyhungnguyen/claude-code-mods/blob/main/cache-watch/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "cost-pane",
+      "url": "https://github.com/anthonyhungnguyen/claude-code-mods/blob/main/cost-pane/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-meter",
+      "url": "https://github.com/arafathusayn/cc-mods/blob/main/mods/usage-meter/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "session-panel",
+      "url": "https://github.com/arsenii-cmd/Claude-mod/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "ai-usage-band",
+      "url": "https://github.com/arvakme/claude-code-butler/blob/main/ai-usage-band/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-ticker",
+      "url": "https://github.com/aycandv/claude-usage-meter/blob/main/plugins/usage-ticker/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "phase-runner-hud",
+      "url": "https://github.com/AyeJK/phase-runner/blob/main/hud/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "context-meter",
+      "url": "https://github.com/ayush-905/claude-code-mods/blob/main/context-meter/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-meter",
+      "url": "https://github.com/ban-dal/claude-mods/blob/main/plugins/usage-meter/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "mission-control",
+      "url": "https://github.com/barmoshe/bar-mods/blob/main/mission-control/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "buddy",
+      "url": "https://github.com/BastienTeissier/watch-tower/blob/main/mods/buddy/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "token-usage",
+      "url": "https://github.com/Benjamin410/claude-mods/blob/main/mods/token-usage/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "ship-tracker",
+      "url": "https://github.com/bennewton999/claude-code-mods/blob/main/ship-tracker/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "session-bar",
+      "url": "https://github.com/betoescobar46/pituto/blob/main/plugins/session-bar/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "airlock",
+      "url": "https://github.com/BillyMRX1/airlock/blob/master/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "token-usage-panel",
+      "url": "https://github.com/BrainRev/claude-session-panels/blob/main/token-usage-panel/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-band",
+      "url": "https://github.com/brooklyn96/claude-usage-band/blob/main/usage-band/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-guard",
+      "url": "https://github.com/Camellia-inc/usage-guard/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "netrunner-hud",
+      "url": "https://github.com/ccdwyer/netrunner-hud/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-hud",
+      "url": "https://github.com/chandan84/cache-time-pending-usage-limit-mod/blob/main/plugins/usage-hud/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-pet-light",
+      "url": "https://github.com/chinayuren2022-2025/claude-desktop-mods-light/blob/master/plugins/usage-pet-light/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "choitree",
+      "url": "https://github.com/choidevhi/choitree/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "spare10",
+      "url": "https://github.com/chrisns/spare10-mod/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-meters",
+      "url": "https://github.com/ChristianBuzzetti/ClaudeMods/blob/main/mods/usage-meters/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "context-weather",
+      "url": "https://github.com/Chronosauros/claude-mods/blob/main/plugins/context-weather/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-limits",
+      "url": "https://github.com/Chronosauros/claude-mods/blob/main/plugins/usage-limits/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "model-router",
+      "url": "https://github.com/claudemodz/mods/blob/main/plugins/model-router/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-deck",
+      "url": "https://github.com/codeclawd/usage-deck/blob/main/plugins/usage-deck/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "devhud",
+      "url": "https://github.com/codywilliamson/claude-mods/blob/main/devhud/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-bars",
+      "url": "https://github.com/craigmcampbell/claude-plugins/blob/main/plugins/usage-bars/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "effort-cycle",
+      "url": "https://github.com/daanqq/agent-config/blob/main/claude/skills/effort-cycle/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "auto-handover",
+      "url": "https://github.com/davidho27941/cockpit/blob/master/plugins/auto-handover/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-pace",
+      "url": "https://github.com/diazgonza17/usage-pace/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "rostech-dashboard",
+      "url": "https://github.com/DJPalefaceSD/rostech-mods/blob/main/plugins/dashboard/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "odometer",
+      "url": "https://github.com/DJPalefaceSD/rostech-mods/blob/main/plugins/odometer/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "jev-model-router",
+      "url": "https://github.com/DmitryBMsk/thinkdial/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "meter",
+      "url": "https://github.com/DominickGiordano/claude-mods/blob/main/meter/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "polite-compaction",
+      "url": "https://github.com/dtinth/claude-code-mods/blob/main/polite-compaction/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "clef-model-router",
+      "url": "https://github.com/dwain-barnes/clef-model-router/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "cache-warm",
+      "url": "https://github.com/EasyAIHenry/henry-mods/blob/main/cache-warm/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "pixelbar",
+      "url": "https://github.com/elkinaguas/claude-mods/blob/main/pixelbar/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "coach",
+      "url": "https://github.com/eshin087/claude-code-mods/blob/main/coach/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-meter",
+      "url": "https://github.com/eshin087/claude-code-mods/blob/main/usage-meter/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "cost-info",
+      "url": "https://github.com/falconsw/cost-info/blob/main/cost-info/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "cache-wetter",
+      "url": "https://github.com/Felixosk/cache-wetter/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "prompt-footer",
+      "url": "https://github.com/five82/claude-mods/blob/main/mods/prompt-footer/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "nier-ui",
+      "url": "https://github.com/fivood/nier-ui/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "limitpace",
+      "url": "https://github.com/fstandhartinger/limitpace/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "turn-usage",
+      "url": "https://github.com/gmorubio/claude-mods/blob/main/turn-usage/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-bar",
+      "url": "https://github.com/Gooner44/ClaudeMods/blob/main/plugins/usage-bar/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "branch-usage",
+      "url": "https://github.com/gpr/claude-code-mods/blob/main/plugins/branch-usage/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "subagent-effort",
+      "url": "https://github.com/HaoYan-A/claude-code-mods/blob/main/plugins/subagent-effort/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "crew",
+      "url": "https://github.com/harshitmywork17/claude-mods/blob/main/plugins/crew/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-forecast",
+      "url": "https://github.com/harshitmywork17/claude-mods/blob/main/plugins/usage-forecast/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-torch",
+      "url": "https://github.com/hicrandn/claude-mods/blob/main/plugins/usage-torch/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-band",
+      "url": "https://github.com/HydrowZer/claude-mods/blob/main/usage-band/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "status-hud",
+      "url": "https://github.com/hymleong/claude-mods/blob/main/plugins/status-hud/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-dollars",
+      "url": "https://github.com/hyvanmielenpelit/ClaudeCodeMods/blob/main/usage-dollars/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "shark-tank",
+      "url": "https://github.com/ianlkl11234s/shark-tank/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "cctop",
+      "url": "https://github.com/ilkayGkbdk/cctop/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-band",
+      "url": "https://github.com/iluolSNS/claude-code-usage-band/blob/main/plugins/usage-band/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-weather",
+      "url": "https://github.com/imsalik/claude-mods/blob/master/usage-weather/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-stats",
+      "url": "https://github.com/japan-da-man/claude-code/blob/main/plugins/usage-stats/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "timeline",
+      "url": "https://github.com/jessetsai1024/claude-mods/blob/main/timeline/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "jet-router",
+      "url": "https://github.com/jetsongdev/jet-router/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-bar",
+      "url": "https://github.com/jimmyeao/claude-code-bars/blob/main/plugins/usage-bar/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-band",
+      "url": "https://github.com/joydeep-pm/usage-band/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-meter",
+      "url": "https://github.com/jumoog/claude_mod_usage/blob/main/usage-meter/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-status",
+      "url": "https://github.com/Jump-High-Kid/claude-mods/blob/main/plugins/usage-status/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "litellm-key",
+      "url": "https://github.com/juninmd/cc-litellm/blob/main/plugins/litellm-key/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "cost-git",
+      "url": "https://github.com/juulsverne/claude-code-mods/blob/main/cost-git/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "jc-hud-mod",
+      "url": "https://github.com/karimdjaafar/jc-hud-mod/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-meter",
+      "url": "https://github.com/kawase1295/usage-meter/blob/dev/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-band",
+      "url": "https://github.com/kcsujeet/kc-claude-kit/blob/main/plugins/usage-band/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-band",
+      "url": "https://github.com/kgrvGRECO/woo-mods/blob/main/usage-band/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "context-gauge",
+      "url": "https://github.com/kirishimarisano-rgb/Mods-Claude-code-0-powerd-by-claude/blob/main/context-gauge/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "widget-bridge",
+      "url": "https://github.com/kirishimarisano-rgb/Mods-Claude-code-0-powerd-by-claude/blob/main/widget-bridge/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "rooms-hud",
+      "url": "https://github.com/KiwiNz324/rooms-hud/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-mod",
+      "url": "https://github.com/kreddevils18/claude-usage-mod/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-bar",
+      "url": "https://github.com/Kyubey64/claude-code-mods/blob/main/mods/usage-bar/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "auto-effort",
+      "url": "https://github.com/kzarzycki/claude-mods/blob/main/plugins/auto-effort/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "cutroom",
+      "url": "https://github.com/leepokai/claude-mod-cutroom/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "lenadweb-usage-meter",
+      "url": "https://github.com/lenadweb/claude-code-plugins/blob/main/plugins/lenadweb-usage-meter/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "git-diff-timeline",
+      "url": "https://github.com/liawzishen/claude-code-mods/blob/main/git-diff-timeline/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "all-mods",
+      "url": "https://github.com/Liberty-Technical-Solutions/claude-workflow-mods/blob/main/plugins/all-mods/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-guard",
+      "url": "https://github.com/Liberty-Technical-Solutions/claude-workflow-mods/blob/main/plugins/usage-guard/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "native-hud",
+      "url": "https://github.com/Luban-Labs/native-hud/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-band",
+      "url": "https://github.com/Luma-Sa/claude-mods/blob/master/plugins/usage-band/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-band",
+      "url": "https://github.com/MaeharaTakumi/claude-usage-band/blob/main/plugins/usage-band/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "turn-governor",
+      "url": "https://github.com/mako-code/gobworks/blob/main/mods/autopilot/turn-governor/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "mod-manager",
+      "url": "https://github.com/mako-code/gobworks/blob/main/mods/core/mod-manager/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "jev-express",
+      "url": "https://github.com/mako-code/gobworks/blob/main/mods/jev/jev-express/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "effort-prefix",
+      "url": "https://github.com/mako-code/gobworks/blob/main/mods/prompting/effort-prefix/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "cost-meter",
+      "url": "https://github.com/mako-code/gobworks/blob/main/mods/telemetry/cost-meter/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "hud",
+      "url": "https://github.com/mako-code/gobworks/blob/main/mods/telemetry/hud/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "turn-receipt",
+      "url": "https://github.com/mako-code/gobworks/blob/main/mods/telemetry/turn-receipt/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-dashboard",
+      "url": "https://github.com/mako-code/gobworks/blob/main/mods/telemetry/usage-dashboard/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "agent-router",
+      "url": "https://github.com/mako-code/gobworks/blob/main/mods/tuning/agent-router/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "autotune",
+      "url": "https://github.com/mako-code/gobworks/blob/main/mods/tuning/autotune/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "cache-guard",
+      "url": "https://github.com/mako-code/gobworks/blob/main/mods/tuning/cache-guard/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "otto-hud",
+      "url": "https://github.com/manuacl/claude-mods/blob/main/plugins/otto-hud/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "session-pulse",
+      "url": "https://github.com/mejba13/session-pulse/blob/main/plugins/session-pulse/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "prompt-enhancer",
+      "url": "https://github.com/MiguelMachado-dev/miguel-mods/blob/main/prompt-enhancer/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "shunt",
+      "url": "https://github.com/miguelrisero/better-shunt/blob/main/plugins/shunt/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "status-line",
+      "url": "https://github.com/mikljohansson/claude-code-status-line/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "gear",
+      "url": "https://github.com/moelahmady/jev-model-router/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "scope-creep-receipt",
+      "url": "https://github.com/mofocm/scope-creep-receipt/blob/main/plugin/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "scout-router",
+      "url": "https://github.com/MohabYasser2/claude-code-mods/blob/main/scout-router/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-bar",
+      "url": "https://github.com/MohammadMD1383/claude-plugins/blob/main/plugins/usage-bar/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-band",
+      "url": "https://github.com/mohammed-alsalhi/usage-band/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "token-usage",
+      "url": "https://github.com/monowu/claude-mod-token-usage/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "effort-router",
+      "url": "https://github.com/moritalous/claude-mods-router/blob/main/effort-router/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "model-router",
+      "url": "https://github.com/moritalous/claude-mods-router/blob/main/model-router/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "glyph-hud",
+      "url": "https://github.com/MridulNegi2005/glyph-hud/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-bar",
+      "url": "https://github.com/muratkaragozgil/claude-code-usage-bar/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "slick-bar",
+      "url": "https://github.com/mustafa89/my-claude-code-mods/blob/main/slick-bar/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "context-watch",
+      "url": "https://github.com/narrowstacks/claude-code-mods/blob/master/context-watch/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "token-ledger",
+      "url": "https://github.com/natsume-777/claude-mods/blob/main/plugins/token-ledger/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-band",
+      "url": "https://github.com/natsume-777/claude-mods/blob/main/plugins/usage-band/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "status-bar",
+      "url": "https://github.com/neemzsoul/claude-mod/blob/main/status-bar/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "burnrate",
+      "url": "https://github.com/nemke82/claude-code-burnrate/blob/main/burnrate/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-band",
+      "url": "https://github.com/nemokoala/claude-mods/blob/main/plugins/usage-band/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-bar",
+      "url": "https://github.com/nigelramsay/nigels-plugins/blob/main/plugins/usage-bar/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "glowbar",
+      "url": "https://github.com/nrzz/claude-code-glow/blob/main/hud/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-dollars",
+      "url": "https://github.com/oaustegard/claude-code-mods/blob/main/usage-dollars/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "cache-keeper",
+      "url": "https://github.com/oioi555/claude-code-mods/blob/main/plugins/cache-keeper/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "quota-pets",
+      "url": "https://github.com/Open01277/claude-mods/blob/main/plugins/quota-pets/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-ring",
+      "url": "https://github.com/Oualid0/claude-mods/blob/main/plugins/usage-ring/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "burn-guard",
+      "url": "https://github.com/ozlar34/claude-code-mods/blob/main/burn-guard/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-band",
+      "url": "https://github.com/pacomarques71/claude-mods/blob/main/plugins/usage-band/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "zsemle",
+      "url": "https://github.com/Parais4/parais-mods/blob/main/plugins/zsemle/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "agent-flow",
+      "url": "https://github.com/paulosergio-jnr/claude-code-mods/blob/main/mods/agent-flow/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-band",
+      "url": "https://github.com/paulosergio-jnr/claude-code-mods/blob/main/mods/usage-band/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "context-statusline",
+      "url": "https://github.com/petritol/context-statusline/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "receipts",
+      "url": "https://github.com/philm123/claude-code-receipts/blob/windows-support/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "burn",
+      "url": "https://github.com/PickleBoxer/burn/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-meter",
+      "url": "https://github.com/Pimzino/pimzinos-cool-cc-mods/blob/main/usage-meter/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "aitools",
+      "url": "https://github.com/pkkid/claude-mods/blob/main/plugins/aitools/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "plan-usage",
+      "url": "https://github.com/potterdigital/plan-usage-mod/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "notify-router",
+      "url": "https://github.com/pradyb/claude-mods/blob/main/notify-router/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-mod",
+      "url": "https://github.com/qingyashizi/claude-usage-mod/blob/main/plugins/usage-mod/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "dev-dash",
+      "url": "https://github.com/RanaRauff/claude-dev-dashboard/blob/main/plugins/dev-dash/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-bar",
+      "url": "https://github.com/ravipatel7/claude-mods/blob/main/mods/usage-bar/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-glance",
+      "url": "https://github.com/RaySu/usage-glance/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "trek-band",
+      "url": "https://github.com/rb17080/trek-band/blob/main/plugins/trek-band/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "context-meter",
+      "url": "https://github.com/redzrush101/claude-mods/blob/main/plugins/context-meter/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-band",
+      "url": "https://github.com/RektyRowdyy/claude-mods/blob/main/plugins/usage-band/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "show-usage",
+      "url": "https://github.com/ricardo-martincoski/claude-lab/blob/main/plugins/show-usage/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "warn-usage",
+      "url": "https://github.com/ricardo-martincoski/claude-lab/blob/main/plugins/warn-usage/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "ccsidebar",
+      "url": "https://github.com/richard-parayno/ccsidebar/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-bar",
+      "url": "https://github.com/richardcsuwandi/claude-mods/blob/main/plugins/usage-bar/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "model-effort-shortcuts",
+      "url": "https://github.com/richkuo/claude-code-model-effort-shortcuts/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "pitwall",
+      "url": "https://github.com/rlpb/pitwall/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "turn-receipt",
+      "url": "https://github.com/roaringsoul404/cc-mods/blob/main/turn-receipt/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "pro-limits",
+      "url": "https://github.com/rodbegbie/rod-claude-mods/blob/main/plugins/pro-limits/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-hud",
+      "url": "https://github.com/rsvishalsingh93/claude-usage-hud/blob/main/plugins/usage-hud/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "status-meter",
+      "url": "https://github.com/s-hiraoku/claude-mods/blob/claude/practical-bohr-nj2o0q/plugins/status-meter/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "claude-who",
+      "url": "https://github.com/SaharCarmel/claude-who/blob/main/claude-who/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "frugal",
+      "url": "https://github.com/saksham10arora-dotcom/claude-frugal/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "hud",
+      "url": "https://github.com/Samarth2001/claude-plugins/blob/main/plugins/hud/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-percent",
+      "url": "https://github.com/schreibse/claude-code-mods/blob/main/usage-percent/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-report",
+      "url": "https://github.com/Schweem/usage-report/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "clawd-hud",
+      "url": "https://github.com/segfaultlab/clawd-hud/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-status",
+      "url": "https://github.com/seiya8bit/claude-mods/blob/main/plugins/usage-status/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "model-router",
+      "url": "https://github.com/sftinc/claude-code-model-router/blob/main/plugin/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "statusbar",
+      "url": "https://github.com/sgmonda/statusbar/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-band",
+      "url": "https://github.com/Sh0ckWaveZero/claude-mods/blob/main/plugins/usage-band/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "stack",
+      "url": "https://github.com/ShahriarBijoy/claude-mods/blob/main/stack/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "shelltime-statusline",
+      "url": "https://github.com/shelltime/claude-code-mods/blob/main/plugins/shelltime-statusline/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "ccoverhead",
+      "url": "https://github.com/shengyy/ccoverhead/blob/main/plugin/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-limit",
+      "url": "https://github.com/shichang4fun/claude-mods/blob/master/plugins/usage-limit/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "chai-meter",
+      "url": "https://github.com/ShriD5/claude-mods/blob/main/chai-meter/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "barra-usage-model",
+      "url": "https://github.com/sidneyfrancois/barra-usage-model/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "cost-meter",
+      "url": "https://github.com/Singh-AP/awesome-claude-mods/blob/main/mods/cost/cost-meter/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "spend-meter",
+      "url": "https://github.com/sivori/claude-mods/blob/main/plugins/spend-meter/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "sth-usage",
+      "url": "https://github.com/Skills-transfer-hub/sth-claude/blob/main/mods/sth-usage/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "slash",
+      "url": "https://github.com/sofanaja44/slash/blob/claude/greeting-mystt6/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "dev-status",
+      "url": "https://github.com/sonata39-star/claude-mod/blob/main/dev-status/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "limit-parking",
+      "url": "https://github.com/soonavi/claude-mods/blob/main/limit-parking/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "reply-line",
+      "url": "https://github.com/soonavi/claude-mods/blob/main/reply-line/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-line",
+      "url": "https://github.com/soonavi/claude-mods/blob/main/usage-line/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-band",
+      "url": "https://github.com/SorcererAres/CC-Usage-Band/blob/main/usage-band/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "better-compaction",
+      "url": "https://github.com/spiiritual/claude-code-stuff/blob/main/plugins/better-compaction/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "session-receipt",
+      "url": "https://github.com/sreshtalluri/claude-mods/blob/main/plugins/session-receipt/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "ci-budget",
+      "url": "https://github.com/StanislavKozachenko/claude-mods/blob/main/plugins/ci-budget/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "turn-stats",
+      "url": "https://github.com/StanislavKozachenko/claude-mods/blob/main/plugins/turn-stats/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-tracker",
+      "url": "https://github.com/starlabs007/claude-mod-usage-tracker/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "jev-semaphore",
+      "url": "https://github.com/staticdreams/jev-semaphore/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-line",
+      "url": "https://github.com/Steven-ODell/claude-usage-line/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "still-mods",
+      "url": "https://github.com/stillgbx/still-mods/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-line",
+      "url": "https://github.com/sundyme/usage-line/blob/main/plugins/usage-line/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-log",
+      "url": "https://github.com/tanuu5/usage-log/blob/main/plugins/usage-log/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "claw-hud",
+      "url": "https://github.com/threesil/claude-mods/blob/main/plugins/claw-hud/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "clawd",
+      "url": "https://github.com/tibzejoker/claude-mods/blob/main/clawd/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-reporter",
+      "url": "https://github.com/tksunw/usage-reporter/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "jev-model-router",
+      "url": "https://github.com/Tolsee/dotfiles/blob/main/ai/claude/skills/jev-model-router/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "effort-router",
+      "url": "https://github.com/tommy5dollar/claude-mods/blob/main/effort-router/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "clawd-usage",
+      "url": "https://github.com/Toshkee/clawd-usage/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "effort-router",
+      "url": "https://github.com/totally-tim/effort-router/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "session-dash",
+      "url": "https://github.com/tsurutanmen/session-dash/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-tracker",
+      "url": "https://github.com/tylergraydev/cc-mods/blob/main/usage-tracker/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-band",
+      "url": "https://github.com/umithavare/claude-mods/blob/main/usage-band/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "subagent-router",
+      "url": "https://github.com/UtakataKyosui/utakata-cc-mod/blob/main/plugins/subagent-router/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "context-meter",
+      "url": "https://github.com/Vibe-Commit/claude-context-mods/blob/main/plugins/context-meter/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "glance",
+      "url": "https://github.com/VibeMage/claude-mod-glance/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "status-bar",
+      "url": "https://github.com/victor-falcon/claude-status-bar/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "cost-meter",
+      "url": "https://github.com/vincentlauriat/ModsTools/blob/main/mods/cost-meter/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "session-recap",
+      "url": "https://github.com/vincentlauriat/ModsTools/blob/main/mods/session-recap/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "jeffort",
+      "url": "https://github.com/vntrungld/jeffort/blob/master/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-band",
+      "url": "https://github.com/Vosssa/claude-usage-band/blob/main/plugins/usage-band/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "run-breakdown",
+      "url": "https://github.com/wickedhardflip/claude-code-mods/blob/main/run-breakdown/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "model-switch-band",
+      "url": "https://github.com/willmail3333/venzor-claude-model-switch/blob/main/model-switch-band/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-band",
+      "url": "https://github.com/WilsonKinyua/claude-mods/blob/main/plugins/usage-band/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-line",
+      "url": "https://github.com/wmkeza/claude-plugins/blob/main/mods/usage-line/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-band",
+      "url": "https://github.com/WoBok/claude-mods/blob/main/usage-band/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "usage-bar",
+      "url": "https://github.com/y20061018y-collab/Claude-Mods/blob/main/usage-bar/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "timeline",
+      "url": "https://github.com/yunjiaz7/claude-timeline-mod/blob/main/.claude-plugin/plugin.json"
+    },
+    {
+      "name": "context-bar",
+      "url": "https://github.com/ziedgithub/claude-code-mods/blob/main/context-bar/.claude-plugin/plugin.json"
+    }
+  ]
+}

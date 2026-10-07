@@ -1,0 +1,17 @@
+{
+  "name": "apex-router",
+  "private": true,
+  "version": "0.1.0-beta.1",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "check": "node scripts/check.mjs",
+    "test:native": "claude plugin test plugins/apex",
+    "test:browser": "node tests/browser.cjs",
+    "verify:offline": "npm run check && npm test && npm run test:native"
+  },
+  "license": "MIT"
+}

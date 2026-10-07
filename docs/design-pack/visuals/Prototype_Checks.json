@@ -1,0 +1,111 @@
+{
+  "scope": "Synthetic prototype interactions only. No live mod, account billing or model inference tested.",
+  "browser": "151.0.7922.34",
+  "date": "2026-10-07",
+  "results": [
+    {
+      "name": "Example/no inference label visible",
+      "status": "PASS"
+    },
+    {
+      "name": "Mode ACK queues next request",
+      "status": "PASS"
+    },
+    {
+      "name": "Inflight example unchanged",
+      "status": "PASS"
+    },
+    {
+      "name": "Next demo boundary consumes mode",
+      "status": "PASS"
+    },
+    {
+      "name": "Next demo ACK becomes active",
+      "status": "PASS"
+    },
+    {
+      "name": "Manual hold prevents demo model change",
+      "status": "PASS"
+    },
+    {
+      "name": "Auto resume allows demo mode application",
+      "status": "PASS"
+    },
+    {
+      "name": "Billing handoff accurately previewed",
+      "status": "PASS"
+    },
+    {
+      "name": "Zero budget rejected",
+      "status": "PASS"
+    },
+    {
+      "name": "Consent separated from account",
+      "status": "PASS"
+    },
+    {
+      "name": "Consent revoke works",
+      "status": "PASS"
+    },
+    {
+      "name": "Drawer Escape closes",
+      "status": "PASS"
+    },
+    {
+      "name": "Model navigation visible",
+      "status": "PASS"
+    },
+    {
+      "name": "Refresh is clearly a simulation",
+      "status": "PASS"
+    },
+    {
+      "name": "Disconnected controls disabled",
+      "status": "PASS"
+    },
+    {
+      "name": "Reconnect restores controls",
+      "status": "PASS"
+    },
+    {
+      "name": "390px no horizontal overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "900px no horizontal overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "720px reflow no horizontal overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "Native reference renders",
+      "status": "PASS"
+    },
+    {
+      "name": "Native demo controls advance state",
+      "status": "PASS"
+    },
+    {
+      "name": "empty preview renders",
+      "status": "PASS"
+    },
+    {
+      "name": "loading preview renders",
+      "status": "PASS"
+    },
+    {
+      "name": "stale preview renders",
+      "status": "PASS"
+    },
+    {
+      "name": "error preview renders",
+      "status": "PASS"
+    },
+    {
+      "name": "No page JavaScript errors",
+      "status": "PASS"
+    }
+  ]
+}

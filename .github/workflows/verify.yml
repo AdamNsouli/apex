@@ -1,0 +1,32 @@
+name: Verify APEX
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  offline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+      - run: npm run check
+      - run: npm test
+      - name: Install isolated native test CLI
+        run: npm install --prefix "$RUNNER_TEMP/apex-cli" --ignore-scripts --no-audit --no-fund @anthropic-ai/claude-code@2.1.292
+      - name: Validate plugin and marketplace
+        run: |
+          node "$RUNNER_TEMP/apex-cli/node_modules/@anthropic-ai/claude-code/cli-wrapper.cjs" plugin validate plugins/apex
+          node "$RUNNER_TEMP/apex-cli/node_modules/@anthropic-ai/claude-code/cli-wrapper.cjs" plugin validate .
+      - name: Test native request forwarding and controls without inference
+        run: node "$RUNNER_TEMP/apex-cli/node_modules/@anthropic-ai/claude-code/cli-wrapper.cjs" plugin test plugins/apex
+      - name: Install browser test dependency
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1.62.1
+          npx playwright install --with-deps chromium
+      - run: npm run test:browser

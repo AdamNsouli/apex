@@ -1,0 +1,15 @@
+# Architecture
+
+The deployable plugin is `plugins/apex`. The root marketplace points to that directory. The installed runtime has no npm dependencies.
+
+`hooks/register.mjs` registers native lifecycle, prompt, command, config, request, tool and UI hooks. It owns revisioned controls, current intent, catalogue and in-memory ledger. `core/catalogue.mjs` normalizes Anthropic/AA responses and joins verified identities. `core/router.mjs` applies conservative guards and ledger accounting. `core/scoring.mjs` ranks comparable evidence.
+
+On every main `turn.step`, the hook synchronizes queued dashboard controls, reads current native context usage, chooses a model/effort pair, records a reservation, and delegates with `yield* next({...e, model, effort})`. It does not reconstruct messages, synthesize chunks, remove fields, buffer the answer or replay a failed request. The downstream returned usage reconciles the receipt. Provider-reported model and APEX-requested model are distinct fields; effective effort remains unknown. Subagent requests are observed with their native settings and bypass selection because this beta does not have a verified per-agent context estimator.
+
+The native pane uses host Box/Text/Button elements. `/apex dashboard` launches `companion/server.mjs` through the permitted process API. A short-lived starter forks the companion and returns its private socket path and browser URL. A 500 ms native timer synchronizes state and controls over the protected Unix socket; the browser polls its authenticated loopback endpoint once a second. A request boundary awaits a pending sync before routing. Controls are applied only against the expected revision, acknowledged by the native host, and reflected in the subsequent state. Simultaneous stale controls are rejected instead of silently winning.
+
+The companion exposes only explicit control kinds, credential setup, refresh, state and receipt export. It is not a general shell or filesystem API. AA credentials live in its memory. It refreshes AA data daily with bounded pagination; native discovery refreshes runtime capabilities daily while the session is open. Atomic successful snapshots replace prior evidence. A 10-minute absence of native heartbeats stops the companion.
+
+The initial creation specification requested a React/TypeScript implementation. The executable beta uses dependency-free JavaScript and native host elements instead: this removes build/install dependencies while retaining a real browser UI, transport and tests. The original pack is retained as design history and imagery, not an authoritative claim that all proposed functionality shipped. Read the beta README and limits for the actual implementation contract.
+
+Sources: [Native mod reference](https://code.claude.com/docs/en/plugins/mods/reference), [native test harness](https://code.claude.com/docs/en/plugins/mods/test), [Models API](https://platform.claude.com/docs/en/api/models/list), [AA API](https://artificialanalysis.ai/data-api/docs).
