@@ -33,6 +33,7 @@ let control = initialControl(),
   refreshTimer = null,
   refreshBusy = false,
   lastRefresh = 0,
+  discoverRetryAt = 0,
   lastAARefresh = 0,
   refreshError = null,
   contextTokens = null,
@@ -78,8 +79,11 @@ const publicState = () => ({
   now,
   pins,
   evidenceFetchedAt: aa?.fetchedAt ?? null,
+  // 0 (eligible now) while models have never been discovered, null until AA has been fetched.
   nextRefreshAt: lastAARefresh
-    ? Math.min(lastAARefresh + 86400000, lastRefresh + 86400000)
+    ? lastRefresh
+      ? Math.min(lastAARefresh + 86400000, lastRefresh + 86400000)
+      : 0
     : null,
   refreshBusy,
   events: ledger.events,
@@ -167,7 +171,9 @@ async function sync($) {
 async function refresh($) {
   if (refreshBusy) return;
   refreshBusy = true;
-  const discover = !lastRefresh || now - lastRefresh >= 86400000;
+  const discover =
+    (!lastRefresh || now - lastRefresh >= 86400000) && now >= discoverRetryAt;
+  let discovered = false;
   try {
     const key = await $.env.get("APEX_AA_API_KEY");
     const fetchAA =
@@ -188,6 +194,7 @@ async function refresh($) {
         all.push(...runtimeModels(body));
         if (!body.has_more) {
           runtime = all;
+          discovered = true;
           break;
         }
         if (!body.last_id || page === 19)
@@ -195,7 +202,11 @@ async function refresh($) {
         cursor = body.last_id;
       }
     }
-    if (discover) lastRefresh = now;
+    // Only a discovery that found models starts the 24-hour wait. With no first-party
+    // login (a headless run, a gateway) there is nothing to find, so the wait stays
+    // unstarted for a session that has one.
+    if (discovered) lastRefresh = now;
+    if (!discovered && !fetchAA) return;
     if (fetchAA) {
       lastAARefresh = now;
       const result = await fetchAAPages(async (page) => {
@@ -222,7 +233,8 @@ async function refresh($) {
     draw($);
   } catch {
     refreshError = "Catalogue refresh failed; previous evidence retained";
-    if (discover) lastRefresh = now;
+    // A failed discovery is retried in an hour, not after a day.
+    if (discover && !discovered) discoverRetryAt = now + 3600000;
     await $.store.set("catalogue", { runtime, aa, lastRefresh, lastAARefresh });
     draw($);
   } finally {
