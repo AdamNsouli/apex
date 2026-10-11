@@ -14,6 +14,8 @@ import {
   runtimeModels,
   joinCatalogue,
   fetchAAPages,
+  suggestMappings,
+  withNamedEffort,
 } from "../core/catalogue.mjs";
 let control = initialControl(),
   intent = {
@@ -464,7 +466,9 @@ export function register(on, config = {}) {
     const cache = await $.store.get("catalogue");
     if (cache && typeof cache === "object") {
       runtime = cache.runtime ?? [];
-      aa = cache.aa ?? null;
+      aa = Array.isArray(cache.aa?.models)
+        ? { ...cache.aa, models: cache.aa.models.map(withNamedEffort) }
+        : (cache.aa ?? null);
       lastRefresh = cache.lastRefresh ?? 0;
       lastAARefresh = cache.lastAARefresh ?? cache.aa?.fetchedAt ?? 0;
       rebuild();
@@ -481,7 +485,7 @@ export function register(on, config = {}) {
       name: "apex",
       description: "APEX request routing, modes and receipts",
       argumentHint:
-        "mode eco|balanced|quality|sports; dashboard; refresh; auto; hold; why; credits",
+        "mode eco|balanced|quality|sports; dashboard; refresh; auto; hold; why; credits; map-efforts",
       immediate: true,
     });
     now = await $.clock.now();
@@ -716,6 +720,55 @@ export function register(on, config = {}) {
           expectedRevision: control.revision,
         });
         return { text: "Exact model/benchmark mapping saved." };
+      }
+      if (verb === "map-efforts") {
+        const ids = [value, ...extra].filter(Boolean);
+        if (!ids.length)
+          return { text: "Use /apex map-efforts RUNTIME_ID [RUNTIME_ID...]" };
+        const lines = [];
+        let qualified = false;
+        for (const id of ids) {
+          const found = suggestMappings(
+            runtime.find((m) => m.id === id) ?? { id, efforts: [] },
+            aa?.models ?? [],
+          );
+          if (!found.length) {
+            lines.push(id + ": no exact effort variants found; nothing saved");
+            continue;
+          }
+          for (const s of found)
+            await change($, {
+              kind: "mapping",
+              runtimeId: s.runtimeId,
+              aaSlug: s.aaSlug,
+              effort: s.effort,
+              expectedRevision: control.revision,
+            });
+          qualified ||= found.some((s) => s.qualifier);
+          lines.push(
+            id +
+              ": " +
+              found
+                .map(
+                  (s) =>
+                    s.effort +
+                    " = " +
+                    s.aaSlug +
+                    (s.qualifier ? " (" + s.qualifier + ")" : ""),
+                )
+                .join(", "),
+          );
+        }
+        await sync($);
+        return {
+          text:
+            "Saved as your confirmed exact mappings:\n" +
+            lines.join("\n") +
+            (qualified
+              ? "\nVariants marked with a fallback were benchmarked with that option on; confirming them accepts that."
+              : "") +
+            "\nAccount access is separate: confirm it with /apex allow-models.",
+        };
       }
       if (verb === "allow-models") {
         await change($, {

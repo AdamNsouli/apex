@@ -5,6 +5,7 @@ import {
   aaModels,
   joinCatalogue,
   fetchAAPages,
+  suggestMappings,
 } from "../plugins/apex/core/catalogue.mjs";
 import {
   route,
@@ -361,4 +362,127 @@ test("hysteresis retains the previously dispatched eligible pair, not the native
   const r = route(o);
   assert.equal(r.pair.model, "b");
   assert.equal(r.reason, "switch_hysteresis");
+});
+const LADDER = ["low", "medium", "high", "xhigh", "max"];
+const ladderRuntime = {
+  ...runtime[0],
+  id: "m5",
+  efforts: LADDER,
+};
+const record = (slug, name) =>
+  aaModels({
+    intelligence_index_version: 4.3,
+    data: [
+      {
+        id: slug,
+        name,
+        slug,
+        model_creator: { name: "Anthropic" },
+        evaluations: { artificial_analysis_intelligence_index: 50 },
+        pricing: {},
+        performance: {},
+      },
+    ],
+  })[0];
+const fallbackLadder = () =>
+  LADDER.map((level) =>
+    record(
+      level === "max" ? "m5" : "m5-" + level,
+      "M5 (" + level[0].toUpperCase() + level.slice(1) + ", Default Fallback)",
+    ),
+  );
+test("benchmark names state effort, with or without a fallback qualifier", () => {
+  const read = (name) => {
+    const r = record("x", name);
+    return [r.effort, r.qualifier];
+  };
+  assert.deepEqual(read("Model (High)"), ["high", null]);
+  assert.deepEqual(read("Model (Medium, Default Fallback)"), [
+    "medium",
+    "Default Fallback",
+  ]);
+  assert.deepEqual(read("Model (Max, Opus 4.8 Fallback)"), [
+    "max",
+    "Opus 4.8 Fallback",
+  ]);
+  // A different thinking mode is not an effort level and stays unparsed.
+  assert.deepEqual(read("Model (Non-reasoning, High)"), [null, null]);
+  assert.deepEqual(read("Model (Reasoning)"), [null, null]);
+});
+test("fallback-qualified evidence is not joined until the user maps it", () => {
+  const [bare] = joinCatalogue(
+    [ladderRuntime],
+    fallbackLadder().filter((a) => a.slug === "m5"),
+    [],
+    ["m5"],
+  );
+  assert.equal(bare.routable, false);
+  assert.ok(bare.exclusions.includes("benchmark_qualifier_unconfirmed"));
+  assert.ok(!bare.exclusions.includes("benchmark_effort_unknown"));
+  const [mapped] = joinCatalogue(
+    [ladderRuntime],
+    fallbackLadder(),
+    [{ runtimeId: "m5", aaSlug: "m5-medium", effort: "medium" }],
+    ["m5"],
+  );
+  assert.equal(mapped.routable, true);
+  assert.equal(mapped.effort, "medium");
+  assert.equal(mapped.evidence.qualifier, "Default Fallback");
+});
+test("a mapping cannot contradict the effort a fallback record states", () => {
+  const [r] = joinCatalogue(
+    [ladderRuntime],
+    fallbackLadder(),
+    [{ runtimeId: "m5", aaSlug: "m5-medium", effort: "high" }],
+    ["m5"],
+  );
+  assert.ok(r.exclusions.includes("benchmark_effort_mismatch"));
+});
+test("snapshots saved before effort was read from fallback names still join", () => {
+  const old = fallbackLadder().map(({ effort, qualifier, ...rest }) => ({
+    ...rest,
+    effort: null,
+  }));
+  const [r] = joinCatalogue(
+    [ladderRuntime],
+    old,
+    [{ runtimeId: "m5", aaSlug: "m5-low", effort: "low" }],
+    ["m5"],
+  );
+  assert.equal(r.routable, true);
+  assert.equal(r.evidence.qualifier, "Default Fallback");
+});
+test("effort variants are proposed only for exact slugs that state that effort", () => {
+  const all = [
+    ...fallbackLadder(),
+    record("m5-extra-high", "M5 (Extra High)"),
+    record("other", "Other (Low)"),
+  ];
+  assert.deepEqual(
+    suggestMappings(ladderRuntime, all).map((s) => [s.effort, s.aaSlug]),
+    [
+      ["low", "m5-low"],
+      ["medium", "m5-medium"],
+      ["high", "m5-high"],
+      ["xhigh", "m5-xhigh"],
+      ["max", "m5"],
+    ],
+  );
+  // A bare slug that is a different thinking mode is never offered as max.
+  assert.deepEqual(
+    suggestMappings(ladderRuntime, [record("m5", "M5 (Non-reasoning, High)")]),
+    [],
+  );
+  // Levels the runtime does not support are not proposed.
+  assert.deepEqual(
+    suggestMappings({ ...ladderRuntime, efforts: ["low"] }, all).map(
+      (s) => s.effort,
+    ),
+    ["low"],
+  );
+  // A slug whose own name states another effort is not proposed.
+  assert.deepEqual(
+    suggestMappings(ladderRuntime, [record("m5-low", "M5 (High)")]),
+    [],
+  );
 });

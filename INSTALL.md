@@ -25,7 +25,7 @@ The terminal prompt dock appears automatically. Open `/apex rail` and run `/apex
 ## Activate evidence-backed routing
 
 1. Supply `APEX_AA_API_KEY` in the Claude process environment for a browser-free setup, or open **Settings** in the dashboard and enter your AA key. A key entered in the browser stays in companion memory and disappears when the companion closes. Do not put credentials in Git, prompts or the installation command.
-2. In the native **Settings** view, select your actual account backend and enter exact available model IDs. Native **Compare model evidence** shows discovered pairs and AA variant slugs. The browser **Settings → Access** step additionally has complete selection forms. Confirm availability. Verify exact benchmark variant and effort mappings when IDs differ. Model/effort support comes from the discovered runtime capabilities, not a guessed model-family list.
+2. In the native **Settings** view, select your actual account backend and enter exact available model IDs. Native **Compare model evidence** shows discovered pairs and AA variant slugs. The browser **Settings → Access** step additionally has complete selection forms. Confirm availability. Verify exact benchmark variant and effort mappings when IDs differ; `/apex map-efforts RUNTIME_ID` confirms all of a model's exact effort variants at once and lists what it saved. Model/effort support comes from the discovered runtime capabilities, not a guessed model-family list.
 3. Select a mode. If you pinned model or effort in settings/environment, or used `/model`, `/effort` or `/config` to override them, explicitly resume with `/apex auto` after verifying setup. APEX uses manual hold until you choose to relinquish that override.
 
 For a direct API backend, APEX holds native settings until you explicitly permit routing in native **Settings → APEX routing consent** (enter a positive estimate budget and select **Allow within estimate budget**) or with browser **Credits** and an estimate budget, or `/apex credits allow 5` for a $5 API-equivalent routing budget. Consent resets on a new or cleared session. This grants consent to APEX; it does not change account billing or guarantee a $5 bill cap. Use `/usage-credits` yourself for Claude account extra usage.
@@ -51,6 +51,7 @@ For a direct API backend, APEX holds native settings until you explicitly permit
 | `/apex credits off`                                | Revoke APEX consent; account billing unchanged                   |
 | `/apex allow-models subscription ID...`            | Confirm model access; `api` also accepted                        |
 | `/apex map RUNTIME_ID AA_SLUG EFFORT`              | Save verified exact mapping; effort may be `default`             |
+| `/apex map-efforts RUNTIME_ID...`                  | Confirm every exact effort variant of a model in one step        |
 
 Native model and effort overrides suspend APEX. Live mode changes acknowledge a revision; the current streamed response is never interrupted or restarted by the mode switch.
 

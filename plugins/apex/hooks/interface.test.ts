@@ -172,3 +172,61 @@ test("dock hiding and compact layout remain recoverable through slash command", 
   expect(await ui.find({ key: "mode-sports" })).toBeDefined();
   await ui.unmount();
 });
+
+test("guided mapping accepts a fallback-qualified variant from an older saved snapshot", async ($, on) => {
+  const levels = ["low", "medium", "high", "xhigh", "max"];
+  const writes: Record<string, any> = {
+    catalogue: {
+      runtime: [
+        {
+          id: "m5",
+          name: "M5",
+          line: null,
+          efforts: levels,
+          effortSupported: true,
+          context: 100000,
+          outputCap: 1000,
+          capabilities: {},
+          thinking: {},
+        },
+      ],
+      // Saved before the effort in "(Medium, Default Fallback)" was read.
+      aa: {
+        fetchedAt: 2000000000000,
+        models: levels.map((level) => ({
+          id: level,
+          slug: level === "max" ? "m5" : "m5-" + level,
+          name:
+            "M5 (" +
+            level[0].toUpperCase() +
+            level.slice(1) +
+            ", Default Fallback)",
+          effort: null,
+          benchmarkVersion: "fictional-v1",
+          scores: { general: 50 },
+          prices: { input: 1, output: 2 },
+          latencyMs: 1000,
+        })),
+      },
+      lastRefresh: 2000000000000,
+    },
+  };
+  setup(on, {}, writes);
+  await startSession($);
+  const ui = await $.ui.mount({
+    plugin: "apex",
+    surface: "terminal",
+    component: "Pane",
+    requestId: "apex",
+    props: paneProps(72),
+  });
+  await ui.press({ key: "settings" });
+  await ui.select({ key: "map-runtime", value: "m5" });
+  await ui.select({ key: "map-slug", value: "m5-medium" });
+  await ui.select({ key: "map-effort", value: "medium" });
+  await ui.press({ key: "confirm-mapping" });
+  expect(writes.control.mappings).toEqual([
+    { runtimeId: "m5", aaSlug: "m5-medium", effort: "medium" },
+  ]);
+  await ui.unmount();
+});

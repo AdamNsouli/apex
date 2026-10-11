@@ -36,6 +36,30 @@ export function runtimeModels(body) {
     };
   });
 }
+// A benchmark name states its effort as "(High)" or, when the run used the API's
+// refusal fallback, "(Max, Default Fallback)". Anything else in the brackets,
+// such as "Non-reasoning, High", is a different thinking mode and stays unparsed.
+const EFFORT_NAME = new RegExp(
+  "\\((" + LEVELS.join("|") + ")(?:,\\s*([^)]*\\bfallback))?\\)$",
+  "i",
+);
+export function parseEffortName(name) {
+  const m = EFFORT_NAME.exec(String(name ?? ""));
+  return {
+    effort: m ? m[1].toLowerCase() : null,
+    qualifier: m?.[2]?.trim() ?? null,
+  };
+}
+// Snapshots saved before fallback names were read have effort null: read it again.
+export const withNamedEffort = (a) => {
+  if (!a) return a;
+  const named = parseEffortName(a.name);
+  return {
+    ...a,
+    effort: a.effort ?? named.effort,
+    qualifier: a.qualifier ?? named.qualifier,
+  };
+};
 export function aaModels(body) {
   if (
     !Array.isArray(body?.data) ||
@@ -54,14 +78,13 @@ export function aaModels(body) {
         throw new Error("Invalid AA model");
       const p = m.pricing ?? {},
         perf = m.performance ?? {};
-      const effort =
-        LEVELS.find((k) => new RegExp("\\(" + k + "\\)$", "i").test(m.name)) ??
-        null;
+      const { effort, qualifier } = parseEffortName(m.name);
       return {
         id: m.id,
         slug: m.slug,
         name: m.name,
         effort,
+        qualifier,
         benchmarkVersion: String(body.intelligence_index_version),
         scores: Object.fromEntries(
           Object.entries(TASK_INDEX).map(([t, k]) => [
@@ -87,10 +110,39 @@ export function aaModels(body) {
       };
     });
 }
+// AA publishes one record per effort level, slugged "<runtime id>-<level>" with
+// the highest level under the bare runtime id. These pairs are only proposed: the
+// caller saves them as explicit mappings, and the effort in the record's own name
+// must agree with the level it is proposed for.
+export function suggestMappings(runtimeModel, aa) {
+  return LEVELS.flatMap((level) => {
+    if (!runtimeModel.efforts.includes(level)) return [];
+    const slug =
+      level === "max" ? runtimeModel.id : runtimeModel.id + "-" + level;
+    const a = withNamedEffort(aa.find((x) => x.slug === slug));
+    return a?.effort === level
+      ? [
+          {
+            runtimeId: runtimeModel.id,
+            aaSlug: slug,
+            effort: level,
+            qualifier: a.qualifier,
+          },
+        ]
+      : [];
+  });
+}
 // Only an exact slug match or a user-confirmed version/effort mapping is joined.
 // Human name similarity is displayed as a setup aid, never routing authority.
-export function joinCatalogue(runtime, aa, mappings = [], verifiedIds = []) {
+// Evidence measured with a fallback option on is joined only by a confirmed mapping.
+export function joinCatalogue(
+  runtime,
+  benchmarks,
+  mappings = [],
+  verifiedIds = [],
+) {
   const allowed = new Set(verifiedIds);
+  const aa = benchmarks.map(withNamedEffort);
   return runtime.flatMap((m) => {
     const explicit = mappings.filter((x) => x.runtimeId === m.id);
     const matches = explicit.length
@@ -116,6 +168,8 @@ export function joinCatalogue(runtime, aa, mappings = [], verifiedIds = []) {
     return matches.map(({ a, effort, verified }) => {
       const exclusions = [];
       if (!a) exclusions.push("mapped_benchmark_missing");
+      if (a?.qualifier && !verified)
+        exclusions.push("benchmark_qualifier_unconfirmed");
       if (typeof m.effortSupported !== "boolean")
         exclusions.push("effort_capability_unknown");
       if (a?.effort != null && a.effort !== effort)
