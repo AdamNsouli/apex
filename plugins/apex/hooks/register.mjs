@@ -44,6 +44,7 @@ let control = initialControl(),
   stepsOnModel = 2,
   acks = [],
   syncing = null,
+  savedRevision = 0,
   now = Date.now();
 let nativeUi = {
   dock: "expanded",
@@ -102,13 +103,60 @@ const publicState = () => ({
   controlAcks: acks.slice(-50),
 });
 const draw = ($) => $.ui.invalidate("ui.render");
+// Every open chat shares one stored settings record but reads it only when it
+// starts. Consent and one-shot state belong to this chat alone; the rest is shared.
+const OWN = ["creditsConsent", "budgetUsd", "qualityOnce"];
+const DISPATCH = [
+  "qualityOnce",
+  "modeConsumedRevision",
+  "consumedBy",
+  "consumedOnceRevision",
+];
+const pick = (o, keys) =>
+  Object.fromEntries(keys.filter((k) => k in o).map((k) => [k, o[k]]));
+const isRecord = (v) => v && typeof v === "object";
+const shared = (stored) => ({
+  ...initialControl(),
+  ...stored,
+  ...pick(control, [...OWN, "modeConsumedRevision"]),
+});
+// Take settings another chat saved since this one last looked, before using them.
+async function adoptSaved($) {
+  try {
+    const stored = await $.store.get("control");
+    if (!isRecord(stored) || !(stored.revision > control.revision)) return;
+    control = shared(stored);
+    savedRevision = Math.max(savedRevision, stored.revision);
+    rebuild();
+  } catch {}
+}
 async function change($, command) {
   control = applyControl(control, command);
   if (command.kind === "mode") stepsOnModel = 2;
   if (command.kind === "routing" && command.value === "auto") pins = false;
   rebuild();
-  await $.store.set("control", control);
+  const stored = await $.store.get("control");
+  if (isRecord(stored) && stored.revision > savedRevision) {
+    // Another chat saved since this one last looked: apply this change on top of
+    // theirs rather than overwriting them with this chat's older copy.
+    control = applyControl(shared(stored), {
+      ...command,
+      expectedRevision: stored.revision,
+    });
+    rebuild();
+  }
+  const saving = control;
+  await $.store.set("control", saving);
+  savedRevision = Math.max(savedRevision, saving.revision);
   draw($);
+}
+// Claiming a one-shot request changes only this chat's own bookkeeping.
+async function saveDispatch($) {
+  const stored = await $.store.get("control");
+  await $.store.set("control", {
+    ...(isRecord(stored) ? stored : control),
+    ...pick(control, DISPATCH),
+  });
 }
 async function sync($) {
   if (!descriptor) return;
@@ -444,6 +492,7 @@ export function register(on, config = {}) {
           qualityOnce: null,
           modeConsumedRevision: stored.modeRevision ?? 0,
         };
+        savedRevision = control.revision;
       } catch {}
     }
     const display = await $.store.get("display");
@@ -807,6 +856,7 @@ export function register(on, config = {}) {
   });
   on("turn.step", async function* ($, e, next) {
     await sync($);
+    await adoptSaved($);
     now = await $.clock.now();
     if (!e.agentId) {
       hostUsage = await $.session.usage();
@@ -891,7 +941,7 @@ export function register(on, config = {}) {
       },
       decision.estimate,
     );
-    if (captured) await $.store.set("control", control);
+    if (captured) await saveDispatch($);
     draw($);
     void sync($);
     try {
