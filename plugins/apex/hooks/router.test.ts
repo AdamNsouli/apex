@@ -433,3 +433,92 @@ test("manual model command suspends auto routing until explicitly resumed", asyn
   expect(await ui.find({ type: "Text", text: /Observing only/ })).toBeDefined();
   await ui.unmount();
 });
+test("map-efforts confirms every exact effort variant of a model in one command", async ($, on) => {
+  const writes: Record<string, any> = {
+    control: {
+      revision: 0,
+      mode: "balanced",
+      routing: "auto",
+      backend: "subscription",
+      verifiedIds: ["m5"],
+      mappings: [],
+      taskOverride: null,
+    },
+    catalogue: {
+      runtime: [
+        {
+          id: "m5",
+          name: "M5",
+          line: null,
+          efforts: ["low", "medium", "high", "xhigh", "max"],
+          effortSupported: true,
+          context: 100000,
+          outputCap: 1000,
+          capabilities: {},
+          thinking: {},
+        },
+      ],
+      // Saved by an older version: the fallback names were not read as effort.
+      aa: {
+        fetchedAt: 2000000000000,
+        models: ["low", "medium", "high", "xhigh", "max"].map((level) => ({
+          id: level,
+          slug: level === "max" ? "m5" : "m5-" + level,
+          name:
+            "M5 (" +
+            level[0].toUpperCase() +
+            level.slice(1) +
+            ", Default Fallback)",
+          effort: null,
+          benchmarkVersion: "fictional-v1",
+          scores: { general: 50, agentic_coding: 50 },
+          prices: { input: 1, output: 2, cacheRead: 0.1, cacheWrite: 1.25 },
+          latencyMs: 1000,
+        })),
+      },
+      lastRefresh: 2000000000000,
+    },
+  };
+  on("store.get", (_$, e) => ({ value: writes[e.key] }));
+  on("store.set", (_$, e) => {
+    writes[e.key] = e.value;
+    return { value: undefined };
+  });
+  mock.clock(on, { now: 2000000000000 });
+  mock.env(on, {});
+  on("session.version", () => ({ value: { version: "2.1.292" } }));
+  on("settings.read", () => ({ value: {} }));
+  on("command.register", () => ({ value: {} }));
+  on("session.start", (_$, e) => ({ cwd: e.cwd }));
+  await $.session.start({
+    cwd: "/tmp/apex-map-efforts-test",
+    surface: "terminal",
+    isInteractive: true,
+  });
+  const models = async () =>
+    JSON.parse((await $.command.run({ command: "apex", args: "models" })).text);
+  expect((await models()).every((m: any) => !m.routable)).toBe(true);
+  const missing = await $.command.run({
+    command: "apex",
+    args: "map-efforts not-a-model",
+  });
+  expect(missing.text).toMatch(/no exact effort variants found/);
+  expect(writes.control.mappings.length).toBe(0);
+  const saved = await $.command.run({
+    command: "apex",
+    args: "map-efforts m5",
+  });
+  expect(saved.text).toMatch(/medium = m5-medium \(Default Fallback\)/);
+  expect(saved.text).toMatch(/accepts that/);
+  expect(writes.control.mappings.length).toBe(5);
+  expect(writes.control.revision).toBe(5);
+  const joined = await models();
+  expect(joined.map((m: any) => m.effort).sort()).toEqual([
+    "high",
+    "low",
+    "max",
+    "medium",
+    "xhigh",
+  ]);
+  expect(joined.every((m: any) => m.routable)).toBe(true);
+});
