@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.3.0-beta.2
+
+Reliability fixes. No change to the interface or the routing policy.
+
+Benchmark names such as "Claude Sonnet 5.5 (Medium, Default Fallback)" now state their effort, so those variants can be confirmed in the guided mapping form, and `/apex map-efforts RUNTIME_ID` confirms all of a model's exact effort variants in one step. Evidence measured with a fallback option on still joins only through a confirmed mapping, and a confirmed mapping is now checked against the effort the record states.
+
+Open chats share one stored settings record. A chat now adopts newer saved settings before routing and applies its own change on top of them, instead of overwriting the confirmed models, backend and mappings with an older copy. Consent and the Quality once arm stay with each chat.
+
+Model discovery starts its 24-hour wait only when it finds models, so a headless or signed-out session can no longer use the day up. A failed discovery retries after an hour, and a refresh that finds nothing no longer rewrites the saved catalogue.
+
+The hygiene check, 49 Node tests, 18 native tests and the browser checks pass in CI. No paid inference, real-key AA ingestion or billing verification was performed. Update the marketplace and the plugin, then restart: chats that were already open keep running the previous code.
+
 ## 0.3.0-beta.1
 
 Replaced the five-tab interface with a 34-column compact native rail, an integrated history/receipt/evidence inspector and contextual setup/consent. The two-row prompt strip preserves other mods and native surveys, adapts to width and avoids duplicate controls while docked. Historical selection and Follow live are explicit. Added honest readiness states and separate mode acknowledgment/dispatch consumption.

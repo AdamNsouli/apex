@@ -1,5 +1,5 @@
 import { duration, verdict } from "./receipt.mjs";
-export const VERSION = "0.3.0-beta.1";
+export const VERSION = "0.3.0-beta.2";
 export const MODES = {
   eco: {
     label: "Eco",

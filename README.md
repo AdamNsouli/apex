@@ -8,6 +8,8 @@
 
 APEX is executable middleware, not just instructions to Claude. It wraps the official `turn.step` hook and forwards the selected model and effort while preserving the streamed response and conversation. Eco, Balanced, High Quality and Sports can be selected while work is running.
 
+**0.3.0-beta.2:** reliability fixes. Fallback-benchmark efforts can be confirmed (`/apex map-efforts`), open chats no longer overwrite each other's saved settings, and a failed or signed-out model discovery no longer blocks the next one for a day. No change to the interface or routing policy. Checked offline and in CI; live inference, billing and measured savings remain unverified.
+
 **0.3.0-beta.1:** premium native rail and route workspace. Native hook tests, local browser integration and genuine terminal rendering checks pass. Live Anthropic inference, authenticated Artificial Analysis data ingestion and account billing have not been verified. There is no claim of guaranteed optimal routing or guaranteed bill savings.
 
 ## Tell Claude to install it
