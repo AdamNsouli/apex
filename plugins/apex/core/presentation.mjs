@@ -1,13 +1,15 @@
 import { duration, verdict } from "./receipt.mjs";
-export const VERSION = "0.3.0-beta.2";
+export const VERSION = "0.4.0-beta.1";
 export const MODES = {
   eco: {
     label: "Eco",
-    detail: "Favor lower cost within the protected quality floor.",
+    detail:
+      "Pick the cheapest pair that reaches a lower share of the best score.",
   },
   balanced: {
     label: "Balanced",
-    detail: "Balance task evidence, estimated cost and speed.",
+    detail:
+      "Pick the cheapest pair that reaches enough of the best score for the task, without a long wait.",
   },
   quality: {
     label: "High Quality",
@@ -34,6 +36,8 @@ export const REASONS = {
   quality_floor: "Kept the native pair to protect task quality.",
   baseline_quality_floor:
     "The alternative falls below the baseline quality floor.",
+  cost_evidence_missing:
+    "The benchmark data has no cost-per-task figures, so efficiency cannot be compared.",
   cache_payback_unknown_or_negative:
     "The forecast does not justify the switch's cache transition.",
   paid_routing_consent_required:
@@ -44,6 +48,14 @@ export const REASONS = {
     "Kept the recent eligible pair to avoid unnecessary switching.",
   agent_native_settings:
     "This agent keeps its native model and effort settings.",
+  eco_policy:
+    "Selected as the cheapest pair that reaches a lower share of the strongest comparable score.",
+  balanced_policy:
+    "Selected as the cheapest pair that reaches enough of the strongest comparable score for this task, without a long wait.",
+  quality_policy: "Selected for the strongest comparable task evidence.",
+  sports_policy:
+    "Selected for speed close to the strongest comparable task evidence.",
+  // Receipts written before 0.4.0 carry the earlier weighted-utility codes.
   eco_utility: "Selected for lower forecast cost within the quality floor.",
   balanced_utility:
     "Selected for the balance of task evidence, speed and forecast cost.",
@@ -163,12 +175,29 @@ export function present(
     : known.reduce((sum, e) => sum + e.observedUsd, 0);
   const nextRefreshAt =
     state.nextRefreshAt ?? (fetchedAt == null ? null : fetchedAt + 86400000);
+  // A model the daily refresh found on the account stays unused until you confirm
+  // your plan includes it. Say so for a week, then stop nagging.
+  const found = (state.changes?.newModels ?? []).filter(
+    (id) => !(control.verifiedIds ?? []).includes(id),
+  );
+  const notice =
+    found.length &&
+    state.changes?.at != null &&
+    now - state.changes.at < 7 * 86400000
+      ? (found.length === 1 ? "New model " : "New models ") +
+        found.map((id) => modelName(state, id)).join(", ") +
+        ". If your plan includes " +
+        (found.length === 1 ? "it" : "them") +
+        ": /apex confirm-models " +
+        found.join(" ")
+      : null;
   return {
     control,
     mode,
     status,
     tone,
     blocker,
+    notice,
     pending,
     pendingText,
     age,

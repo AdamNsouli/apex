@@ -1,4 +1,4 @@
-# Verification and limits — 0.3.0-beta.1
+# Verification and limits — 0.4.0-beta.1
 
 Read [Release_Results.md](Release_Results.md) for actual results and screenshot provenance. The isolated test CLI is Claude Code 2.1.292 on macOS arm64. It does not update the person's global installation.
 
@@ -13,3 +13,5 @@ APEX preserves native settings when it lacks evidence, context/capability inform
 Quality once is a single main-dispatch preference, not a retry or unconditional provider upgrade. All guards remain active. Agents retain native settings. Reload/new/cleared sessions cancel any unused arm and revoke consent. Receipts remain in memory, bounded at 1,000 events; export before restart.
 
 A compatible public mod runtime is required; a prompt/skill cannot make an older unsupported Claude installation execute these hooks. Do not use permission bypass, scrape login credentials or patch private internals to install APEX. This release uses supported primitives and explicit source credentials only.
+
+The 0.4.0 routing policy is checked with synthetic fixtures, which show that picks follow the numbers (a new model, a changed cost or speed changes the choice) and that every guard still holds, and offline against a cached real AA snapshot. The tier shares and wait limits are judgment calls, not measured task success, and AA's median seconds and cost per task describe its own benchmark, not your prompts. A model found on the account is never used until you confirm it, because APEX cannot verify what your plan includes.

@@ -1,4 +1,4 @@
-import { selectPair, MODES } from "./scoring.mjs";
+import { selectPair, tierFor, MODES } from "./scoring.mjs";
 import { LEVELS, TASK_INDEX, finite } from "./catalogue.mjs";
 export const initialControl = () => ({
   revision: 0,
@@ -210,27 +210,35 @@ export function route({
       m.effort === (original.effort ?? null) &&
       m.routable,
   );
-  if (!baseline?.evidence || finite(baseline.evidence.scores[task]) === null)
-    return hold(original, "baseline_evidence_unknown");
+  if (!baseline?.evidence) return hold(original, "baseline_evidence_unknown");
   if (!Number.isFinite(inputTokens) || inputTokens < 0)
     return hold(original, "context_tokens_unknown");
   const risky =
     intent.risk !== "normal" ||
     intent.difficulty === "complex" ||
     intent.failures >= 2;
-  let eligible = models.filter(
+  const compatible = models.filter(
     (m) =>
       m.routable &&
       m.evidence?.benchmarkVersion === baseline.evidence.benchmarkVersion &&
-      finite(m.evidence?.scores[task]) !== null &&
       m.context >= inputTokens &&
       JSON.stringify(m.thinking ?? null) ===
         JSON.stringify(baseline.thinking ?? null),
   );
+  const scored = (m, index) => finite(m.evidence?.scores?.[index]) !== null;
+  // The task's own index is used only when every compared pair has it. Otherwise
+  // general intelligence stands in for all of them, so the pairs stay comparable.
+  const basis =
+    scored(baseline, task) && compatible.every((m) => scored(m, task))
+      ? task
+      : "general";
+  if (!scored(baseline, basis))
+    return hold(original, "baseline_evidence_unknown");
+  let eligible = compatible.filter((m) => scored(m, basis));
   if (risky || now - fetchedAt > 72 * 3600000)
     eligible = eligible.filter(
       (m) =>
-        m.evidence.scores[task] >= baseline.evidence.scores[task] &&
+        m.evidence.scores[basis] >= baseline.evidence.scores[basis] &&
         (original.effort === undefined ||
           m.effort === original.effort ||
           LEVELS.indexOf(m.effort) >= LEVELS.indexOf(original.effort)),
@@ -238,8 +246,9 @@ export function route({
   const candidates = eligible.map((m) => ({
     model: m.runtimeId,
     effort: m.effort ?? undefined,
-    rawScore: m.evidence.scores[task],
+    rawScore: m.evidence.scores[basis],
     benchmarkVersion: m.evidence.benchmarkVersion,
+    costPerTaskUsd: finite(m.evidence.benchmarkCostPerTask),
     costUpperUsd: forecastCost(m.evidence, inputTokens, m.outputCap),
     latencyMs: m.evidence.latencyMs,
     record: m,
@@ -250,10 +259,11 @@ export function route({
     (lastModel ?? original.model) +
       "|" +
       (lastModel ? (lastEffort ?? "default") : (original.effort ?? "default")),
+    { tier: tierFor(intent) },
   );
   if (r.kind !== "select") return hold(original, r.reason);
   let winner = r.selected;
-  const baselineScore = baseline.evidence.scores[task];
+  const baselineScore = baseline.evidence.scores[basis];
   // Standard tasks retain the baseline unless the evidence improvement or
   // conservative 5-request cache payback justifies a switch.
   let hysteresis = false;
@@ -269,29 +279,22 @@ export function route({
   if (winner.rawScore < baselineScore) {
     if (risky || now - fetchedAt > 72 * 3600000)
       return hold(original, "quality_floor");
-    const stay = forecastCost(
-      baseline.evidence,
-      inputTokens,
-      baseline.outputCap,
-    );
-    const switchCost = winner.costUpperUsd;
-    if (
-      stay === null ||
-      switchCost === null ||
-      !(switchCost * 5 < stay * 5 * 0.95)
-    )
-      return hold(original, "cache_payback_unknown_or_negative");
-  }
-  if (intent.difficulty === "standard" && !risky) {
-    const scores = candidates.map((p) => p.rawScore).sort((a, b) => a - b);
-    const percentile = (score) =>
-      scores.length === 1
-        ? 1
-        : scores.reduce((v, x, i) => v + (x === score ? i : 0), 0) /
-          scores.filter((x) => x === score).length /
-          (scores.length - 1);
-    if (percentile(winner.rawScore) < percentile(baselineScore) - 0.1)
-      return hold(original, "baseline_quality_floor");
+    // A different model has to store the whole conversation again, so a downgrade
+    // there must pay back. A change of effort alone keeps the cache and needs no payback.
+    if (winner.model !== original.model) {
+      const stay = forecastCost(
+        baseline.evidence,
+        inputTokens,
+        baseline.outputCap,
+      );
+      const switchCost = winner.costUpperUsd;
+      if (
+        stay === null ||
+        switchCost === null ||
+        !(switchCost * 5 < stay * 5 * 0.95)
+      )
+        return hold(original, "cache_payback_unknown_or_negative");
+    }
   }
   // A different thinking-capability profile needs a native-engine compatibility
   // check we cannot infer from a benchmark name. Keep compatible profiles only.
@@ -311,10 +314,12 @@ export function route({
       model: winner.model,
       ...(winner.effort !== undefined ? { effort: winner.effort } : {}),
     },
-    reason: hysteresis ? "switch_hysteresis" : control.mode + "_utility",
+    reason: hysteresis ? "switch_hysteresis" : control.mode + "_policy",
     estimate: winner.costUpperUsd,
     ranked: r.ranked.map(({ record, ...p }) => p),
     task,
+    scoreBasis: basis,
+    tier: r.tier,
     risk: intent.risk,
   };
 }

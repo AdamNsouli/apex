@@ -576,6 +576,7 @@ function render() {
   $("state-detail").textContent =
     p.pendingText ??
     p.blocker ??
+    p.notice ??
     "Preference evaluated at each main dispatch · native guards remain active";
   document.querySelector(".state-line").dataset.pending = String(
     !!p.pendingText,

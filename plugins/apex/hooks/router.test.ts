@@ -116,6 +116,7 @@ test("main request routes through the actual host hook chain; stream retained", 
     benchmarkVersion: "fictional-v1",
     scores: { general: score, agentic_coding: score },
     prices: { input: 1, output: 2, cacheRead: 0.1, cacheWrite: 1.25 },
+    benchmarkCostPerTask: score / 100,
     latencyMs: 1000,
   });
   const runtime = ["model-a", "model-b"].map((id) => ({
@@ -301,6 +302,7 @@ test("mode changed during a stream affects the next request and changes effort",
     benchmarkVersion: "synthetic",
     scores: { general: score },
     prices: { input: 1, output: 2, cacheRead: 0.1, cacheWrite: 1.25 },
+    benchmarkCostPerTask: score / 100,
     latencyMs: latency,
   }));
   const mappings = variants.map((m) => ({
@@ -433,7 +435,7 @@ test("manual model command suspends auto routing until explicitly resumed", asyn
   expect(await ui.find({ type: "Text", text: /Observing only/ })).toBeDefined();
   await ui.unmount();
 });
-test("map-efforts confirms every exact effort variant of a model in one command", async ($, on) => {
+test("effort variants of a confirmed model join by themselves; map-efforts still confirms them as your own", async ($, on) => {
   const writes: Record<string, any> = {
     control: {
       revision: 0,
@@ -473,6 +475,7 @@ test("map-efforts confirms every exact effort variant of a model in one command"
           benchmarkVersion: "fictional-v1",
           scores: { general: 50, agentic_coding: 50 },
           prices: { input: 1, output: 2, cacheRead: 0.1, cacheWrite: 1.25 },
+          benchmarkCostPerTask: 0.5,
           latencyMs: 1000,
         })),
       },
@@ -497,7 +500,12 @@ test("map-efforts confirms every exact effort variant of a model in one command"
   });
   const models = async () =>
     JSON.parse((await $.command.run({ command: "apex", args: "models" })).text);
-  expect((await models()).every((m: any) => !m.routable)).toBe(true);
+  // Nothing to set up: the confirmed model's variants are already joined.
+  const automatic = await models();
+  expect(automatic.length).toBe(5);
+  expect(automatic.every((m: any) => m.routable && m.mapping === "auto")).toBe(
+    true,
+  );
   const missing = await $.command.run({
     command: "apex",
     args: "map-efforts not-a-model",
@@ -520,5 +528,7 @@ test("map-efforts confirms every exact effort variant of a model in one command"
     "medium",
     "xhigh",
   ]);
-  expect(joined.every((m: any) => m.routable)).toBe(true);
+  expect(joined.every((m: any) => m.routable && m.mapping === "user")).toBe(
+    true,
+  );
 });

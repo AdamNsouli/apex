@@ -16,6 +16,7 @@ import {
   fetchAAPages,
   suggestMappings,
   withNamedEffort,
+  describeRefresh,
 } from "../core/catalogue.mjs";
 let control = initialControl(),
   intent = {
@@ -38,6 +39,7 @@ let control = initialControl(),
   discoverRetryAt = 0,
   lastAARefresh = 0,
   refreshError = null,
+  lastChange = null,
   contextTokens = null,
   pins = false,
   lastModel = null,
@@ -97,6 +99,7 @@ const publicState = () => ({
   accountBilling: "unknown",
   intent,
   refreshError,
+  changes: lastChange,
   aaStatus: aa ? "connected" : "not_connected",
   active: ledger.events.filter((e) => e.status === "streaming"),
   cost: {
@@ -221,6 +224,7 @@ async function sync($) {
 async function refresh($) {
   if (refreshBusy) return;
   refreshBusy = true;
+  const before = { runtime, aa };
   const discover =
     (!lastRefresh || now - lastRefresh >= 86400000) && now >= discoverRetryAt;
   let discovered = false;
@@ -277,15 +281,42 @@ async function refresh($) {
       };
     }
     refreshError = null;
+    // Keep what the last refresh that changed anything found, so a quiet day does
+    // not hide a new model before you have seen it.
+    const found = describeRefresh(
+      before,
+      { runtime, aa },
+      control.verifiedIds,
+      now,
+    );
+    if (
+      found.newModels.length ||
+      found.droppedModels.length ||
+      found.newEvidence.length ||
+      found.changedEvidence.length
+    )
+      lastChange = found;
     rebuild();
-    await $.store.set("catalogue", { runtime, aa, lastRefresh, lastAARefresh });
+    await $.store.set("catalogue", {
+      runtime,
+      aa,
+      lastRefresh,
+      lastAARefresh,
+      lastChange,
+    });
     await sync($);
     draw($);
   } catch {
     refreshError = "Catalogue refresh failed; previous evidence retained";
     // A failed discovery is retried in an hour, not after a day.
     if (discover && !discovered) discoverRetryAt = now + 3600000;
-    await $.store.set("catalogue", { runtime, aa, lastRefresh, lastAARefresh });
+    await $.store.set("catalogue", {
+      runtime,
+      aa,
+      lastRefresh,
+      lastAARefresh,
+      lastChange,
+    });
     draw($);
   } finally {
     refreshBusy = false;
@@ -532,6 +563,7 @@ export function register(on, config = {}) {
         : (cache.aa ?? null);
       lastRefresh = cache.lastRefresh ?? 0;
       lastAARefresh = cache.lastAARefresh ?? cache.aa?.fetchedAt ?? 0;
+      lastChange = cache.lastChange ?? null;
       rebuild();
     }
     hostVersion = (await $.session.version()).version;
@@ -546,7 +578,7 @@ export function register(on, config = {}) {
       name: "apex",
       description: "APEX request routing, modes and receipts",
       argumentHint:
-        "mode eco|balanced|quality|sports; dashboard; refresh; auto; hold; why; credits; map-efforts",
+        "mode eco|balanced|quality|sports; dashboard; refresh; auto; hold; why; credits; map-efforts; confirm-models",
       immediate: true,
     });
     now = await $.clock.now();
@@ -721,6 +753,7 @@ export function register(on, config = {}) {
               id: m.runtimeId,
               effort: m.effort,
               routable: m.routable,
+              mapping: m.mappingSource,
               exclusions: m.exclusions,
             })),
             null,
@@ -738,6 +771,7 @@ export function register(on, config = {}) {
               pins,
               dataAgeHours: aa ? (now - aa.fetchedAt) / 3600000 : null,
               refreshError,
+              lastChange,
               dashboard: descriptor ? "connected" : "closed",
               billing: "unknown",
             },
@@ -829,6 +863,36 @@ export function register(on, config = {}) {
               ? "\nVariants marked with a fallback were benchmarked with that option on; confirming them accepts that."
               : "") +
             "\nAccount access is separate: confirm it with /apex allow-models.",
+        };
+      }
+      if (verb === "confirm-models") {
+        const ids = [value, ...extra].filter(Boolean);
+        if (!ids.length)
+          return {
+            text: "Use /apex confirm-models RUNTIME_ID [RUNTIME_ID...] to add models your plan includes to the ones already confirmed.",
+          };
+        if (!["api", "subscription"].includes(control.backend))
+          return {
+            text: "Set your backend first: /apex allow-models subscription|api RUNTIME_ID...",
+          };
+        const unknown = ids.filter((id) => !runtime.some((m) => m.id === id));
+        if (unknown.length)
+          return {
+            text:
+              "Not on your account: " + unknown.join(", ") + ". Nothing saved.",
+          };
+        await change($, {
+          kind: "availability",
+          backend: control.backend,
+          ids: [...control.verifiedIds, ...ids],
+          expectedRevision: control.revision,
+        });
+        await sync($);
+        return {
+          text:
+            "Confirmed: " +
+            ids.join(", ") +
+            ". Their exact effort variants join the routing evidence automatically. Confirm only models your plan includes.",
         };
       }
       if (verb === "allow-models") {
@@ -923,7 +987,7 @@ export function register(on, config = {}) {
       original,
       decision,
       models,
-      task,
+      task: decision.scoreBasis ?? task,
       fetchedAt: aa?.fetchedAt,
       baselineForecast: baseline
         ? forecastCost(baseline.evidence, contextTokens, baseline.outputCap)
@@ -945,6 +1009,8 @@ export function register(on, config = {}) {
         onceRevision: captured?.onceRevision ?? null,
         decisionSnapshot: snapshot,
         task,
+        scoreBasis: decision.scoreBasis ?? null,
+        tier: decision.tier ?? null,
         risk: e.agentId ? "unknown" : intent.risk,
         original,
         apexRequested: decision.pair,

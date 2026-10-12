@@ -124,8 +124,12 @@ function receipt(k, state, e, actions) {
     k.muted(
       "Task " +
         e.task +
+        (e.scoreBasis && e.scoreBasis !== e.task
+          ? " (scored on " + e.scoreBasis + ")"
+          : "") +
         " · " +
         (MODES[e.mode]?.label ?? "Native") +
+        (e.tier ? " · " + e.tier + " tier" : "") +
         (e.onceRevision ? " · Quality once" : ""),
     ),
     k.muted("Risk " + e.risk + " · revision " + e.revision),
@@ -177,7 +181,10 @@ function receipt(k, state, e, actions) {
           " · task " +
           p.rawScore +
           " · forecast " +
-          money(p.costUpperUsd),
+          money(p.costUpperUsd) +
+          (p.costPerTaskUsd == null
+            ? ""
+            : " · AA " + money(p.costPerTaskUsd) + "/task"),
       ),
     );
   out.push(
@@ -244,7 +251,7 @@ export function dock(elements, props, state, actions) {
       ]),
     );
   if (state.ui.dock !== "compact" && (props.maxRows ?? 2) >= 2) {
-    let line = d.pendingText ?? d.blocker;
+    let line = d.pendingText ?? d.blocker ?? d.notice;
     if (scope !== "main")
       line =
         "Agent · native settings · " +
@@ -274,7 +281,7 @@ export function dock(elements, props, state, actions) {
                 .join(" ") +
               " · Main · " +
               (d.active ? "streaming" : "idle");
-    if (!d.latest && !d.pendingText && !d.blocker)
+    if (!d.latest && !d.pendingText && !d.blocker && !d.notice)
       line = "Your first request will appear here.";
     rows.push(k.muted(short(line, width)));
   }
@@ -640,6 +647,7 @@ export function pane(elements, props, state, actions) {
     if (!d.latest) body.push(k.muted("Your first request will appear here."));
     if (d.pendingText) body.push(k.text(d.pendingText));
     else if (d.blocker) body.push(k.muted(d.blocker));
+    else if (d.notice) body.push(k.muted(d.notice));
     body.push(
       k.button("settings", d.blocker ? "Set up" : "Settings", () =>
         actions.view("settings"),
