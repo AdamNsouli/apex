@@ -13,7 +13,38 @@ export const initialControl = () => ({
   modeRevision: 0,
   modeConsumedRevision: 0,
   qualityOnce: null,
+  ultracode: "off",
 });
+// Ultracode is Claude Code's multi-agent mode. It is a session switch, not a field
+// of a request, and it uses far more than one model call, so it is off unless the
+// person turns it on here. Even then only a newly classified critical task typed
+// at an idle prompt qualifies: a continuation ("yes", "go ahead"), a slash
+// command, a message with attachments (a plugin's prompt cannot carry them) and a
+// message typed over a running turn are all sent normally.
+export function wantsUltracode({
+  control,
+  intent,
+  fresh,
+  text,
+  origin,
+  attachments,
+  turnId,
+  pinned = false,
+}) {
+  return (
+    control.ultracode === "auto" &&
+    control.routing === "auto" &&
+    !pinned &&
+    fresh === true &&
+    origin?.kind === "composer" &&
+    !turnId &&
+    !attachments?.length &&
+    typeof text === "string" &&
+    text.trim().length > 0 &&
+    !/^\s*\//.test(text) &&
+    tierFor(intent) === "critical"
+  );
+}
 export function applyControl(state, c) {
   if (c.expectedRevision !== state.revision)
     throw new Error("revision_conflict");
@@ -23,6 +54,8 @@ export function applyControl(state, c) {
     next.modeRevision = state.revision + 1;
   } else if (c.kind === "quality_once" && typeof c.armed === "boolean")
     next.qualityOnce = c.armed ? { revision: state.revision + 1 } : null;
+  else if (c.kind === "ultracode" && ["off", "auto"].includes(c.value))
+    next.ultracode = c.value;
   else if (
     c.kind === "routing" &&
     ["auto", "manual_hold", "disabled"].includes(c.value)
