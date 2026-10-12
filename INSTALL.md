@@ -37,6 +37,7 @@ For a direct API backend, APEX holds native settings until you explicitly permit
 | `/apex`, `/apex rail`                              | Open compact native rail                                         |
 | `/apex inspect`, `/apex timeline`, `/apex receipt` | Open the integrated native inspector                             |
 | `/apex setup`, `/apex controls`                    | Open contextual setup and settings                               |
+| `/apex`                                            | Open the panel; print version, mode and routing status           |
 | `/apex quality-once`, `/apex quality-once cancel`  | Arm/cancel High Quality for the next main dispatch               |
 | `/apex dock expanded`, `compact`, `hidden`         | Persist the terminal dock display preference                     |
 | `/apex dashboard`                                  | Start/open link for authenticated local dashboard                |
@@ -45,7 +46,7 @@ For a direct API backend, APEX holds native settings until you explicitly permit
 | `/apex hold`                                       | Keep native request settings                                     |
 | `/apex why`                                        | Latest request receipt                                           |
 | `/apex models`                                     | Joined model/effort catalogue and exclusions                     |
-| `/apex doctor`                                     | Host, discovery, data, pin and backend status                    |
+| `/apex doctor`                                     | Version, host, discovery, data, pin and backend status           |
 | `/apex refresh`                                    | Request background refresh within daily source limits            |
 | `/apex credits allow USD_CAP`                      | Grant APEX routing consent and estimate budget                   |
 | `/apex credits off`                                | Revoke APEX consent; account billing unchanged                   |

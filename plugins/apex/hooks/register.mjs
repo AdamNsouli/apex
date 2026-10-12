@@ -10,6 +10,7 @@ import {
   forecastCost,
 } from "../core/router.mjs";
 import { freezeDecision } from "../core/receipt.mjs";
+import { VERSION } from "../core/presentation.mjs";
 import {
   runtimeModels,
   joinCatalogue,
@@ -764,6 +765,7 @@ export function register(on, config = {}) {
         return {
           text: JSON.stringify(
             {
+              version: VERSION,
               hostVersion,
               models: runtime.length,
               benchmarkModels: aa?.models.length ?? 0,
@@ -905,7 +907,29 @@ export function register(on, config = {}) {
         return { text: "Account model availability confirmed by user." };
       }
       await nativeActions($).open();
-      return {};
+      // Bare /apex (or an unknown word) opens the panel; it also says what is
+      // running, so the command never looks like it did nothing.
+      now = await $.clock.now();
+      const routable = models.filter((m) => m.routable).length;
+      return {
+        text:
+          "APEX " +
+          VERSION +
+          " · mode " +
+          control.mode +
+          " · routing " +
+          control.routing +
+          " · " +
+          routable +
+          " of " +
+          models.length +
+          " model/effort pairs routable · benchmark data " +
+          (aa
+            ? Math.round((now - aa.fetchedAt) / 3600000) + "h old"
+            : "missing") +
+          (refreshError ? " · last refresh failed: " + refreshError : "") +
+          ". Panel opened. More: /apex doctor, /apex why, /apex models.",
+      };
     } catch {
       return {
         text: "APEX control rejected. Check command arguments, supported effort, and current revision. Use /apex doctor.",
