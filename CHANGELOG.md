@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.5.0-beta.1
+
+APEX can use ultracode for critical tasks. Off by default.
+
+Ultracode is Claude Code's multi-agent mode. It is a session switch (`/effort ultracode on|off`), not a field of a request, so APEX could not choose it the way it chooses model and effort, and a keyword a plugin adds to a prompt does not opt the turn in. With `/apex ultracode auto`, a newly classified critical task (complex and high risk) typed at an idle prompt is held for a moment: APEX turns ultracode on, sends the message as your own words, and turns ultracode off when that turn ends. `/apex ultracode off` is the default, because ultracode uses far more than a normal request and has no benchmark to judge it by.
+
+Ordinary and hard tasks, continuations such as "yes", slash commands, messages with attachments and messages typed over a running turn are sent as typed. Held routing and pins leave ultracode alone. If a session ends while it is on, the next session start turns it off. `/apex doctor` shows the setting. Routing of model and effort is unchanged.
+
+The hygiene check, plugin and marketplace validation, 78 Node tests (4 new) and 27 native tests (5 new) pass locally; the browser checks run only in CI. The hold, switch-on, send and switch-off sequence was run once in a live session with a throwaway plugin; a real multi-agent run under it was not observed. No paid inference, real-key AA ingestion or billing verification was performed. Update the marketplace and the plugin, then restart: chats that were already open keep running the previous code.
+
 ## 0.4.0-beta.1
 
 Routing now follows a data-driven policy and configures itself from the daily refresh.

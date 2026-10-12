@@ -16,6 +16,10 @@ The policy optimizes a comparable model/effort cohort. It does not establish tha
 
 Once a day, while a signed-in session is open, APEX rediscovers the account's models and refetches the benchmark data, then rebuilds the joined catalogue, so the next request already uses the new scores, costs and models. It compares the new data with the old and records what changed: models that appeared on or left the account, new effort variants, and score, cost, price or speed changes for the models you confirmed. `/apex doctor` prints the record. A model that appeared is shown in the rail and browser for a week with the command to confirm it. Confirming is the one step APEX does not take for you: it cannot tell whether your plan includes a model, and a model outside your plan can spend credits.
 
+## Ultracode
+
+Ultracode is Claude Code's multi-agent mode: a session switch set by `/effort ultracode on|off`, not a request field, with no benchmark evidence. It is therefore outside the ranking above and off by default. With `/apex ultracode auto`, a newly classified critical-tier prompt typed at an idle composer is dropped with a visible reason, the switch is turned on, the same text is submitted as the person's own words, and the switch is turned off when that turn completes. A continuation, a slash command, a prompt with attachments, a prompt typed over a running turn, manual hold and pins are never held. A stored mark makes the next session start turn the switch off if a session ended in between.
+
 ## Receipts and costs
 
 The receipt stores mode, revision, original/requested pair, task/risk, tier, the index used, reason, top ten ranked comparisons, response-reported model and observed token cost when all needed prices are known. Rejected runtime models are excluded for the current joined catalogue; a later verified refresh can rebuild it. No automatic retry is performed by APEX.

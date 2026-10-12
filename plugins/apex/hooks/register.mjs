@@ -8,6 +8,7 @@ import {
   Ledger,
   captureDispatch,
   forecastCost,
+  wantsUltracode,
 } from "../core/router.mjs";
 import { freezeDecision } from "../core/receipt.mjs";
 import { VERSION } from "../core/presentation.mjs";
@@ -41,6 +42,7 @@ let control = initialControl(),
   lastAARefresh = 0,
   refreshError = null,
   lastChange = null,
+  ultra = "idle",
   contextTokens = null,
   pins = false,
   lastModel = null,
@@ -79,6 +81,39 @@ const rebuild = () => {
     control.verifiedIds,
   );
 };
+// Ultracode can only be switched by its own command, and a command a plugin runs
+// waits until the session is idle. So a critical task is held, the switch is
+// turned on, the message is sent again as the person's own words, and the switch
+// is turned off when that turn ends. The stored mark lets the next session start
+// turn it off if this one ended in between.
+const ULTRA_ON = "ultracode on",
+  ULTRA_OFF = "ultracode off";
+async function ultracodeOff($) {
+  ultra = "idle";
+  try {
+    await $.command.run({ command: "effort", args: ULTRA_OFF });
+  } catch {}
+  try {
+    await $.store.set("ultracodeArmed", false);
+  } catch {}
+}
+function armUltracode($, text) {
+  ultra = "arming";
+  $.clock.after(50, async () => {
+    try {
+      await $.store.set("ultracodeArmed", true);
+      await $.command.run({ command: "effort", args: ULTRA_ON });
+      ultra = "running";
+      await $.prompt.submit({ text, asUser: true });
+    } catch {
+      // The message could not be sent with ultracode on: never leave it on.
+      await ultracodeOff($);
+      try {
+        await $.prompt.submit({ text, asUser: true });
+      } catch {}
+    }
+  });
+}
 const publicState = () => ({
   control,
   connected: true,
@@ -579,7 +614,7 @@ export function register(on, config = {}) {
       name: "apex",
       description: "APEX request routing, modes and receipts",
       argumentHint:
-        "mode eco|balanced|quality|sports; dashboard; refresh; auto; hold; why; credits; map-efforts; confirm-models",
+        "mode eco|balanced|quality|sports; dashboard; refresh; auto; hold; why; credits; map-efforts; confirm-models; ultracode auto|off",
       immediate: true,
     });
     now = await $.clock.now();
@@ -588,6 +623,9 @@ export function register(on, config = {}) {
       await refresh($);
     });
     void refresh($);
+    // A session that ended while ultracode was on for a held task left this mark.
+    if ((await $.store.get("ultracodeArmed")) === true)
+      $.clock.after(50, () => ultracodeOff($));
     return next(e);
   });
   on("session.end", async ($, e, next) => {
@@ -634,9 +672,36 @@ export function register(on, config = {}) {
           task: null,
           expectedRevision: control.revision,
         });
+      const fresh = nextIntent !== intent;
       intent = nextIntent;
+      if (
+        ultra === "idle" &&
+        wantsUltracode({
+          control,
+          intent,
+          fresh,
+          text: e.text,
+          origin: e.origin,
+          attachments: e.attachments,
+          turnId: e.turnId,
+          pinned: pins,
+        })
+      ) {
+        armUltracode($, e.text);
+        return {
+          drop: "APEX is turning ultracode on for this critical task and sending your message.",
+        };
+      }
     }
     return next(e);
+  });
+  on("turn.complete", async ($, e, next) => {
+    const result = await next(e);
+    if (ultra === "running") {
+      ultra = "idle";
+      $.clock.after(50, () => ultracodeOff($));
+    }
+    return result;
   });
   on("command.run", async ($, e, next) => {
     if (e.command === "model" || e.command === "effort") {
@@ -682,6 +747,27 @@ export function register(on, config = {}) {
               : "inspect";
         await nativeActions($).open(view);
         return { text: "" };
+      }
+      if (verb === "ultracode") {
+        if (!["auto", "off"].includes(value))
+          return {
+            text:
+              "APEX ultracode is " +
+              (control.ultracode ?? "off") +
+              ". Use /apex ultracode auto|off. Auto turns ultracode on for a critical task (complex and high risk) and off when that turn ends; it uses far more than a normal request.",
+          };
+        await change($, {
+          kind: "ultracode",
+          value,
+          expectedRevision: control.revision,
+        });
+        await sync($);
+        return {
+          text:
+            value === "auto"
+              ? "APEX will turn ultracode on for critical tasks only, and off when each one ends. It uses far more than a normal request."
+              : "APEX will not turn ultracode on.",
+        };
       }
       if (verb === "quality-once") {
         await change($, {
@@ -771,6 +857,7 @@ export function register(on, config = {}) {
               benchmarkModels: aa?.models.length ?? 0,
               backend: control.backend,
               pins,
+              ultracode: control.ultracode ?? "off",
               dataAgeHours: aa ? (now - aa.fetchedAt) / 3600000 : null,
               refreshError,
               lastChange,
