@@ -24,6 +24,7 @@ const evidence = (slug, score, effort = "high") => ({
   benchmarkVersion: "synthetic",
   scores: { general: score, agentic_coding: score },
   prices: { input: 1, output: 2, cacheRead: 0.1, cacheWrite: 1.25 },
+  benchmarkCostPerTask: score / 100,
   latencyMs: 1000,
 });
 const runtime = ["a", "b"].map((id) => ({
@@ -353,7 +354,13 @@ test("hysteresis retains the previously dispatched eligible pair, not the native
       ...o.models[1],
       runtimeId: "c",
       id: "c",
-      evidence: { ...o.models[1].evidence, id: "c", slug: "c" },
+      // Cheaper than b, so the policy prefers c; hysteresis keeps b for now.
+      evidence: {
+        ...o.models[1].evidence,
+        id: "c",
+        slug: "c",
+        benchmarkCostPerTask: 0.1,
+      },
     },
   ];
   o.lastModel = "b";
@@ -409,16 +416,26 @@ test("benchmark names state effort, with or without a fallback qualifier", () =>
   assert.deepEqual(read("Model (Non-reasoning, High)"), [null, null]);
   assert.deepEqual(read("Model (Reasoning)"), [null, null]);
 });
-test("fallback-qualified evidence is not joined until the user maps it", () => {
+test("fallback-qualified evidence joins by itself only for a model whose access is confirmed", () => {
   const [bare] = joinCatalogue(
     [ladderRuntime],
     fallbackLadder().filter((a) => a.slug === "m5"),
     [],
     ["m5"],
   );
-  assert.equal(bare.routable, false);
-  assert.ok(bare.exclusions.includes("benchmark_qualifier_unconfirmed"));
-  assert.ok(!bare.exclusions.includes("benchmark_effort_unknown"));
+  assert.equal(bare.routable, true);
+  assert.equal(bare.effort, "max");
+  assert.equal(bare.mappingSource, "auto");
+  assert.equal(bare.evidence.qualifier, "Default Fallback");
+  const [unconfirmed] = joinCatalogue(
+    [ladderRuntime],
+    fallbackLadder().filter((a) => a.slug === "m5"),
+    [],
+    [],
+  );
+  assert.equal(unconfirmed.routable, false);
+  assert.ok(unconfirmed.exclusions.includes("benchmark_qualifier_unconfirmed"));
+  assert.ok(unconfirmed.exclusions.includes("account_not_confirmed"));
   const [mapped] = joinCatalogue(
     [ladderRuntime],
     fallbackLadder(),

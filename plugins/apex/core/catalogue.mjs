@@ -132,9 +132,14 @@ export function suggestMappings(runtimeModel, aa) {
       : [];
   });
 }
-// Only an exact slug match or a user-confirmed version/effort mapping is joined.
-// Human name similarity is displayed as a setup aid, never routing authority.
-// Evidence measured with a fallback option on is joined only by a confirmed mapping.
+// Only exact identities are joined; human name similarity is displayed as a setup
+// aid, never routing authority. Where you saved mappings for a model they are the
+// whole truth for it. Otherwise the exact effort variants AA publishes for it join
+// by themselves (slug "<id>-<level>", the highest level under the bare id, and the
+// level the record's own name states must agree), so a new model needs no setup beyond
+// confirming access. A variant benchmarked with a fallback option on joins this way
+// only for a model whose access you confirmed, and stays marked as such. Failing both,
+// the bare slug joins by exact identity.
 export function joinCatalogue(
   runtime,
   benchmarks,
@@ -145,15 +150,29 @@ export function joinCatalogue(
   const aa = benchmarks.map(withNamedEffort);
   return runtime.flatMap((m) => {
     const explicit = mappings.filter((x) => x.runtimeId === m.id);
+    const auto = explicit.length ? [] : suggestMappings(m, aa);
     const matches = explicit.length
       ? explicit.map((map) => ({
           a: aa.find((a) => a.slug === map.aaSlug),
           effort: map.effort,
           verified: true,
+          source: "user",
         }))
-      : aa
-          .filter((a) => a.slug === m.id)
-          .map((a) => ({ a, effort: a.effort, verified: false }));
+      : auto.length
+        ? auto.map((s) => ({
+            a: aa.find((a) => a.slug === s.aaSlug),
+            effort: s.effort,
+            verified: allowed.has(m.id),
+            source: "auto",
+          }))
+        : aa
+            .filter((a) => a.slug === m.id)
+            .map((a) => ({
+              a,
+              effort: a.effort,
+              verified: false,
+              source: "slug",
+            }));
     if (!matches.length)
       return [
         {
@@ -165,7 +184,7 @@ export function joinCatalogue(
           routable: false,
         },
       ];
-    return matches.map(({ a, effort, verified }) => {
+    return matches.map(({ a, effort, verified, source }) => {
       const exclusions = [];
       if (!a) exclusions.push("mapped_benchmark_missing");
       if (a?.qualifier && !verified)
@@ -186,12 +205,79 @@ export function joinCatalogue(
         runtimeId: m.id,
         effort: effort ?? null,
         evidence: a ?? null,
-        mappingVerified: verified,
+        mappingVerified: source === "user",
+        mappingSource: source,
         exclusions,
         routable: exclusions.length === 0,
       };
     });
   });
+}
+// What a refresh changed, in words a person can act on: models that appeared on or
+// left the account, plus new effort variants and score, cost, price or speed changes
+// for the models whose access you confirmed (the only ones routing can use). The
+// first discovery, with nothing before it, reports no new or dropped models.
+export function describeRefresh(before, after, verifiedIds = [], at = null) {
+  const idsOf = (r) => new Set((r?.runtime ?? []).map((m) => m.id));
+  const was = idsOf(before),
+    is = idsOf(after);
+  const mine = (slug) =>
+    verifiedIds.some(
+      (id) => slug === id || LEVELS.some((l) => slug === id + "-" + l),
+    );
+  const rows = (r) =>
+    new Map(
+      (r?.aa?.models ?? []).filter((a) => mine(a.slug)).map((a) => [a.slug, a]),
+    );
+  const old = rows(before),
+    now = rows(after);
+  const fields = {
+    ...Object.fromEntries(
+      Object.keys(TASK_INDEX).map((t) => [t, (a) => a.scores?.[t]]),
+    ),
+    input: (a) => a.prices?.input,
+    output: (a) => a.prices?.output,
+    "cost per task": (a) => a.benchmarkCostPerTask,
+    "latency ms": (a) => a.latencyMs,
+  };
+  const moved = (name, a, b) => {
+    if (a == null && b == null) return null;
+    if (a == null || b == null)
+      return name + " " + (a ?? "none") + " → " + (b ?? "none");
+    const big =
+      name in TASK_INDEX
+        ? Math.abs(b - a) >= 0.5
+        : name === "cost per task"
+          ? a
+            ? Math.abs(b - a) / a >= 0.1
+            : b !== a
+          : name === "latency ms"
+            ? Math.abs(b - a) >= 2000 && Math.abs(b - a) / a >= 0.3
+            : a !== b;
+    return big ? name + " " + a + " → " + b : null;
+  };
+  const changedEvidence = [];
+  for (const [slug, next] of now) {
+    const prev = old.get(slug);
+    if (!prev) continue;
+    const changes = Object.entries(fields)
+      .map(([name, read]) => moved(name, read(prev), read(next)))
+      .filter(Boolean);
+    if (changes.length) changedEvidence.push({ slug, changes });
+  }
+  return {
+    at,
+    newModels: was.size
+      ? [...is].filter((id) => !was.has(id)).slice(0, 20)
+      : [],
+    droppedModels: was.size
+      ? [...was].filter((id) => !is.has(id)).slice(0, 20)
+      : [],
+    newEvidence: old.size
+      ? [...now.keys()].filter((s) => !old.has(s)).slice(0, 20)
+      : [],
+    changedEvidence: changedEvidence.slice(0, 20),
+  };
 }
 export async function fetchAAPages(fetchPage) {
   const all = [];

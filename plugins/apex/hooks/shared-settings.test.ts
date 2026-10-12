@@ -110,6 +110,7 @@ test("an older chat routes with the backend another chat saved but not its paid-
     benchmarkVersion: "fictional-v1",
     scores: { general: score, agentic_coding: score },
     prices: { input: 1, output: 2, cacheRead: 0.1, cacheWrite: 1.25 },
+    benchmarkCostPerTask: score / 100,
     latencyMs: 1000,
   });
   h.writes.control = {
