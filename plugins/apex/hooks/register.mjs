@@ -689,7 +689,7 @@ export function register(on, config = {}) {
       ) {
         armUltracode($, e.text);
         return {
-          drop: "APEX is turning ultracode on for this critical task and sending your message.",
+          drop: "APEX is turning ultracode on for this task and sending your message.",
         };
       }
     }
@@ -753,8 +753,8 @@ export function register(on, config = {}) {
           return {
             text:
               "APEX ultracode is " +
-              (control.ultracode ?? "off") +
-              ". Use /apex ultracode auto|off. Auto turns ultracode on for a critical task (complex and high risk) and off when that turn ends; it uses far more than a normal request.",
+              (control.ultracode ?? "auto") +
+              ". Use /apex ultracode auto|off. Auto uses ultracode for hard and critical tasks in Sports and for critical tasks in High Quality, and turns it off when each turn ends; Balanced and Eco never use it. It uses far more than a normal request.",
           };
         await change($, {
           kind: "ultracode",
@@ -765,8 +765,8 @@ export function register(on, config = {}) {
         return {
           text:
             value === "auto"
-              ? "APEX will turn ultracode on for critical tasks only, and off when each one ends. It uses far more than a normal request."
-              : "APEX will not turn ultracode on.",
+              ? "APEX uses ultracode for hard and critical tasks in Sports and for critical tasks in High Quality, and turns it off when each one ends. It uses far more than a normal request."
+              : "APEX will not turn ultracode on in any mode.",
         };
       }
       if (verb === "quality-once") {
@@ -857,7 +857,7 @@ export function register(on, config = {}) {
               benchmarkModels: aa?.models.length ?? 0,
               backend: control.backend,
               pins,
-              ultracode: control.ultracode ?? "off",
+              ultracode: control.ultracode ?? "auto",
               dataAgeHours: aa ? (now - aa.fetchedAt) / 3600000 : null,
               refreshError,
               lastChange,

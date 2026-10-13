@@ -18,7 +18,7 @@ Once a day, while a signed-in session is open, APEX rediscovers the account's mo
 
 ## Ultracode
 
-Ultracode is Claude Code's multi-agent mode: a session switch set by `/effort ultracode on|off`, not a request field, with no benchmark evidence. It is therefore outside the ranking above and off by default. With `/apex ultracode auto`, a newly classified critical-tier prompt typed at an idle composer is dropped with a visible reason, the switch is turned on, the same text is submitted as the person's own words, and the switch is turned off when that turn completes. A continuation, a slash command, a prompt with attachments, a prompt typed over a running turn, manual hold and pins are never held. A stored mark makes the next session start turn the switch off if a session ended in between.
+Ultracode is Claude Code's multi-agent mode: a session switch set by `/effort ultracode on|off`, not a request field, with no benchmark evidence. It is therefore outside the ranking above and follows the mode: Sports for hard and critical tiers, High Quality (and Quality once) for the critical tier, Balanced and Eco never; `/apex ultracode off` rules it out in every mode. A newly classified qualifying prompt typed at an idle composer is dropped with a visible reason, the switch is turned on, the same text is submitted as the person's own words, and the switch is turned off when that turn completes. A continuation, a slash command, a prompt with attachments, a prompt typed over a running turn, manual hold and pins are never held. A stored mark makes the next session start turn the switch off if a session ended in between.
 
 ## Receipts and costs
 

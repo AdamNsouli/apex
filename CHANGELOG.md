@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.6.0-beta.1
+
+Ultracode follows the mode instead of a separate opt-in.
+
+In 0.5.0-beta.1 ultracode was off until `/apex ultracode auto` and then applied to critical tasks in any mode. Now choosing the mode is the opt-in: Sports uses ultracode for hard and critical tasks, High Quality (and Quality once) for critical tasks, and Balanced and Eco never use it. The setting defaults to `auto`; `/apex ultracode off` rules ultracode out in every mode. Ordinary messages are never held, in any mode. The mode descriptions say so, and the held-message notice no longer says "critical".
+
+This changes the default: an installation on Sports or High Quality will start using ultracode for those tasks after updating, which uses far more than a normal request. Everything else about the hold, send and switch-off sequence, and all model and effort routing, is unchanged.
+
+The hygiene check, plugin and marketplace validation, 80 Node tests and 28 native tests pass locally; the browser checks run only in CI. No paid inference, real-key AA ingestion or billing verification was performed. Update the marketplace and the plugin, then restart: chats that were already open keep running the previous code.
+
 ## 0.5.0-beta.1
 
 APEX can use ultracode for critical tasks. Off by default.

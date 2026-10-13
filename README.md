@@ -8,6 +8,8 @@
 
 APEX is executable middleware, not just instructions to Claude. It wraps the official `turn.step` hook and forwards the selected model and effort while preserving the streamed response and conversation. Eco, Balanced, High Quality and Sports can be selected while work is running.
 
+**0.6.0-beta.1:** ultracode now follows the mode instead of a separate opt-in: Sports uses it for hard and critical tasks, High Quality for critical tasks, Balanced and Eco never. `/apex ultracode off` rules it out everywhere. Checked offline and in CI.
+
 **0.5.0-beta.1:** APEX can turn ultracode (Claude Code's multi-agent mode) on for a critical task and off again when that turn ends. It is off by default and enabled with `/apex ultracode auto`, because it uses far more than a normal request. Checked offline and in CI, and the hold, switch-on, send and switch-off sequence was run once in a live session; a real multi-agent run under it has not been observed.
 
 **0.4.0-beta.1:** routing now follows a data-driven policy and configures itself from the daily benchmark refresh. For each task APEX picks the cheapest model/effort pair that reaches enough of the strongest comparable score within a wait limit, using AA's measured cost per task, so a high effort that burns more tokens costs more. Effort variants of confirmed models join automatically, the refresh records what changed, and `/apex confirm-models` adds a newly discovered model. Checked offline and in CI; live inference and real-key AA ingestion are still unverified.
@@ -65,9 +67,18 @@ For each request APEX classifies the task locally into a tier, finds the stronge
 
 These are transparent heuristics, not measured task-success probabilities, and the shares and wait limits are judgment calls. The wait limit compares AA's median end-to-end seconds, not your prompt. Hard, risky, ambiguous or repeatedly failing tasks never go below the native baseline score and effort. A downgrade to a different model must pay back re-storing the conversation conservatively; a change of effort alone keeps the cache and needs no payback. If a task has no index for every compared pair, general intelligence is used for all of them and the receipt says so. If the benchmark data has no cost-per-task figures, native settings are kept.
 
-## Ultracode for critical tasks
+## Ultracode for the hardest tasks
 
-Ultracode is a session switch in Claude Code, not a field of a request, so APEX cannot set it the way it sets model and effort. With `/apex ultracode auto`, a newly classified critical task (complex and high risk) typed at an idle prompt is held for a moment: APEX runs `/effort ultracode on`, sends your message as your own words, and runs `/effort ultracode off` when that turn ends. Everything else is sent as typed: ordinary and hard tasks, continuations such as "yes", slash commands, messages with attachments, and messages typed over a running turn. Held routing and pins leave it alone. If a session ends while it is on, the next session start turns it off. `/apex ultracode off` (the default) disables all of this. Ultracode uses far more than a normal request; there is no benchmark for it, so the critical tier is a judgment call.
+Ultracode is Claude Code's multi-agent mode. It is a session switch, not a field of a request, so APEX cannot set it the way it sets model and effort. The mode you choose decides whether APEX uses it:
+
+| Mode         | Ultracode               |
+| ------------ | ----------------------- |
+| Sports       | hard and critical tasks |
+| High Quality | critical tasks only     |
+| Balanced     | never                   |
+| Eco          | never                   |
+
+A qualifying task typed at an idle prompt is held for a moment: APEX runs `/effort ultracode on`, sends your message as your own words, and runs `/effort ultracode off` when that turn ends. Everything else is sent as typed: ordinary tasks, continuations such as "yes", slash commands, messages with attachments, and messages typed over a running turn. Held routing and pins leave it alone. If a session ends while it is on, the next session start turns it off. Ultracode uses far more than a normal request and has no benchmark, so these tiers are a judgment call; `/apex ultracode off` rules it out in every mode, and `/apex ultracode auto` restores the table.
 
 ## Interface
 

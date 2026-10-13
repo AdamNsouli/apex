@@ -32,29 +32,29 @@ For a direct API backend, APEX holds native settings until you explicitly permit
 
 ## Commands
 
-| Command                                            | Effect                                                             |
-| -------------------------------------------------- | ------------------------------------------------------------------ |
-| `/apex`, `/apex rail`                              | Open compact native rail                                           |
-| `/apex inspect`, `/apex timeline`, `/apex receipt` | Open the integrated native inspector                               |
-| `/apex setup`, `/apex controls`                    | Open contextual setup and settings                                 |
-| `/apex`                                            | Open the panel; print version, mode and routing status             |
-| `/apex quality-once`, `/apex quality-once cancel`  | Arm/cancel High Quality for the next main dispatch                 |
-| `/apex dock expanded`, `compact`, `hidden`         | Persist the terminal dock display preference                       |
-| `/apex dashboard`                                  | Start/open link for authenticated local dashboard                  |
-| `/apex mode eco`                                   | Change mode; accepts `balanced`, `quality`, `sports` too           |
-| `/apex auto`                                       | Resume automatic routing and relinquish APEX's detected pin hold   |
-| `/apex hold`                                       | Keep native request settings                                       |
-| `/apex why`                                        | Latest request receipt                                             |
-| `/apex models`                                     | Joined model/effort catalogue and exclusions                       |
-| `/apex doctor`                                     | Version, host, discovery, data, pin and backend status             |
-| `/apex refresh`                                    | Request background refresh within daily source limits              |
-| `/apex credits allow USD_CAP`                      | Grant APEX routing consent and estimate budget                     |
-| `/apex credits off`                                | Revoke APEX consent; account billing unchanged                     |
-| `/apex allow-models subscription ID...`            | Confirm model access; `api` also accepted                          |
-| `/apex confirm-models ID...`                       | Add models your plan includes to the confirmed ones                |
-| `/apex ultracode auto`, `/apex ultracode off`      | Let APEX turn ultracode on for critical tasks only; off by default |
-| `/apex map RUNTIME_ID AA_SLUG EFFORT`              | Save verified exact mapping; effort may be `default`               |
-| `/apex map-efforts RUNTIME_ID...`                  | Confirm every exact effort variant of a model in one step          |
+| Command                                            | Effect                                                                      |
+| -------------------------------------------------- | --------------------------------------------------------------------------- |
+| `/apex`, `/apex rail`                              | Open compact native rail                                                    |
+| `/apex inspect`, `/apex timeline`, `/apex receipt` | Open the integrated native inspector                                        |
+| `/apex setup`, `/apex controls`                    | Open contextual setup and settings                                          |
+| `/apex`                                            | Open the panel; print version, mode and routing status                      |
+| `/apex quality-once`, `/apex quality-once cancel`  | Arm/cancel High Quality for the next main dispatch                          |
+| `/apex dock expanded`, `compact`, `hidden`         | Persist the terminal dock display preference                                |
+| `/apex dashboard`                                  | Start/open link for authenticated local dashboard                           |
+| `/apex mode eco`                                   | Change mode; accepts `balanced`, `quality`, `sports` too                    |
+| `/apex auto`                                       | Resume automatic routing and relinquish APEX's detected pin hold            |
+| `/apex hold`                                       | Keep native request settings                                                |
+| `/apex why`                                        | Latest request receipt                                                      |
+| `/apex models`                                     | Joined model/effort catalogue and exclusions                                |
+| `/apex doctor`                                     | Version, host, discovery, data, pin and backend status                      |
+| `/apex refresh`                                    | Request background refresh within daily source limits                       |
+| `/apex credits allow USD_CAP`                      | Grant APEX routing consent and estimate budget                              |
+| `/apex credits off`                                | Revoke APEX consent; account billing unchanged                              |
+| `/apex allow-models subscription ID...`            | Confirm model access; `api` also accepted                                   |
+| `/apex confirm-models ID...`                       | Add models your plan includes to the confirmed ones                         |
+| `/apex ultracode off`, `/apex ultracode auto`      | Rule ultracode out in every mode, or restore it for Sports and High Quality |
+| `/apex map RUNTIME_ID AA_SLUG EFFORT`              | Save verified exact mapping; effort may be `default`                        |
+| `/apex map-efforts RUNTIME_ID...`                  | Confirm every exact effort variant of a model in one step                   |
 
 Native model and effort overrides suspend APEX. Live mode changes acknowledge a revision; the current streamed response is never interrupted or restarted by the mode switch.
 
