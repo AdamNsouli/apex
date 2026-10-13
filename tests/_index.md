@@ -1,6 +1,6 @@
 # tests — Index
 
-Current status: APEX 0.6.0-beta.1 executable beta.
+Current status: APEX 0.6.1-beta.1 executable beta.
 Code and assets are public; dataset and inference fixtures are synthetic.
 See the root README and verification document for actual limits.
 
@@ -9,4 +9,5 @@ See the root README and verification document for actual limits.
 - [core.test.mjs](./core.test.mjs) — release source or supporting artifact.
 - [presentation.test.mjs](./presentation.test.mjs) — dispatch consumption, frozen evidence and shared UI state contracts.
 - [ultracode.test.mjs](./ultracode.test.mjs) — which prompts qualify for ultracode and the setting itself.
+- [simple.test.mjs](./simple.test.mjs) — which prompts the classifier treats as simple.
 - [policy.test.mjs](./policy.test.mjs) — tier policy, automatic effort mapping and the daily change record, on synthetic benchmark data.
