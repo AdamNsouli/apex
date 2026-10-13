@@ -13,14 +13,20 @@ export const initialControl = () => ({
   modeRevision: 0,
   modeConsumedRevision: 0,
   qualityOnce: null,
-  ultracode: "off",
+  ultracode: "auto",
 });
 // Ultracode is Claude Code's multi-agent mode. It is a session switch, not a field
-// of a request, and it uses far more than one model call, so it is off unless the
-// person turns it on here. Even then only a newly classified critical task typed
-// at an idle prompt qualifies: a continuation ("yes", "go ahead"), a slash
-// command, a message with attachments (a plugin's prompt cannot carry them) and a
-// message typed over a running turn are all sent normally.
+// of a request, and it uses far more than one model call. Choosing a mode is what
+// opts in: Sports uses it for hard and critical tasks, High Quality (or Quality
+// once) for critical tasks only, Balanced and Eco never. `ultracode: "off"` rules
+// it out altogether. Even then only a newly classified task typed at an idle prompt
+// qualifies: a continuation ("yes", "go ahead"), a slash command, a message with
+// attachments (a plugin's prompt cannot carry them) and a message typed over a
+// running turn are all sent normally.
+export const ULTRACODE_TIERS = Object.freeze({
+  sports: ["hard", "critical"],
+  quality: ["critical"],
+});
 export function wantsUltracode({
   control,
   intent,
@@ -31,6 +37,7 @@ export function wantsUltracode({
   turnId,
   pinned = false,
 }) {
+  const mode = control.qualityOnce ? "quality" : control.mode;
   return (
     control.ultracode === "auto" &&
     control.routing === "auto" &&
@@ -42,7 +49,7 @@ export function wantsUltracode({
     typeof text === "string" &&
     text.trim().length > 0 &&
     !/^\s*\//.test(text) &&
-    tierFor(intent) === "critical"
+    (ULTRACODE_TIERS[mode] ?? []).includes(tierFor(intent))
   );
 }
 export function applyControl(state, c) {

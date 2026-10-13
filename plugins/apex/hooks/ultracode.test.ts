@@ -1,11 +1,17 @@
 import { test, expect, mock } from "claude-code/testing";
 
 const CRITICAL = "architect a complex security migration for production";
-function harness($, on, ultracode: string, extra: Record<string, any> = {}) {
+function harness(
+  $,
+  on,
+  mode: string,
+  extra: Record<string, any> = {},
+  ultracode = "auto",
+) {
   const writes: Record<string, any> = {
     control: {
       revision: 0,
-      mode: "balanced",
+      mode,
       routing: "auto",
       backend: "subscription",
       verifiedIds: [],
@@ -59,8 +65,8 @@ function harness($, on, ultracode: string, extra: Record<string, any> = {}) {
   return { writes, clock, commands, entered, start, type, finish };
 }
 
-test("a critical task is held, sent with ultracode on, and ultracode is turned off when the turn ends", async ($, on) => {
-  const h = harness($, on, "auto");
+test("in High Quality a critical task is held, sent with ultracode on, and ultracode is turned off when the turn ends", async ($, on) => {
+  const h = harness($, on, "quality");
   await h.start();
   const held = await h.type(CRITICAL);
   expect(held.drop).toMatch(/ultracode/);
@@ -77,8 +83,8 @@ test("a critical task is held, sent with ultracode on, and ultracode is turned o
   expect(h.writes.ultracodeArmed).toBe(false);
 });
 
-test("ordinary messages are never held, and nothing is held while the setting is off", async ($, on) => {
-  const h = harness($, on, "auto");
+test("ordinary messages are never held, even in Sports", async ($, on) => {
+  const h = harness($, on, "sports");
   await h.start();
   const plain = await h.type("Please explain a general concept clearly");
   expect(plain.drop).toBeUndefined();
@@ -89,8 +95,8 @@ test("ordinary messages are never held, and nothing is held while the setting is
   expect(h.entered.length).toBe(1);
 });
 
-test("with the setting off a critical task goes out as typed", async ($, on) => {
-  const h = harness($, on, "off");
+test("in Balanced, and with the kill switch, a critical task goes out as typed", async ($, on) => {
+  const h = harness($, on, "balanced");
   await h.start();
   const sent = await h.type(CRITICAL);
   expect(sent.drop).toBeUndefined();
@@ -99,13 +105,13 @@ test("with the setting off a critical task goes out as typed", async ($, on) => 
 });
 
 test("the ultracode command turns the setting on and off", async ($, on) => {
-  const h = harness($, on, "off");
+  const h = harness($, on, "sports", {}, "off");
   await h.start();
   const onText = await $.command.run({
     command: "apex",
     args: "ultracode auto",
   });
-  expect(onText.text).toMatch(/critical tasks only/);
+  expect(onText.text).toMatch(/Sports/);
   expect(h.writes.control.ultracode).toBe("auto");
   const status = await $.command.run({ command: "apex", args: "ultracode" });
   expect(status.text).toMatch(/APEX ultracode is auto/);
@@ -114,8 +120,24 @@ test("the ultracode command turns the setting on and off", async ($, on) => {
 });
 
 test("a session that ended with ultracode on has it turned off at the next start", async ($, on) => {
-  const h = harness($, on, "auto", { ultracodeArmed: true });
+  const h = harness($, on, "balanced", { ultracodeArmed: true });
   await h.start();
   expect(h.commands).toEqual(["effort ultracode off"]);
   expect(h.writes.ultracodeArmed).toBe(false);
+});
+
+test("in Sports a hard task is held too, and the kill switch stops it", async ($, on) => {
+  const h = harness($, on, "sports");
+  await h.start();
+  const held = await h.type("architect a complex system");
+  expect(held.drop).toMatch(/ultracode/);
+  await h.clock.advance(100);
+  expect(h.commands).toEqual(["effort ultracode on"]);
+  await h.finish();
+  await h.clock.advance(100);
+  await $.command.run({ command: "apex", args: "ultracode off" });
+  const sent = await h.type(
+    "architect a complex security migration for production",
+  );
+  expect(sent.drop).toBeUndefined();
 });

@@ -7,28 +7,53 @@ import {
   classifyIntent,
 } from "../plugins/apex/core/router.mjs";
 
-const critical = classifyIntent(
-  "architect a complex security migration for production",
-);
-const ask = (over = {}) =>
+const CRITICAL = "architect a complex security migration for production";
+const HARD = "architect a complex system";
+const ORDINARY = "Please explain a general concept clearly";
+const ask = (mode, text = CRITICAL, over = {}) =>
   wantsUltracode({
-    control: { ...initialControl(), ultracode: "auto" },
-    intent: critical,
+    control: { ...initialControl(), mode },
+    intent: classifyIntent(text),
     fresh: true,
-    text: "architect a complex security migration for production",
+    text,
     origin: { kind: "composer" },
     ...over,
   });
 
-test("ultracode is off until the person turns it on", () => {
-  assert.equal(initialControl().ultracode, "off");
-  assert.equal(ask({ control: initialControl() }), false);
-  const on = applyControl(initialControl(), {
+test("the mode decides: Sports for hard and critical, High Quality for critical, Balanced and Eco never", () => {
+  assert.equal(initialControl().ultracode, "auto");
+  assert.deepEqual(
+    ["sports", "quality", "balanced", "eco"].map((m) => ask(m, CRITICAL)),
+    [true, true, false, false],
+  );
+  assert.deepEqual(
+    ["sports", "quality", "balanced", "eco"].map((m) => ask(m, HARD)),
+    [true, false, false, false],
+  );
+  for (const mode of ["sports", "quality", "balanced", "eco"])
+    assert.equal(ask(mode, ORDINARY), false, mode);
+  assert.equal(ask("sports", "format this list"), false);
+});
+
+test("Quality once counts as High Quality for the next task", () => {
+  const once = {
+    ...initialControl(),
+    mode: "balanced",
+    qualityOnce: { revision: 1 },
+  };
+  assert.equal(ask("balanced", CRITICAL, { control: once }), true);
+  assert.equal(ask("balanced", HARD, { control: once }), false);
+});
+
+test("the kill switch rules it out in every mode", () => {
+  const off = applyControl(initialControl(), {
     kind: "ultracode",
-    value: "auto",
+    value: "off",
     expectedRevision: 0,
   });
-  assert.equal(on.ultracode, "auto");
+  assert.equal(off.ultracode, "off");
+  for (const mode of ["sports", "quality"])
+    assert.equal(ask(mode, CRITICAL, { control: { ...off, mode } }), false);
   assert.throws(
     () =>
       applyControl(initialControl(), {
@@ -40,35 +65,29 @@ test("ultracode is off until the person turns it on", () => {
   );
 });
 
-test("only a newly classified critical task qualifies", () => {
-  assert.equal(ask(), true);
-  for (const text of [
-    "Please explain a general concept clearly",
-    "architect a complex system",
-    "implement production authentication",
-    "format this list",
-  ])
-    assert.equal(ask({ intent: classifyIntent(text), text }), false, text);
-  // "yes" after a critical task repeats that intent; it must not hold again.
+test("a continuation does not hold again", () => {
+  const critical = classifyIntent(CRITICAL);
   assert.equal(classifyIntent("yes", critical), critical);
-  assert.equal(ask({ fresh: false }), false);
+  assert.equal(ask("sports", CRITICAL, { fresh: false }), false);
 });
 
 test("anything that cannot be sent again safely goes out normally", () => {
-  assert.equal(ask({ attachments: [{ type: "image" }] }), false);
-  assert.equal(ask({ turnId: "running-turn" }), false);
-  assert.equal(ask({ text: "/apex why" }), false);
-  assert.equal(ask({ text: "   " }), false);
-  assert.equal(ask({ origin: { kind: "plugin", name: "other" } }), false);
-  assert.equal(ask({ origin: { kind: "bridge" } }), false);
+  assert.equal(
+    ask("sports", CRITICAL, { attachments: [{ type: "image" }] }),
+    false,
+  );
+  assert.equal(ask("sports", CRITICAL, { turnId: "running-turn" }), false);
+  assert.equal(ask("sports", "/apex why"), false);
+  assert.equal(ask("sports", "   "), false);
+  assert.equal(
+    ask("sports", CRITICAL, { origin: { kind: "plugin", name: "other" } }),
+    false,
+  );
+  assert.equal(ask("sports", CRITICAL, { origin: { kind: "bridge" } }), false);
 });
 
 test("held routing and pins leave ultracode alone", () => {
-  const held = {
-    ...initialControl(),
-    ultracode: "auto",
-    routing: "manual_hold",
-  };
-  assert.equal(ask({ control: held }), false);
-  assert.equal(ask({ pinned: true }), false);
+  const held = { ...initialControl(), mode: "sports", routing: "manual_hold" };
+  assert.equal(ask("sports", CRITICAL, { control: held }), false);
+  assert.equal(ask("sports", CRITICAL, { pinned: true }), false);
 });

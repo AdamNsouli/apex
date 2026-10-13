@@ -1,5 +1,5 @@
 import { duration, verdict } from "./receipt.mjs";
-export const VERSION = "0.5.0-beta.1";
+export const VERSION = "0.6.0-beta.1";
 export const MODES = {
   eco: {
     label: "Eco",
@@ -13,11 +13,13 @@ export const MODES = {
   },
   quality: {
     label: "High Quality",
-    detail: "Favor the strongest comparable task evidence.",
+    detail:
+      "Favor the strongest comparable task evidence; ultracode for critical tasks.",
   },
   sports: {
     label: "Sports",
-    detail: "Favor speed close to the strongest task evidence.",
+    detail:
+      "Favor speed close to the strongest task evidence; ultracode for hard and critical tasks.",
   },
 };
 export const REASONS = {
