@@ -128,6 +128,18 @@ export function captureDispatch(control, requestId) {
     },
   };
 }
+// A simple task is a mechanical edit or lookup named by its first word, or a short
+// factual question. A question that asks for judgment, a plan or new work is not
+// simple however short it is. This is a wording heuristic, not a measure of difficulty.
+const SIMPLE_START =
+  /^\s*(format|copy|rename|explain this line|summari[sz]e|tl;?dr|list|define|translate|spell|proofread|reword|rephrase|shorten|convert|sort|count|capitali[sz]e|fix (the |this |a )?typo)\b/;
+const QUESTION_START =
+  /^\s*(what|who|when|where|which|how (many|much|old|long|far)|is|are|was|were|does|do|did|can|could)\b/;
+const NEEDS_THOUGHT =
+  /should|best|better|recommend|advice|think|opinion|why|implement|build|refactor|debug|design|plan|write|create|review|analy[sz]e|compare|strategy|decide/;
+const isSimple = (t) =>
+  SIMPLE_START.test(t) ||
+  (QUESTION_START.test(t) && t.trim().length <= 80 && !NEEDS_THOUGHT.test(t));
 export function classifyIntent(text, previous) {
   const t = String(text ?? "")
     .slice(0, 12000)
@@ -148,7 +160,7 @@ export function classifyIntent(text, previous) {
     ["economics", /economics|inflation/],
     ["engineering", /engineering|mechanical|electrical/],
     ["strategy", /strategy|business operation/],
-    ["math", /math|proof|theorem|integral/],
+    ["math", /math|\bproofs?\b|theorem|integral/],
     ["coding", /code|function|debug|program|typescript|python/],
   ])
     if (re.test(t)) {
@@ -158,11 +170,11 @@ export function classifyIntent(text, previous) {
   if (task === "coding" && /implement|build|fix|refactor|debug/.test(t))
     task = "agentic_coding";
   const difficulty =
-    /architect|proof|multi.file|concurren|security|comprehensive|complex|hard task/.test(
+    /architect|\bproofs?\b|multi.file|concurren|security|comprehensive|complex|hard task/.test(
       t,
     )
       ? "complex"
-      : /^(format|copy|rename|explain this line)\b/.test(t) && risk === "normal"
+      : isSimple(t) && risk === "normal"
         ? "simple"
         : "standard";
   const ambiguous = t.length < 15 && !/^(hello|hi)\b/.test(t);

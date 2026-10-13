@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.6.1-beta.1
+
+More tasks count as simple, so the cheaper model is chosen more often.
+
+Before, a prompt was simple only if it began with "format", "copy", "rename" or "explain this line", so in Balanced nearly everything stayed on the strongest model at a lower effort and the model itself rarely changed. Now a mechanical edit or lookup named by its first word is simple (summarise, translate, proofread, list, define, reword, shorten, convert, sort, count, fix a typo), and so is a short factual question of 80 characters or fewer. A question that asks for judgment, a plan or new work ("should", "best", "why", "write", "build", "plan" and similar) is not simple however short, and risky and complex prompts are unaffected. This is a wording heuristic, not a measure of difficulty.
+
+"proofread" no longer counts as a mathematical proof: the word "proof" is now matched as a whole word.
+
+The hygiene check, plugin and marketplace validation, 84 Node tests (4 new) and 28 native tests pass locally; the browser checks run only in CI. No paid inference, real-key AA ingestion or billing verification was performed.
+
 ## 0.6.0-beta.1
 
 Ultracode follows the mode instead of a separate opt-in.
