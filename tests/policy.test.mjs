@@ -124,7 +124,7 @@ test("the tier follows the classified intent", () => {
   assert.equal(tierFor({ difficulty: "simple", risk: "normal" }), "quick");
   assert.equal(tierFor({ difficulty: "standard", risk: "normal" }), "everyday");
   assert.equal(tierFor({ difficulty: "complex", risk: "normal" }), "hard");
-  assert.equal(tierFor({ difficulty: "standard", risk: "high" }), "hard");
+  assert.equal(tierFor({ difficulty: "standard", risk: "high" }), "critical");
   assert.equal(
     tierFor({ difficulty: "standard", risk: "unknown" }),
     "everyday",
@@ -289,15 +289,16 @@ test("changed benchmark numbers change the pick on the next refresh", () => {
   assert.equal(at(decide(models2, {})), "alpha/xhigh");
 });
 
-test("hard, risky and failing tasks never drop below the native pair", () => {
+test("a risky task is held to the critical tier, not to the pair the chat started on", () => {
   const models = world(["alpha", "beta"]);
   const r = decide(
     models,
     { risk: "high" },
     { model: "beta", effort: "xhigh" },
   );
-  assert.equal(at(r), "beta/xhigh");
-  assert.equal(r.tier, "hard");
+  assert.equal(r.tier, "critical");
+  assert.ok(r.ranked[0].shareOfBest >= TIERS.critical.share);
+  assert.equal(at(r), "beta/max");
 });
 
 test("an unclear request keeps the everyday tier and the native pair, not a stronger one", () => {

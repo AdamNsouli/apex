@@ -8,6 +8,8 @@
 
 APEX is executable middleware, not just instructions to Claude. It wraps the official `turn.step` hook and forwards the selected model and effort while preserving the streamed response and conversation. Eco, Balanced, High Quality and Sports can be selected while work is running.
 
+**0.7.0-beta.1:** APEX now moves between models, not only efforts. Before, it only considered models with exactly the same thinking flags as the one the chat started on, so Haiku, Sonnet and Opus never replaced each other; a chat that started on an effort the benchmarks do not name was not routed at all; and risky prompts could not go below the starting pair. Now every confirmed model is a candidate, a move to another model is made when it repays re-storing the conversation over the next five requests, and subagents are routed too (`/apex agents off` turns that off). A replay of 200 labelled prompts (`scripts/replay.mjs`) measures each change offline. Checked offline and in CI.
+
 **0.6.0-beta.1:** ultracode now follows the mode instead of a separate opt-in: Sports uses it for hard and critical tasks, High Quality for critical tasks, Balanced and Eco never. `/apex ultracode off` rules it out everywhere. Checked offline and in CI.
 
 **0.5.0-beta.1:** APEX can turn ultracode (Claude Code's multi-agent mode) on for a critical task and off again when that turn ends. It is off by default and enabled with `/apex ultracode auto`, because it uses far more than a normal request. Checked offline and in CI, and the hold, switch-on, send and switch-off sequence was run once in a live session; a real multi-agent run under it has not been observed.
@@ -43,8 +45,8 @@ See [INSTALL.md](INSTALL.md) for the complete setup and removal instructions.
 - Discovers model IDs, efforts and capabilities from Anthropic's Models API; gets indices, prices, benchmark USD/task and performance from **your own Artificial Analysis key**. No generation-specific list or copied public benchmark dataset is bundled.
 - Chooses by policy, not from a fixed list: the cheapest pair that reaches enough of the strongest score for the kind of task, within a wait limit. No model name is built in, so a new model or changed benchmark numbers change the choice at the next daily refresh. Effort variants of confirmed models join automatically. A newly discovered model waits for your confirmation (`/apex confirm-models`) because APEX cannot tell whether your plan includes it.
 - Compares general intelligence, coding, agentic coding and six domain indices. A local deterministic classifier selects a broad task category; it does not send your prompt to a separate classifier model. Math uses the general intelligence index as a proxy.
-- Keeps the native model when access, identity mapping, effort, capabilities, context size, freshness or baseline evidence is unknown. New model discovery does not silently grant account access.
-- Respects user model/effort overrides through manual hold. Subagent requests keep their own settings in this release.
+- Keeps the native model when access, identity mapping, effort, capabilities, context size or freshness is unknown. New model discovery does not silently grant account access.
+- Respects user model/effort overrides through manual hold. Subagents are routed under the base mode (search agents as quick tasks); an agent given its own model keeps it, and `/apex agents off` leaves all agents alone.
 - Requires explicit APEX consent before changing requests on a confirmed direct-API backend. Consent is reset when a session starts or clears. Estimated reservations and unknown-cost liabilities protect APEX's routing budget; native requests are not stopped when that budget is exhausted.
 
 ## Live modes
@@ -65,7 +67,7 @@ For each request APEX classifies the task locally into a tier, finds the stronge
 | High Quality | The strongest comparable score; cost then speed break ties; no wait limit. |
 | Sports       | The fastest pair within 3% of the strongest comparable score.              |
 
-These are transparent heuristics, not measured task-success probabilities, and the shares and wait limits are judgment calls. The wait limit compares AA's median end-to-end seconds, not your prompt. Hard, risky, ambiguous or repeatedly failing tasks never go below the native baseline score and effort. A downgrade to a different model must pay back re-storing the conversation conservatively; a change of effort alone keeps the cache and needs no payback. If a task has no index for every compared pair, general intelligence is used for all of them and the receipt says so. If the benchmark data has no cost-per-task figures, native settings are kept.
+These are transparent heuristics, not measured task-success probabilities, and the shares and wait limits are judgment calls. The wait limit compares AA's median end-to-end seconds, not your prompt. Routing is not held at the model the chat started on: high-risk or twice-failing tasks are held to the critical tier instead, and complex ones to the hard tier. Moving to a different model pays one cache write for the whole conversation, so it is made only when it repays that over the next five requests (or, in Sports, is clearly faster; in High Quality, scores higher), or when no effort of the current model reaches the task's floor. A change of effort alone keeps the cache and needs no payback. With benchmark data older than three days nothing goes below the starting pair. If a task has no index for every compared pair, general intelligence is used for all of them and the receipt says so. If the benchmark data has no cost-per-task figures, native settings are kept.
 
 ## Ultracode for the hardest tasks
 
@@ -90,7 +92,7 @@ This is actual Claude Code 2.1.292 ANSI output converted to an image, with local
 
 The **prompt strip** is the two-row fallback. Its expanded, compact or hidden preference is saved locally. It yields to native surveys, preserves other mods, and suppresses duplicate controls while the rail is docked. Focus it with Claude's `ctrl+x tab`; `m` opens modes and `i` opens the rail. The mode chooser uses `e`, `b`, `q`, `s` while its site has focus. Host fonts, button chrome, scrolling and focus remain native. Desktop panes have harness coverage; live desktop rendering is unverified.
 
-**Inspect** puts history, the selected receipt and its frozen evidence together. Selection stays on the historical request until you choose Follow live. Settings, consent and catalogue comparisons open contextually. Main and observed agent scopes remain distinct; agents retain native settings.
+**Inspect** puts history, the selected receipt and its frozen evidence together. Selection stays on the historical request until you choose Follow live. Settings, consent and catalogue comparisons open contextually. Main and observed agent scopes remain distinct; agent receipts show how each agent was routed.
 
 The optional **browser workspace** has one command bar, stepped request history and a narrow inspector. A step means an actual outgoing model/effort change. Tool markers mean recorded tool activity. Time view plots only known start/completion timestamps. Complete retained history is paginated, not silently hidden; theme and compact-view preferences persist locally.
 

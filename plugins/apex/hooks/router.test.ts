@@ -250,7 +250,9 @@ test("main request routes through the actual host hook chain; stream retained", 
   });
   let item = await agent.next();
   while (!item.done) item = await agent.next();
-  expect(forwarded.model).toBe("model-a");
+  // The agent asked for the session's own model, so it is routed under the mode
+  // (High Quality here) like the main chat. agents.test.ts covers the rest.
+  expect(forwarded.model).toBe("model-b");
   expect(forwarded.agentId).toBe("fixture-agent");
 });
 test("native pane mode controls exist and change state", async ($, on) => {

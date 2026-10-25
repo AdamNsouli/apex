@@ -7,6 +7,7 @@ import {
   estimatedCost,
   Ledger,
   captureDispatch,
+  agentPlan,
   forecastCost,
   wantsUltracode,
 } from "../core/router.mjs";
@@ -48,6 +49,8 @@ let control = initialControl(),
   lastModel = null,
   lastEffort = undefined,
   stepsOnModel = 2,
+  mainNativeModel = null,
+  agentRoutes = new Map(),
   acks = [],
   syncing = null,
   savedRevision = 0,
@@ -614,7 +617,7 @@ export function register(on, config = {}) {
       name: "apex",
       description: "APEX request routing, modes and receipts",
       argumentHint:
-        "mode eco|balanced|quality|sports; dashboard; refresh; auto; hold; why; credits; map-efforts; confirm-models; ultracode auto|off",
+        "mode eco|balanced|quality|sports; dashboard; refresh; auto; hold; why; credits; map-efforts; confirm-models; ultracode auto|off; agents auto|off",
       immediate: true,
     });
     now = await $.clock.now();
@@ -767,6 +770,27 @@ export function register(on, config = {}) {
             value === "auto"
               ? "APEX uses ultracode for hard and critical tasks in Sports and for critical tasks in High Quality, and turns it off when each one ends. It uses far more than a normal request."
               : "APEX will not turn ultracode on in any mode.",
+        };
+      }
+      if (verb === "agents") {
+        if (!["auto", "off"].includes(value))
+          return {
+            text:
+              "APEX agent routing is " +
+              (control.agents ?? "auto") +
+              ". Use /apex agents auto|off. Auto routes subagents under the current mode (search agents as quick tasks); an agent given its own model keeps it.",
+          };
+        await change($, {
+          kind: "agents",
+          value,
+          expectedRevision: control.revision,
+        });
+        await sync($);
+        return {
+          text:
+            value === "auto"
+              ? "APEX routes subagents under the current mode; an agent given its own model keeps it."
+              : "Subagents keep their own model and effort.",
         };
       }
       if (verb === "quality-once") {
@@ -1054,17 +1078,66 @@ export function register(on, config = {}) {
       ...(e.effort !== undefined ? { effort: e.effort } : {}),
     };
     const id = e.turnId + ":" + e.index + ":" + (e.agentId ?? "main");
+    if (!e.agentId) mainNativeModel = e.model;
+    // Each agent keeps its own routing memory: the model holding its cache and the
+    // size of its own conversation.
+    let agent = null,
+      plan = null;
+    if (e.agentId) {
+      agent = agentRoutes.get(e.agentId);
+      if (!agent) {
+        let type = "unknown";
+        try {
+          type =
+            (await $.agent.list()).find((a) => a.id === e.agentId)?.type ??
+            "unknown";
+        } catch {}
+        agent = {
+          type,
+          lastModel: null,
+          lastEffort: undefined,
+          steps: 2,
+          tokens: 0,
+        };
+        agentRoutes.set(e.agentId, agent);
+        if (agentRoutes.size > 200)
+          agentRoutes.delete(agentRoutes.keys().next().value);
+      }
+      plan = agentPlan({
+        control,
+        agentType: agent.type,
+        agentModel: e.model,
+        mainModel: mainNativeModel,
+        mainIntent: intent,
+      });
+    }
     const captured = e.agentId ? null : captureDispatch(control, id);
     const dispatchControl = captured?.effective ?? { ...control };
     // Atomic claim: no await between capturing and clearing the one-shot token.
     if (captured) control = captured.next;
     const decision = e.agentId
-      ? {
-          pair: original,
-          reason: "agent_native_settings",
-          estimate: null,
-          ranked: [],
-        }
+      ? plan.route
+        ? route({
+            original,
+            control: { ...control, qualityOnce: null },
+            intent: plan.intent,
+            models,
+            fetchedAt: aa?.fetchedAt,
+            now,
+            inputTokens: agent.tokens,
+            spentUsd: ledger.spentUsd,
+            reservedUsd: ledger.reservedUsd,
+            pinned: pins,
+            lastModel: agent.lastModel,
+            lastEffort: agent.lastEffort,
+            stepsOnModel: agent.steps,
+          })
+        : {
+            pair: original,
+            reason: plan.reason,
+            estimate: null,
+            ranked: [],
+          }
       : route({
           original,
           control: dispatchControl,
@@ -1086,8 +1159,16 @@ export function register(on, config = {}) {
       stepsOnModel = 1;
     }
     if (!e.agentId) lastEffort = decision.pair.effort;
+    if (agent) {
+      agent.steps =
+        agent.lastModel === decision.pair.model ? agent.steps + 1 : 1;
+      agent.lastModel = decision.pair.model;
+      agent.lastEffort = decision.pair.effort;
+    }
     const task = e.agentId
-      ? "unknown"
+      ? plan.route
+        ? (plan.intent.task ?? "unknown")
+        : "unknown"
       : (dispatchControl.taskOverride ?? intent.task);
     const baseline = models.find(
       (m) =>
@@ -1140,6 +1221,12 @@ export function register(on, config = {}) {
         effort: decision.pair.effort,
       });
       const reported = result.usage?.model;
+      if (agent && result.usage)
+        agent.tokens =
+          (result.usage.input_tokens ?? 0) +
+          (result.usage.cache_read_input_tokens ?? 0) +
+          (result.usage.cache_creation_input_tokens ?? 0) +
+          (result.usage.output_tokens ?? 0);
       const evidence =
         snapshot.selected?.model === reported ? snapshot.selected : null;
       const u = result.usage,
