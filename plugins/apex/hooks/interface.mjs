@@ -597,7 +597,7 @@ function settings(k, elements, state, actions, props) {
     ]),
     k.button("open-rail", "Open compact rail", () => actions.open("compact")),
     k.rule("ABOUT"),
-    k.text("APEX by Kavren Labs"),
+    k.text("APEX by Zoran"),
     k.muted("Adaptive model routing for Claude Code."),
     k.muted(
       "Independent project · account billing and effective effort remain unknown.",

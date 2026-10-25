@@ -263,7 +263,7 @@ export async function createCompanion({
         "/receipt.mjs": "../core/receipt.mjs",
         "/assets/marks.svg": "assets/marks.svg",
         "/assets/apex-mark.svg": "assets/apex-mark.svg",
-        "/assets/kavren-mark.svg": "assets/kavren-mark.svg",
+        "/assets/zoran-mark.svg": "assets/zoran-mark.svg",
         "/assets/inter.ttf": "assets/inter.ttf",
         "/assets/space-grotesk.ttf": "assets/space-grotesk.ttf",
         "/assets/jetbrains-mono.ttf": "assets/jetbrains-mono.ttf",

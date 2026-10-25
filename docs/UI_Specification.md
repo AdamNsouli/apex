@@ -1,6 +1,6 @@
 # APEX interface specification — 0.3.0-beta.1
 
-The distinguishing object is the route through a task. Information geometry follows recorded events; decoration cannot invent progress, work plans, task success, savings or parent relationships. Product identity is APEX; publisher identity is APEX by Kavren Labs. The Kavren glyph appears only in About/setup and publishing material.
+The distinguishing object is the route through a task. Information geometry follows recorded events; decoration cannot invent progress, work plans, task success, savings or parent relationships. Product identity is APEX; publisher identity is APEX by Zoran. The Zoran symbol appears only in About/setup and publishing material.
 
 ## Browser visual contract
 
