@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.7.1-beta.1
+
+The publisher line now reads "APEX by Zoran".
+
+The publisher's company was renamed, so the line under the APEX title, the browser header and the companion page show Zoran and its Three Lifts symbol in place of the old name and K mark. The Archivo font licence is removed because it only covered the old glyph. Routing is unchanged.
+
+The hygiene check, plugin validation, Node tests and native tests pass locally; the browser checks run only in CI. Update the marketplace and the plugin, then restart: chats that were already open keep the previous code.
+
 ## 0.7.0-beta.1
 
 APEX moves between models, not only efforts.
