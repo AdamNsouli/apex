@@ -26,13 +26,15 @@ export const MODES = Object.freeze({
   quality: { tier: "best", objective: "score" },
   sports: { share: 0.97, objective: "speed" },
 });
-// A broad tier from the local intent classification. High risk, complexity or
-// repeated failure make a task at least "hard". An unclear request (unknown risk)
+// A broad tier from the local intent classification. High risk or repeated failure
+// make a task critical, complexity makes it at least "hard". An unclear request (unknown risk)
 // stays "everyday"; the router still stops it falling below the native pair.
 export function tierFor(intent = {}) {
   const complex = intent.difficulty === "complex";
   const risky = intent.risk === "high";
-  if ((intent.failures ?? 0) >= 2 || (complex && risky)) return "critical";
+  // High risk alone is critical: routing is no longer held at the starting model,
+  // so the tier is what keeps a risky task on a strong pair.
+  if ((intent.failures ?? 0) >= 2 || risky) return "critical";
   if (complex || risky) return "hard";
   return intent.difficulty === "simple" ? "quick" : "everyday";
 }

@@ -1,0 +1,69 @@
+{
+  "note": "Made-up example prompts showing the replay format. Real prompts stay on your own machine.",
+  "prompts": [
+    {
+      "chat": "a",
+      "turn": 0,
+      "text": "rename the variable total to sum in this file",
+      "context": 30000,
+      "need": "quick",
+      "importance": 1
+    },
+    {
+      "chat": "a",
+      "turn": 1,
+      "text": "now explain why the test fails and fix it",
+      "context": 42000,
+      "need": "everyday",
+      "importance": 3
+    },
+    {
+      "chat": "a",
+      "turn": 2,
+      "text": "yes",
+      "context": 50000,
+      "need": "everyday",
+      "importance": 3
+    },
+    {
+      "chat": "b",
+      "turn": 0,
+      "text": "what is the capital of Japan?",
+      "context": 12000,
+      "need": "quick",
+      "importance": 1
+    },
+    {
+      "chat": "b",
+      "turn": 1,
+      "text": "translate this sentence into French",
+      "context": 13000,
+      "need": "quick",
+      "importance": 1
+    },
+    {
+      "chat": "c",
+      "turn": 0,
+      "text": "review this contract clause before I sign it",
+      "context": 25000,
+      "need": "critical",
+      "importance": 5
+    },
+    {
+      "chat": "d",
+      "turn": 0,
+      "text": "design a comprehensive architecture for a multi-file refactor",
+      "context": 80000,
+      "need": "hard",
+      "importance": 4
+    },
+    {
+      "chat": "d",
+      "turn": 1,
+      "text": "continue",
+      "context": 120000,
+      "need": "hard",
+      "importance": 4
+    }
+  ]
+}

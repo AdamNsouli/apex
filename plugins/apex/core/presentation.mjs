@@ -1,5 +1,5 @@
 import { duration, verdict } from "./receipt.mjs";
-export const VERSION = "0.6.1-beta.1";
+export const VERSION = "0.7.0-beta.1";
 export const MODES = {
   eco: {
     label: "Eco",
@@ -50,6 +50,14 @@ export const REASONS = {
     "Kept the recent eligible pair to avoid unnecessary switching.",
   agent_native_settings:
     "This agent keeps its native model and effort settings.",
+  agent_routing_off:
+    "Agent routing is off (/apex agents auto turns it on); this agent keeps its own settings.",
+  agent_model_chosen:
+    "This agent was given its own model, so APEX leaves it alone.",
+  switch_does_not_pay_back:
+    "Stayed on the model that holds this chat: moving would cost more to re-store the conversation than it saves over the next few requests.",
+  switch_cost_unknown:
+    "Stayed on the model that holds this chat: the prices needed to judge a move are missing.",
   eco_policy:
     "Selected as the cheapest pair that reaches a lower share of the strongest comparable score.",
   balanced_policy:

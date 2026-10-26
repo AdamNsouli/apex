@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.7.0-beta.1
+
+APEX moves between models, not only efforts.
+
+Three things held routing at the model a chat started on. Only models with exactly the same thinking flags as that model were compared, and Haiku, Sonnet and Opus 5.5 each have different extra flags (Haiku can turn thinking off, Sonnet can think between tools), so they never replaced each other: only the effort changed. A chat that started on a pair the benchmarks do not name (for example no effort set) was not routed at all. And a prompt with a risky word could not go below the starting pair's score or effort, so starting on Opus max kept every such prompt there.
+
+Now every confirmed model is a candidate. Models are compared by thinking mode (adaptive where a model has it), not by every flag. The starting pair is only the reference for receipts and, when benchmark data is more than three days old, the floor; when it has no evidence the pair holding the cache, then the strongest routable pair, stands in. High-risk and twice-failing tasks are held to the critical tier instead of the starting pair.
+
+The test for moving to another model is rewritten. It was "one request on the new model is 5% cheaper than one on the old", computed from upper bounds, and ignored that the new model has to store the whole conversation again. Now staying (five requests on the best acceptable effort of the current model, reading the cache) is compared with moving (five requests on the new model plus one cache write of the whole context). Sports judges the wait and High Quality the score. Missing prices keep the current model; a model with no effort that reaches the floor is left regardless.
+
+Subagents are routed too, under the base mode, each with its own cache memory: search agents (Explore and similar) as quick tasks, others as the main chat's task. An agent that asks for a different model from the session's keeps it. `/apex agents auto|off` (default auto).
+
+`scripts/replay.mjs` replays labelled prompts through the router offline, with no model calls, and reports per mode and starting pair how often model and effort move, how many prompts get less than their labelled tier, and usage and wait against always using the starting pair. On 200 of the maintainer's own prompts (kept off the repository) with the current benchmark data, starting on Opus 5.5 max: Balanced used 28% of always-max usage (37% before), Eco 18% (37% before), with no more under-served important prompts than before; starting on Sonnet 5.5 medium, Balanced moved to Opus on 87% of prompts where it had stayed on Sonnet. The replay also shows that the local classifier rates most hard and critical prompts as everyday, which this release does not change.
+
+The hygiene check, plugin validation, 92 Node tests (8 new) and 29 native tests (1 new; 3 updated for the new behaviour) pass locally; the browser checks run only in CI. No live inference was run. Update the marketplace and the plugin, then restart: chats that were already open keep the previous code.
+
 ## 0.6.1-beta.1
 
 More tasks count as simple, so the cheaper model is chosen more often.

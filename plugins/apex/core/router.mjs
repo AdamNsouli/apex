@@ -14,6 +14,7 @@ export const initialControl = () => ({
   modeConsumedRevision: 0,
   qualityOnce: null,
   ultracode: "auto",
+  agents: "auto",
 });
 // Ultracode is Claude Code's multi-agent mode. It is a session switch, not a field
 // of a request, and it uses far more than one model call. Choosing a mode is what
@@ -63,6 +64,8 @@ export function applyControl(state, c) {
     next.qualityOnce = c.armed ? { revision: state.revision + 1 } : null;
   else if (c.kind === "ultracode" && ["off", "auto"].includes(c.value))
     next.ultracode = c.value;
+  else if (c.kind === "agents" && ["off", "auto"].includes(c.value))
+    next.agents = c.value;
   else if (
     c.kind === "routing" &&
     ["auto", "manual_hold", "disabled"].includes(c.value)
@@ -110,6 +113,39 @@ export function applyControl(state, c) {
   } else throw new Error("invalid_control");
   next.revision++;
   return next;
+}
+// Subagents (the Agent tool, workflows) are routed too, under the base mode. One
+// that was given its own model (by its definition or the Agent call) keeps it: an
+// agent is taken to have inherited the session's model only when it asks for the
+// same one the main chat does. Search and lookup agents are routed as quick tasks;
+// any other agent is routed as the main chat's current task.
+export const QUICK_AGENTS = Object.freeze([
+  "Explore",
+  "claude-code-guide",
+  "statusline-setup",
+]);
+export function agentPlan({
+  control,
+  agentType,
+  agentModel,
+  mainModel,
+  mainIntent,
+}) {
+  if ((control.agents ?? "auto") !== "auto")
+    return { route: false, reason: "agent_routing_off" };
+  if (!mainModel || agentModel !== mainModel)
+    return { route: false, reason: "agent_model_chosen" };
+  if (QUICK_AGENTS.includes(agentType))
+    return {
+      route: true,
+      intent: {
+        task: "general",
+        risk: "normal",
+        difficulty: "simple",
+        failures: 0,
+      },
+    };
+  return { route: true, intent: mainIntent };
 }
 // Called synchronously at a MAIN dispatch boundary, before any await. Subagents
 // never call this. Consumption does not change the user's acknowledged intent
@@ -234,6 +270,54 @@ export const forecastCost = (evidence, input, output) => {
     output,
   );
 };
+// Which thinking mode the engine would ask a model for. Claude Code uses adaptive
+// thinking where a model has it, so two models that both have it can share a
+// conversation; the other flags (turning thinking off, thinking between tools) are
+// extras the engine sets per model and do not block a move.
+export const thinkingMode = (m) =>
+  m?.thinking?.adaptive?.supported
+    ? "adaptive"
+    : m?.thinking?.enabled?.supported
+      ? "enabled"
+      : m?.thinking == null
+        ? "unknown"
+        : "none";
+// Requests a move to another model is judged over. Conservative: a chat that ends
+// sooner never repays as much.
+export const PAYBACK_REQUESTS = 5;
+// Is moving the conversation to `winner` worth it, against staying on the model that
+// holds the cache at its best acceptable effort (`stay`)? The move pays the new
+// model's cache write for the whole context once; afterwards both only read it.
+// Cost modes compare usage, Sports compares waiting, High Quality the score.
+// Returns null when a price or cost needed for the sum is unknown.
+export function switchPayback(winner, stay, inputTokens, objective = "cost") {
+  const w = winner.record?.evidence?.prices,
+    s = stay.record?.evidence?.prices;
+  const nums = [
+    winner.costPerTaskUsd,
+    stay.costPerTaskUsd,
+    w?.cacheWrite,
+    w?.cacheRead,
+    s?.cacheRead,
+    inputTokens,
+  ];
+  if (nums.some((x) => finite(x) === null || x < 0)) return null;
+  const n = PAYBACK_REQUESTS,
+    mtok = inputTokens / 1e6;
+  const stayUsd = n * (stay.costPerTaskUsd + mtok * s.cacheRead);
+  const moveUsd =
+    n * (winner.costPerTaskUsd + mtok * w.cacheRead) +
+    mtok * (w.cacheWrite - w.cacheRead);
+  const pays =
+    objective === "score"
+      ? winner.rawScore > stay.rawScore
+      : objective === "speed"
+        ? winner.latencyMs != null &&
+          stay.latencyMs != null &&
+          winner.latencyMs < stay.latencyMs * 0.9
+        : moveUsd < stayUsd * 0.95;
+  return { pays, stayUsd, moveUsd, requests: n };
+}
 export function route({
   original,
   control,
@@ -256,12 +340,21 @@ export function route({
   if (!["api", "subscription"].includes(control.backend))
     return hold(original, "backend_not_confirmed");
   const task = control.taskOverride ?? intent.task;
-  const baseline = models.find(
-    (m) =>
-      m.runtimeId === original.model &&
-      m.effort === (original.effort ?? null) &&
-      m.routable,
-  );
+  // The whole allowed list is routed, not just the model the chat started on. The
+  // starting pair is only the reference for receipts and, when the data is old, the
+  // quality floor. When it has no evidence (an effort the benchmarks do not name, a
+  // model they do not cover), the pair now holding the cache stands in, then the
+  // strongest routable pair.
+  const routable = models.filter((m) => m.routable && m.evidence);
+  const same = (model, effort) => (m) =>
+    m.runtimeId === model && m.effort === (effort ?? null);
+  const baseline =
+    routable.find(same(original.model, original.effort)) ??
+    (lastModel ? routable.find(same(lastModel, lastEffort)) : undefined) ??
+    [...routable].sort(
+      (a, b) =>
+        (b.evidence.scores?.general ?? 0) - (a.evidence.scores?.general ?? 0),
+    )[0];
   if (!baseline?.evidence) return hold(original, "baseline_evidence_unknown");
   if (!Number.isFinite(inputTokens) || inputTokens < 0)
     return hold(original, "context_tokens_unknown");
@@ -269,13 +362,12 @@ export function route({
     intent.risk !== "normal" ||
     intent.difficulty === "complex" ||
     intent.failures >= 2;
-  const compatible = models.filter(
+  const stale = now - fetchedAt > 72 * 3600000;
+  const compatible = routable.filter(
     (m) =>
-      m.routable &&
-      m.evidence?.benchmarkVersion === baseline.evidence.benchmarkVersion &&
+      m.evidence.benchmarkVersion === baseline.evidence.benchmarkVersion &&
       m.context >= inputTokens &&
-      JSON.stringify(m.thinking ?? null) ===
-        JSON.stringify(baseline.thinking ?? null),
+      thinkingMode(m) === thinkingMode(baseline),
   );
   const scored = (m, index) => finite(m.evidence?.scores?.[index]) !== null;
   // The task's own index is used only when every compared pair has it. Otherwise
@@ -287,13 +379,11 @@ export function route({
   if (!scored(baseline, basis))
     return hold(original, "baseline_evidence_unknown");
   let eligible = compatible.filter((m) => scored(m, basis));
-  if (risky || now - fetchedAt > 72 * 3600000)
+  // Old data cannot be trusted to place a cheaper pair, so it may not go below the
+  // reference. Fresh data lets the task's tier set the floor instead.
+  if (stale)
     eligible = eligible.filter(
-      (m) =>
-        m.evidence.scores[basis] >= baseline.evidence.scores[basis] &&
-        (original.effort === undefined ||
-          m.effort === original.effort ||
-          LEVELS.indexOf(m.effort) >= LEVELS.indexOf(original.effort)),
+      (m) => m.evidence.scores[basis] >= baseline.evidence.scores[basis],
     );
   const candidates = eligible.map((m) => ({
     model: m.runtimeId,
@@ -305,51 +395,46 @@ export function route({
     latencyMs: m.evidence.latencyMs,
     record: m,
   }));
+  const cacheModel = lastModel ?? original.model;
   const r = selectPair(
     candidates,
     control.mode,
-    (lastModel ?? original.model) +
+    cacheModel +
       "|" +
       (lastModel ? (lastEffort ?? "default") : (original.effort ?? "default")),
     { tier: tierFor(intent) },
   );
   if (r.kind !== "select") return hold(original, r.reason);
   let winner = r.selected;
-  const baselineScore = baseline.evidence.scores[basis];
-  // Standard tasks retain the baseline unless the evidence improvement or
-  // conservative 5-request cache payback justifies a switch.
-  let hysteresis = false;
+  let reason = control.mode + "_policy";
+  // Standard tasks keep the previous pair for one more step rather than flap.
   if (lastModel && winner.model !== lastModel && stepsOnModel < 2 && !risky) {
     const previous = r.ranked.find(
       (p) => p.model === lastModel && p.effort === lastEffort,
     );
     if (previous) {
       winner = previous;
-      hysteresis = true;
+      reason = "switch_hysteresis";
     }
   }
-  if (winner.rawScore < baselineScore) {
-    if (risky || now - fetchedAt > 72 * 3600000)
-      return hold(original, "quality_floor");
-    // A different model has to store the whole conversation again, so a downgrade
-    // there must pay back. A change of effort alone keeps the cache and needs no payback.
-    if (winner.model !== original.model) {
-      const stay = forecastCost(
-        baseline.evidence,
+  // A different model has to store the whole conversation again; the model that
+  // holds it only reads it. The move is made when it pays back over the next few
+  // requests, or when no effort of the current model reaches the task's floor.
+  if (winner.model !== cacheModel) {
+    const stay = r.ranked.find((p) => p.model === cacheModel);
+    if (stay) {
+      const move = switchPayback(
+        winner,
+        stay,
         inputTokens,
-        baseline.outputCap,
+        MODES[control.mode]?.objective,
       );
-      const switchCost = winner.costUpperUsd;
-      if (
-        stay === null ||
-        switchCost === null ||
-        !(switchCost * 5 < stay * 5 * 0.95)
-      )
-        return hold(original, "cache_payback_unknown_or_negative");
+      if (!(move?.pays === true)) {
+        winner = stay;
+        reason = move ? "switch_does_not_pay_back" : "switch_cost_unknown";
+      }
     }
   }
-  // A different thinking-capability profile needs a native-engine compatibility
-  // check we cannot infer from a benchmark name. Keep compatible profiles only.
   const changes =
     winner.model !== original.model || winner.effort !== original.effort;
   if (changes && control.backend === "api" && !control.creditsConsent)
@@ -366,7 +451,7 @@ export function route({
       model: winner.model,
       ...(winner.effort !== undefined ? { effort: winner.effort } : {}),
     },
-    reason: hysteresis ? "switch_hysteresis" : control.mode + "_policy",
+    reason,
     estimate: winner.costUpperUsd,
     ranked: r.ranked.map(({ record, ...p }) => p),
     task,
