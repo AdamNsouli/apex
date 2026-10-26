@@ -76,7 +76,7 @@ The hygiene check, 49 Node tests, 18 native tests and the browser checks pass in
 
 Replaced the five-tab interface with a 34-column compact native rail, an integrated history/receipt/evidence inspector and contextual setup/consent. The two-row prompt strip preserves other mods and native surveys, adapts to width and avoids duplicate controls while docked. Historical selection and Follow live are explicit. Added honest readiness states and separate mode acknowledgment/dispatch consumption.
 
-Rebuilt the browser as a route workspace with stepped request history, recorded-time view, scoped agents, frozen receipts, guided exact mappings, complete pagination, local licensed fonts, dark/light themes and compact display. Added original APEX vectors and the monochrome Kavren publisher mark.
+Rebuilt the browser as a route workspace with stepped request history, recorded-time view, scoped agents, frozen receipts, guided exact mappings, complete pagination, local licensed fonts, dark/light themes and compact display. Added original APEX vectors and the monochrome publisher mark.
 
 Added main-only Quality once with atomic consumption, explicit cancellation, unchanged base preference and ordinary guards. Receipt snapshots freeze evidence and pricing at dispatch. Runtime discovery and the first native AA fetch have separate refresh clocks.
 

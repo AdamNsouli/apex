@@ -1,6 +1,6 @@
 # APEX
 
-**APEX by Kavren Labs**
+**APEX by Zoran**
 
 [![Verify APEX](https://github.com/AdamNsouli/apex/actions/workflows/verify.yml/badge.svg)](https://github.com/AdamNsouli/apex/actions/workflows/verify.yml)
 
@@ -138,4 +138,4 @@ npm run test:browser
 
 The installed plugin has no package dependencies. See [Verification_And_Limits.md](docs/Verification_And_Limits.md), [Architecture.md](docs/Architecture.md), [Routing_Policy.md](docs/Routing_Policy.md), and [SECURITY.md](SECURITY.md).
 
-MIT license covers APEX code and original assets. Bundled fonts and the Archivo-derived publisher glyph retain their SIL Open Font License notices in the asset inventory. External services and data keep their own terms. APEX is an independent project, not an Anthropic or Artificial Analysis product.
+MIT license covers APEX code and original assets. Bundled fonts retain their SIL Open Font License notices in the asset inventory. External services and data keep their own terms. APEX is an independent project, not an Anthropic or Artificial Analysis product.
