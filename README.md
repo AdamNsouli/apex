@@ -8,6 +8,8 @@
 
 APEX is executable middleware, not just instructions to Claude. It wraps the official `turn.step` hook and forwards the selected model and effort while preserving the streamed response and conversation. Eco, Balanced, High Quality and Sports can be selected while work is running.
 
+**0.7.1-beta.1:** the publisher line reads "APEX by Zoran"; routing is unchanged.
+
 **0.7.0-beta.1:** APEX now moves between models, not only efforts. Before, it only considered models with exactly the same thinking flags as the one the chat started on, so Haiku, Sonnet and Opus never replaced each other; a chat that started on an effort the benchmarks do not name was not routed at all; and risky prompts could not go below the starting pair. Now every confirmed model is a candidate, a move to another model is made when it repays re-storing the conversation over the next five requests, and subagents are routed too (`/apex agents off` turns that off). A replay of 200 labelled prompts (`scripts/replay.mjs`) measures each change offline. Checked offline and in CI.
 
 **0.6.0-beta.1:** ultracode now follows the mode instead of a separate opt-in: Sports uses it for hard and critical tasks, High Quality for critical tasks, Balanced and Eco never. `/apex ultracode off` rules it out everywhere. Checked offline and in CI.
