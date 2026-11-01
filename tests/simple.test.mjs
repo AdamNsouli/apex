@@ -22,7 +22,7 @@ test("mechanical edits and lookups named by their first word are simple", () => 
 test("a short factual question is simple", () => {
   for (const text of [
     "what is the capital of Australia",
-    "when is the SAT registration deadline",
+    "when does the library open",
     "how many days are there until June",
     "is this file used anywhere else",
   ])
@@ -49,5 +49,11 @@ test("a long question, a risky one and a complex one are not simple", () => {
     "what is the difference between the two approaches we discussed yesterday for the onboarding flow and the tracker";
   assert.equal(difficulty(long), "standard");
   assert.equal(difficulty("what is our production payment setup"), "standard");
+  // A deadline, fee or agreement is high-stakes: a wrong answer is costly.
+  assert.equal(difficulty("when is the SAT registration deadline"), "standard");
+  assert.equal(
+    classifyIntent("when is the SAT registration deadline").risk,
+    "high",
+  );
   assert.equal(difficulty("summarise this complex proof"), "complex");
 });

@@ -139,9 +139,9 @@ test("all three models count as one thinking mode, so they can share a chat", ()
 });
 
 test("a chat started on the big model moves to another model when that is better value", () => {
-  // Starting on big/max, a quick task with a short context goes to the mid model.
+  // Starting on big/max, a quick task with a short context goes to the small model.
   const r = decide({ intent: { difficulty: "simple" } });
-  assert.equal(r.pair.model, "mid");
+  assert.equal(at(r), "small/high");
   // Starting on the small model, a hard task moves up to the big one.
   const up = decide({
     intent: { difficulty: "complex" },
@@ -157,21 +157,26 @@ test("a pair the benchmarks do not name no longer freezes routing", () => {
     intent: { difficulty: "simple" },
   });
   assert.notEqual(r.reason, "baseline_evidence_unknown");
-  assert.equal(r.pair.model, "mid");
+  assert.equal(r.pair.model, "small");
 });
 
-test("on a very long chat a cheaper model that cannot repay the cache write is skipped", () => {
-  // 900k tokens held by big: moving to mid writes all of it again, which five
-  // cheaper requests cannot repay, so the cheapest acceptable big effort is kept.
+test("on a very long chat a move that cannot repay the cache write is skipped", () => {
+  // big/medium is the better everyday value, but with 900k tokens held by mid the
+  // move writes all of them again, which five requests cannot repay: mid stays.
   const r = decide({
-    intent: { difficulty: "simple" },
     inputTokens: 900000,
-    lastModel: "big",
-    lastEffort: "max",
+    lastModel: "mid",
+    lastEffort: "high",
   });
-  assert.equal(r.pair.model, "big");
   assert.equal(r.reason, "switch_does_not_pay_back");
-  assert.equal(at(r), "big/low");
+  assert.equal(at(r), "mid/high");
+  // On a short chat the same move up pays for itself.
+  const short = decide({
+    inputTokens: 20000,
+    lastModel: "mid",
+    lastEffort: "high",
+  });
+  assert.equal(at(short), "big/medium");
 });
 
 test("the cache payback sum: one cache write against five cheaper requests", () => {
@@ -207,7 +212,7 @@ test("a risky task stays on a strong pair even though routing is no longer held 
     original: { model: "small", effort: "low" },
   });
   assert.equal(r.tier, "critical");
-  assert.ok(r.ranked[0].shareOfBest >= 0.97);
+  assert.ok(r.ranked[0].shareOfBest >= 0.9);
 });
 
 test("data older than three days still may not drop below the starting pair", () => {

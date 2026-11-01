@@ -1,15 +1,15 @@
 import { duration, verdict } from "./receipt.mjs";
-export const VERSION = "0.7.1-beta.1";
+export const VERSION = "0.8.0-beta.1";
 export const MODES = {
   eco: {
     label: "Eco",
     detail:
-      "Pick the cheapest pair that reaches a lower share of the best score.",
+      "Settle for a little less: lower floors and cheaper points, except on critical tasks.",
   },
   balanced: {
     label: "Balanced",
     detail:
-      "Pick the cheapest pair that reaches enough of the best score for the task, without a long wait.",
+      "Most score for the usage among pairs good enough for the task, without a long wait.",
   },
   quality: {
     label: "High Quality",
@@ -19,7 +19,7 @@ export const MODES = {
   sports: {
     label: "Sports",
     detail:
-      "Favor speed close to the strongest task evidence; ultracode for hard and critical tasks.",
+      "Fastest pair that is good enough for the task; ultracode for hard and critical tasks.",
   },
 };
 export const REASONS = {
@@ -59,12 +59,11 @@ export const REASONS = {
   switch_cost_unknown:
     "Stayed on the model that holds this chat: the prices needed to judge a move are missing.",
   eco_policy:
-    "Selected as the cheapest pair that reaches a lower share of the strongest comparable score.",
+    "Selected for the most score for the usage, with Eco's lower floor and cheaper points.",
   balanced_policy:
-    "Selected as the cheapest pair that reaches enough of the strongest comparable score for this task, without a long wait.",
+    "Selected for the most score for the usage among pairs good enough for this task, without a long wait.",
   quality_policy: "Selected for the strongest comparable task evidence.",
-  sports_policy:
-    "Selected for speed close to the strongest comparable task evidence.",
+  sports_policy: "Selected as the fastest pair good enough for this task.",
   // Receipts written before 0.4.0 carry the earlier weighted-utility codes.
   eco_utility: "Selected for lower forecast cost within the quality floor.",
   balanced_utility:

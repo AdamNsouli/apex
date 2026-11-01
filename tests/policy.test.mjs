@@ -36,35 +36,66 @@ const ladder = () => [
 const pick = (candidates, mode, tier) =>
   selectPair(candidates, mode, "none|high", { tier });
 
-test("each tier takes the cheapest pair that reaches its share of the best score in time", () => {
-  assert.equal(pick(ladder(), "balanced", "quick").selected.model, "mid");
+test("each tier takes the most score for the usage among pairs good enough and quick enough", () => {
+  // quick values a point at 3 cents: cheap (40 for $0.10) beats mid (55 for $1).
+  assert.equal(pick(ladder(), "balanced", "quick").selected.model, "cheap");
+  // everyday at 15 cents: strong's 11 more points for $1 more are worth it.
   assert.equal(pick(ladder(), "balanced", "everyday").selected.model, "strong");
-  assert.equal(pick(ladder(), "balanced", "hard").selected.model, "stronger");
+  // hard at 40 cents: stronger's 2 more points for $1 more are not.
+  assert.equal(pick(ladder(), "balanced", "hard").selected.model, "strong");
+  // critical at $1.20 they are; top is too slow for it (400 s).
+  assert.equal(
+    pick(ladder(), "balanced", "critical").selected.model,
+    "stronger",
+  );
+});
+
+test("a pair below the task's floor is never chosen, however cheap", () => {
+  // 40 is under 60% of 72, so everyday never takes cheap.
+  const r = pick(ladder(), "balanced", "everyday");
+  assert.ok(!r.ranked.some((p) => p.model === "cheap"));
+  assert.equal(r.target.floor, 0.6 * 72);
 });
 
 test("when no acceptable pair is quick enough the wait limit is relaxed and the fastest wins", () => {
-  const r = pick(ladder(), "balanced", "critical");
-  assert.equal(r.selected.model, "top");
+  const slow = [pair("a", 60, 1, 400), pair("b", 62, 5, 350)];
+  const r = pick(slow, "balanced", "critical");
+  assert.equal(r.selected.model, "b");
   assert.equal(r.target.relaxed, true);
-  const slow = [pair("a", 60, 1, 300), pair("b", 62, 5, 100)];
   assert.equal(pick(slow, "balanced", "quick").selected.model, "b");
 });
 
-test("High Quality takes the strongest score and Sports the fastest near it", () => {
+test("High Quality takes the strongest score and Sports the fastest good-enough pair", () => {
   assert.equal(pick(ladder(), "quality", "quick").selected.model, "top");
   const near = [...ladder(), pair("swift", 70, 4, 30)];
-  assert.equal(pick(near, "sports", "quick").selected.model, "swift");
+  // A quick task: anything over its floor will do, so the fastest of them.
+  assert.equal(pick(near, "sports", "quick").selected.model, "cheap");
+  // A critical one needs 95% of the best: swift is the fastest that reaches it.
+  assert.equal(pick(near, "sports", "critical").selected.model, "swift");
 });
 
-test("Eco asks for a lower share of the best score than Balanced", () => {
-  // lean reaches 81% of the best score: enough for Eco (78%), not for Balanced (88%).
+test("Eco values a point at half what Balanced does, so it settles for less", () => {
   const c = [
-    pair("lean", 58, 0.5, 10),
+    pair("lean", 50, 0.5, 10),
     pair("full", 66, 2, 30),
     pair("top", 72, 6, 90),
   ];
   assert.equal(pick(c, "balanced", "everyday").selected.model, "full");
   assert.equal(pick(c, "eco", "everyday").selected.model, "lean");
+});
+
+test("a higher effort of a small model and a lower effort of a big one compete on the same terms", () => {
+  const c = [
+    pair("small-max", 45, 0.4, 300),
+    pair("small-xhigh", 43, 0.25, 25),
+    pair("big-low", 44, 1, 12),
+    pair("big-medium", 55, 1.6, 20),
+    pair("big-max", 60, 10, 600),
+  ];
+  // small-max is too slow; small-xhigh gives nearly big-low's score for a quarter.
+  assert.equal(pick(c, "balanced", "quick").selected.model, "small-xhigh");
+  // An everyday task pays for big-medium's 12 extra points.
+  assert.equal(pick(c, "balanced", "everyday").selected.model, "big-medium");
 });
 
 test("a pair that is dearer and no better is never chosen", () => {
@@ -99,15 +130,16 @@ test("exact ties keep the current pair", () => {
   assert.equal(selectPair(c, "balanced", "a|high").selected.model, "a");
 });
 
-test("ranked pairs carry their share of the best score", () => {
+test("ranked pairs carry their share of the best score and their value", () => {
   const r = pick(ladder(), "balanced", "critical");
   assert.ok(r.ranked.every((p) => p.shareOfBest >= TIERS.critical.share));
   const everyday = pick(ladder(), "balanced", "everyday");
   assert.deepEqual(
     everyday.ranked.map((p) => p.model),
-    ["strong"],
+    ["strong", "mid"],
   );
   assert.equal(everyday.ranked[0].shareOfBest, 66 / 72);
+  assert.equal(everyday.ranked[0].value, Number((66 - 2 / 0.15).toFixed(2)));
 });
 
 test("invalid inputs are rejected loudly", () => {
@@ -189,8 +221,8 @@ const ALPHA = [
 ];
 const BETA = [
   [42, 0.5, 12],
-  [52, 1.2, 25],
-  [56, 1.8, 50],
+  [52, 1.3, 25],
+  [56, 2, 50],
   [60, 3.5, 130],
   [62, 6, 600],
 ];
@@ -237,8 +269,8 @@ const at = (r) => r.pair.model + "/" + r.pair.effort;
 test("routing follows the numbers and needs no per-model setup", () => {
   const models = world(["alpha", "beta"]);
   assert.ok(models.every((m) => m.routable && m.mappingSource === "auto"));
-  assert.equal(at(decide(models, { difficulty: "simple" })), "alpha/high");
-  assert.equal(at(decide(models, {})), "beta/high");
+  assert.equal(at(decide(models, { difficulty: "simple" })), "alpha/medium");
+  assert.equal(at(decide(models, {})), "alpha/high");
   const r = decide(models, {});
   assert.equal(r.reason, "balanced_policy");
   assert.equal(r.tier, "everyday");
@@ -247,20 +279,20 @@ test("routing follows the numbers and needs no per-model setup", () => {
 
 test("a new model that earns its place is used once its access is confirmed, and not before", () => {
   const before = decide(world(["alpha", "beta"]), {});
-  assert.equal(at(before), "beta/high");
+  assert.equal(at(before), "alpha/high");
   const unconfirmed = decide(
     world(["alpha", "beta", "gamma"], ["alpha", "beta"]),
     {},
   );
-  assert.equal(at(unconfirmed), "beta/high");
+  assert.equal(at(unconfirmed), "alpha/high");
   const confirmed = decide(world(["alpha", "beta", "gamma"]), {});
-  assert.equal(at(confirmed), "gamma/medium");
+  assert.equal(at(confirmed), "gamma/high");
 });
 
 test("changed benchmark numbers change the pick on the next refresh", () => {
   const cheaper = records("beta", [
     [42, 0.5, 12],
-    [52, 1.2, 25],
+    [52, 1.3, 25],
     [56, 0.8, 50],
     [60, 3.5, 130],
     [62, 6, 600],
@@ -275,7 +307,7 @@ test("changed benchmark numbers change the pick on the next refresh", () => {
   assert.equal(at(decide(models, {})), "beta/high");
   const slower = records("beta", [
     [42, 0.5, 12],
-    [52, 1.2, 25],
+    [52, 1.3, 25],
     [56, 1.8, 200],
     [60, 3.5, 130],
     [62, 6, 600],
@@ -286,7 +318,7 @@ test("changed benchmark numbers change the pick on the next refresh", () => {
     [],
     ["alpha", "beta"],
   );
-  assert.equal(at(decide(models2, {})), "alpha/xhigh");
+  assert.equal(at(decide(models2, {})), "alpha/high");
 });
 
 test("a risky task is held to the critical tier, not to the pair the chat started on", () => {
@@ -298,10 +330,10 @@ test("a risky task is held to the critical tier, not to the pair the chat starte
   );
   assert.equal(r.tier, "critical");
   assert.ok(r.ranked[0].shareOfBest >= TIERS.critical.share);
-  assert.equal(at(r), "beta/max");
+  assert.equal(at(r), "beta/xhigh");
 });
 
-test("an unclear request keeps the everyday tier and the native pair, not a stronger one", () => {
+test("an unclear request keeps the everyday tier and never moves above the native pair", () => {
   const models = world(["alpha", "beta"]);
   const r = decide(
     models,
@@ -309,7 +341,10 @@ test("an unclear request keeps the everyday tier and the native pair, not a stro
     { model: "beta", effort: "high" },
   );
   assert.equal(r.tier, "everyday");
-  assert.equal(at(r), "beta/high");
+  assert.ok(
+    r.ranked.find((p) => p.model === r.pair.model && p.effort === r.pair.effort)
+      .rawScore <= 56,
+  );
 });
 
 test("an index for the task is used only when every compared pair has it", () => {
@@ -325,19 +360,21 @@ test("an index for the task is used only when every compared pair has it", () =>
 
 test("a change of effort alone skips the cache payback; a change of model still needs it", () => {
   const models = world(["alpha", "beta"]);
-  // beta/xhigh -> beta/high is a downgrade within one model: allowed.
-  assert.equal(
-    at(decide(models, {}, { model: "beta", effort: "xhigh" })),
-    "beta/high",
-  );
-  // beta/max -> alpha/xhigh would be a downgrade to another model at the same token
-  // prices, which cannot pay back re-storing the conversation.
+  // beta/xhigh -> beta/medium is a move within one model: no cache write, allowed.
+  const own = decide(world(["beta"]), {}, { model: "beta", effort: "xhigh" });
+  assert.equal(at(own), "beta/medium");
+  assert.equal(own.reason, "balanced_policy");
   const r = decide(
     world(["alpha"]),
     { difficulty: "simple" },
     { model: "alpha", effort: "max" },
   );
-  assert.equal(at(r), "alpha/high");
+  assert.equal(at(r), "alpha/medium");
+  // A move to another model goes through the payback check (here it pays: tiny chat).
+  assert.equal(
+    at(decide(models, {}, { model: "beta", effort: "xhigh" })),
+    "alpha/high",
+  );
 });
 
 test("data without cost per task keeps the native pair", () => {

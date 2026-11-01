@@ -1,30 +1,36 @@
 // Pure ranking core for comparable evidence. The adapter applies availability,
 // risk, manual override, budget, cache-payback and freshness gates BEFORE this.
 //
-// The policy names no model. For a kind of task it asks two questions of the
-// benchmark data: which pairs reach enough of the strongest comparable score, and
-// of those, which is cheapest (measured benchmark USD per task, so a high effort
-// that burns many tokens costs more than a low one) without making a person wait
-// too long? Every number comes from the daily benchmark refresh, so a new model or
-// a changed score changes the answer without a code or settings change.
+// The policy names no model. Every allowed model at every effort is a candidate,
+// scored on the benchmark for this kind of task (coding, agentic work, reasoning,
+// knowledge, a sector, or general). For a task of a given size it asks:
+//   1. which pairs are good enough (at least `share` of the strongest score),
+//   2. which of those answer in time (benchmark median seconds under `waitS`),
+//   3. which gives the most score for the usage: value = score - cost / wtp.
+// `wtp` is how many dollars of benchmark cost per task one more point is worth.
+// A quick task values a point at 3 cents, so a cheap pair that is a little weaker
+// wins; a critical one at $1.20, so the stronger pair wins unless it is far dearer.
+// Model and effort are traded off the same way: a higher effort of a smaller model
+// and a lower effort of a bigger one are just two pairs with their own score and
+// cost. Every number comes from the benchmark refresh, so new data changes picks.
 //
-// share  = fraction of the strongest comparable score a task of this kind deserves.
-// waitS  = how long a person will wait for it, compared with the benchmark's median
-//          end-to-end seconds. A relative speed limit, not a promise about your prompt.
+// waitS is compared with the benchmark's median end-to-end seconds: a relative speed
+// limit, not a promise about your prompt.
 export const TIERS = Object.freeze({
-  quick: { share: 0.7, waitS: 20 },
-  everyday: { share: 0.88, waitS: 60 },
-  hard: { share: 0.92, waitS: 120 },
-  critical: { share: 0.97, waitS: 240 },
-  best: { share: 1, waitS: Infinity },
+  quick: { share: 0.4, wtp: 0.03, waitS: 30 },
+  everyday: { share: 0.6, wtp: 0.15, waitS: 60 },
+  hard: { share: 0.8, wtp: 0.4, waitS: 150 },
+  critical: { share: 0.9, wtp: 1.2, waitS: 300 },
+  best: { share: 1, wtp: Infinity, waitS: Infinity },
 });
-// shift moves every tier's share (Eco asks for less); a fixed tier or share ignores
-// the task. objective is what is minimised or maximised among the acceptable pairs.
+// shift moves every tier's floor and wtpScale how much a point is worth (Eco asks for
+// less and values points at 60%), a fixed tier ignores the task. objective is what
+// decides among the acceptable pairs: value (cost), score, or speed.
 export const MODES = Object.freeze({
-  eco: { shift: -0.1, objective: "cost" },
-  balanced: { shift: 0, objective: "cost" },
+  eco: { shift: -0.05, wtpScale: 0.6, objective: "cost" },
+  balanced: { shift: 0, wtpScale: 1, objective: "cost" },
   quality: { tier: "best", objective: "score" },
-  sports: { share: 0.97, objective: "speed" },
+  sports: { shift: 0, wtpScale: 1, objective: "speed" },
 });
 // A broad tier from the local intent classification. High risk or repeated failure
 // make a task critical, complexity makes it at least "hard". An unclear request (unknown risk)
@@ -67,17 +73,15 @@ export function selectPair(
   const priced = candidates.filter((p) => p.costPerTaskUsd != null);
   if (!priced.length) return { kind: "hold", reason: "cost_evidence_missing" };
   const spec = MODES[mode];
+  const t = TIERS[spec.tier ?? tier];
   const best = Math.max(...priced.map((p) => p.rawScore));
-  const share =
-    spec.share ??
-    Math.min(
-      1,
-      Math.max(0.5, TIERS[spec.tier ?? tier].share + (spec.shift ?? 0)),
-    );
-  const waitMs =
-    spec.objective === "cost"
-      ? (spec.tier ? TIERS[spec.tier] : TIERS[tier]).waitS * 1000
-      : Infinity;
+  // A critical task keeps its full floor and point value in every mode: Eco saves on
+  // the rest, never on money, legal, admissions or production work.
+  const protect = (spec.tier ?? tier) === "critical";
+  const shift = protect ? Math.max(0, spec.shift ?? 0) : (spec.shift ?? 0);
+  const share = Math.min(1, Math.max(0.2, t.share + shift));
+  const wtp = t.wtp * (protect ? 1 : (spec.wtpScale ?? 1));
+  const waitMs = spec.objective === "score" ? Infinity : t.waitS * 1000;
   // The strongest pair always qualifies, so this is never empty.
   const floor = best > 0 ? share * best : best;
   const good = priced.filter((p) => p.rawScore >= floor);
@@ -88,6 +92,8 @@ export function selectPair(
   );
   const relaxed = !inTime.length;
   const pool = relaxed ? good : inTime;
+  const value = (p) =>
+    Number.isFinite(wtp) ? p.rawScore - p.costPerTaskUsd / wtp : p.rawScore;
   const order =
     spec.objective === "score"
       ? (a, b) =>
@@ -97,14 +103,18 @@ export function selectPair(
       : spec.objective === "speed" || relaxed
         ? (a, b) =>
             byAsc(a.latencyMs, b.latencyMs) ||
-            byAsc(a.costPerTaskUsd, b.costPerTaskUsd) ||
+            value(b) - value(a) ||
             b.rawScore - a.rawScore
         : (a, b) =>
+            value(b) - value(a) ||
             byAsc(a.costPerTaskUsd, b.costPerTaskUsd) ||
-            b.rawScore - a.rawScore ||
             byAsc(a.latencyMs, b.latencyMs);
   const ranked = pool
-    .map((p) => ({ ...p, shareOfBest: best > 0 ? p.rawScore / best : 1 }))
+    .map((p) => ({
+      ...p,
+      shareOfBest: best > 0 ? p.rawScore / best : 1,
+      value: Number(value(p).toFixed(2)),
+    }))
     .sort((a, b) => {
       const d = order(a, b);
       if (d) return d;
@@ -116,8 +126,8 @@ export function selectPair(
     kind: "select",
     selected: ranked[0],
     ranked,
-    tier: spec.tier ?? (spec.share ? "speed" : tier),
-    target: { share, floor, best, waitS: waitMs / 1000, relaxed },
+    tier: spec.tier ?? tier,
+    target: { share, floor, best, wtp, waitS: waitMs / 1000, relaxed },
     evidence: "share_of_best_score_not_success_probability",
   };
 }

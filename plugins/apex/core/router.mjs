@@ -173,6 +173,20 @@ const QUESTION_START =
   /^\s*(what|who|when|where|which|how (many|much|old|long|far)|is|are|was|were|does|do|did|can|could)\b/;
 const NEEDS_THOUGHT =
   /should|best|better|recommend|advice|think|opinion|why|implement|build|refactor|debug|design|plan|write|create|review|analy[sz]e|compare|strategy|decide/;
+// A wrong answer here costs money, a legal position, a deadline or data: the task
+// is held to the critical tier. Money and agreements (equity, vesting, licences,
+// patents, signing), and admissions (tuition, fees, deadlines) count, not only code.
+const RISK =
+  /security|authenticat|authoriz|payment|production|migration|delete|concurren|medical|diagnos|legal|contract|financial|\btax|tuition|\bfees?\b|deadline|admission|patent|licen[cs]e|vesting|equity|investor|shareholder|wages|salary|visa|should i sign|sign (it|this|and send)/;
+// Whole words only: "codex" or "decode" is not a request to write code.
+const CODING =
+  /\b(code|coding|codebase|function|debug|program|typescript|javascript|python|react|component|compile|bug|unit tests?|refactor|repo|api|script)\b/;
+const CHANGE =
+  /\b(implement|build|fix|refactor|debug|update|change|edit|add|remove|rewrite|migrate)\b/;
+const AGENTIC =
+  /\b(update|sync|organi[sz]e|clean up|install|commit|push|merge|pr|deploy|run|set ?up|configure|files?|folder|vault|notes|index|changes|system)\b/;
+const MATH =
+  /\bmath|\bproofs?\b|theorem|integral|equation|probability|statistic|calculus|differentiat|algebra/;
 const isSimple = (t) =>
   SIMPLE_START.test(t) ||
   (QUESTION_START.test(t) && t.trim().length <= 80 && !NEEDS_THOUGHT.test(t));
@@ -182,29 +196,35 @@ export function classifyIntent(text, previous) {
     .toLowerCase();
   if (previous && /^\s*(yes|continue|go ahead|do it|ok|okay)[.!\s]*$/.test(t))
     return previous;
-  const risk =
-    /security|authenticat|authoriz|payment|production|migration|delete|concurren|medical|diagnos|legal|contract|financial|tax/.test(
-      t,
-    )
-      ? "high"
-      : "normal";
+  const risk = RISK.test(t) ? "high" : "normal";
   let task = "general";
   for (const [name, re] of [
     ["healthcare", /medical|diagnos|healthcare/],
-    ["legal", /legal|contract|lawsuit/],
-    ["finance", /financial|accounting|tax/],
+    ["legal", /legal|contract|lawsuit|patent|licen[cs]e|trademark/],
+    [
+      "finance",
+      /financial|accounting|\btax|vesting|equity|wages|salary|tuition/,
+    ],
     ["economics", /economics|inflation/],
     ["engineering", /engineering|mechanical|electrical/],
     ["strategy", /strategy|business operation/],
-    ["math", /math|\bproofs?\b|theorem|integral/],
-    ["coding", /code|function|debug|program|typescript|python/],
+    ["math", MATH],
+    ["coding", CODING],
   ])
     if (re.test(t)) {
       task = name;
       break;
     }
-  if (task === "coding" && /implement|build|fix|refactor|debug/.test(t))
+  // Changing code, or working through files and tools, is agentic work: it is scored
+  // on the tool-use and terminal benchmarks rather than on code-writing alone.
+  if (
+    (task === "coding" && CHANGE.test(t)) ||
+    (task === "general" && AGENTIC.test(t))
+  )
     task = "agentic_coding";
+  // A short factual question is recall, scored on the knowledge benchmark.
+  if (task === "general" && isSimple(t) && QUESTION_START.test(t))
+    task = "knowledge";
   const difficulty =
     /architect|\bproofs?\b|multi.file|concurren|security|comprehensive|complex|hard task/.test(
       t,
@@ -288,9 +308,18 @@ export const PAYBACK_REQUESTS = 5;
 // Is moving the conversation to `winner` worth it, against staying on the model that
 // holds the cache at its best acceptable effort (`stay`)? The move pays the new
 // model's cache write for the whole context once; afterwards both only read it.
-// Cost modes compare usage, Sports compares waiting, High Quality the score.
+// Cost modes compare usage, Sports compares waiting, High Quality the score. Given
+// `wtp` (what a point of score is worth, from the task's tier), cost modes compare
+// value instead: score over the next requests minus their usage priced in points,
+// so a move up to a stronger model can pay for itself, not only a move down.
 // Returns null when a price or cost needed for the sum is unknown.
-export function switchPayback(winner, stay, inputTokens, objective = "cost") {
+export function switchPayback(
+  winner,
+  stay,
+  inputTokens,
+  objective = "cost",
+  wtp = null,
+) {
   const w = winner.record?.evidence?.prices,
     s = stay.record?.evidence?.prices;
   const nums = [
@@ -315,7 +344,10 @@ export function switchPayback(winner, stay, inputTokens, objective = "cost") {
         ? winner.latencyMs != null &&
           stay.latencyMs != null &&
           winner.latencyMs < stay.latencyMs * 0.9
-        : moveUsd < stayUsd * 0.95;
+        : Number.isFinite(wtp) && wtp > 0
+          ? n * winner.rawScore - moveUsd / wtp >
+            n * stay.rawScore - stayUsd / wtp
+          : moveUsd < stayUsd * 0.95;
   return { pays, stayUsd, moveUsd, requests: n };
 }
 export function route({
@@ -428,6 +460,7 @@ export function route({
         stay,
         inputTokens,
         MODES[control.mode]?.objective,
+        r.target.wtp,
       );
       if (!(move?.pays === true)) {
         winner = stay;

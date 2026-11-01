@@ -8,6 +8,8 @@
 
 APEX is executable middleware, not just instructions to Claude. It wraps the official `turn.step` hook and forwards the selected model and effort while preserving the streamed response and conversation. Eco, Balanced, High Quality and Sports can be selected while work is running.
 
+**0.8.0-beta.1:** APEX picks on value, not on "nearly as good as the top model". Every model at every effort is weighed on the benchmark for the kind of task (coding, agentic work, reasoning, knowledge, a sector or general), and the pick is the most score for the usage among pairs that are good enough and quick enough. Ordinary prompts no longer default to Opus at high effort, agentic work often goes to Sonnet, and money, legal and admissions questions are held to the critical tier in every mode. Checked offline with a 200-prompt replay; see the changelog.
+
 **0.7.1-beta.1:** the publisher line reads "APEX by Zoran"; routing is unchanged.
 
 **0.7.0-beta.1:** APEX now moves between models, not only efforts. Before, it only considered models with exactly the same thinking flags as the one the chat started on, so Haiku, Sonnet and Opus never replaced each other; a chat that started on an effort the benchmarks do not name was not routed at all; and risky prompts could not go below the starting pair. Now every confirmed model is a candidate, a move to another model is made when it repays re-storing the conversation over the next five requests, and subagents are routed too (`/apex agents off` turns that off). A replay of 200 labelled prompts (`scripts/replay.mjs`) measures each change offline. Checked offline and in CI.
@@ -45,7 +47,7 @@ See [INSTALL.md](INSTALL.md) for the complete setup and removal instructions.
 - Shows request and tool activity, original settings, APEX-requested settings, response-reported model, revision, selection reason, and token-cost receipts. Requested effort is shown explicitly; effective provider effort stays unknown.
 - Accepts live mode changes through native buttons, slash commands or an authenticated loopback dashboard. An already streaming request stays on its existing settings; acknowledged changes apply to the next unsent request.
 - Discovers model IDs, efforts and capabilities from Anthropic's Models API; gets indices, prices, benchmark USD/task and performance from **your own Artificial Analysis key**. No generation-specific list or copied public benchmark dataset is bundled.
-- Chooses by policy, not from a fixed list: the cheapest pair that reaches enough of the strongest score for the kind of task, within a wait limit. No model name is built in, so a new model or changed benchmark numbers change the choice at the next daily refresh. Effort variants of confirmed models join automatically. A newly discovered model waits for your confirmation (`/apex confirm-models`) because APEX cannot tell whether your plan includes it.
+- Chooses by policy, not from a fixed list: among pairs that reach the task's floor within its wait limit, the one with the most score for the usage (score minus cost divided by what a point is worth for that task). No model name is built in, so a new model or changed benchmark numbers change the choice at the next daily refresh. Effort variants of confirmed models join automatically. A newly discovered model waits for your confirmation (`/apex confirm-models`) because APEX cannot tell whether your plan includes it.
 - Compares general intelligence, coding, agentic coding and six domain indices. A local deterministic classifier selects a broad task category; it does not send your prompt to a separate classifier model. Math uses the general intelligence index as a proxy.
 - Keeps the native model when access, identity mapping, effort, capabilities, context size or freshness is unknown. New model discovery does not silently grant account access.
 - Respects user model/effort overrides through manual hold. Subagents are routed under the base mode (search agents as quick tasks); an agent given its own model keeps it, and `/apex agents off` leaves all agents alone.
@@ -53,23 +55,25 @@ See [INSTALL.md](INSTALL.md) for the complete setup and removal instructions.
 
 ## Live modes
 
-For each request APEX classifies the task locally into a tier, finds the strongest comparable score for that task in the benchmark data, and picks the cheapest pair that reaches a share of it within a wait limit. Cost is AA's measured benchmark USD per task, so an effort that burns more tokens costs more. Nothing here names a model.
+For each request APEX classifies the task locally into a kind (coding, agentic work through files and tools, reasoning, knowledge, a business sector, or general) and a tier, then scores every confirmed model at every effort on that kind's benchmark. Pairs below the tier's floor (a share of the strongest score) or slower than its wait limit are dropped; of the rest it takes the highest value, `score − cost per task ÷ worth of a point`. A quick task values a point at 3 cents, so a slightly weaker pair for a fraction of the usage wins; a critical one at $1.20, so the stronger pair wins unless it is far dearer. A higher effort on a smaller model and a lower effort on a bigger one compete on the same terms. Cost is AA's measured benchmark USD per task, so an effort that burns more tokens costs more. Nothing here names a model.
 
-| Tier     | When                                   | Share of the best score | Wait limit |
-| -------- | -------------------------------------- | ----------------------- | ---------- |
-| Quick    | simple, low-risk requests              | 70%                     | 20 s       |
-| Everyday | ordinary requests                      | 88%                     | 60 s       |
-| Hard     | complex or high-risk requests          | 92%                     | 120 s      |
-| Critical | complex and high-risk, or failed twice | 97%                     | 240 s      |
+Since AA's index v5 its free API no longer fills the coding and agentic indices, so those, reasoning (HLE-Diamond, CritPt) and knowledge (AA-Omniscience) come from a dated snapshot of AA's public model pages in `core/task-scores.mjs` (refresh with `node scripts/refresh-task-scores.mjs`). Coding is Terminal-Bench 4.0 with FrontierCode 2.0; agentic work is AutomationBench with Terminal-Bench 4.0. The snapshot is ignored once AA's index version changes.
 
-| Mode         | What it does                                                               |
-| ------------ | -------------------------------------------------------------------------- |
-| Balanced     | The tiers above.                                                           |
-| Eco          | The same tiers, asking for 10 points less of the best score.               |
-| High Quality | The strongest comparable score; cost then speed break ties; no wait limit. |
-| Sports       | The fastest pair within 3% of the strongest comparable score.              |
+| Tier     | When                                                                       | Floor (share of best) | Worth of a point | Wait limit |
+| -------- | -------------------------------------------------------------------------- | --------------------- | ---------------- | ---------- |
+| Quick    | simple, low-risk requests                                                  | 40%                   | $0.03            | 30 s       |
+| Everyday | ordinary requests                                                          | 60%                   | $0.15            | 60 s       |
+| Hard     | complex requests                                                           | 80%                   | $0.40            | 150 s      |
+| Critical | high-risk (money, legal, admissions, production, security) or failed twice | 90%                   | $1.20            | 300 s      |
 
-These are transparent heuristics, not measured task-success probabilities, and the shares and wait limits are judgment calls. The wait limit compares AA's median end-to-end seconds, not your prompt. Routing is not held at the model the chat started on: high-risk or twice-failing tasks are held to the critical tier instead, and complex ones to the hard tier. Moving to a different model pays one cache write for the whole conversation, so it is made only when it repays that over the next five requests (or, in Sports, is clearly faster; in High Quality, scores higher), or when no effort of the current model reaches the task's floor. A change of effort alone keeps the cache and needs no payback. With benchmark data older than three days nothing goes below the starting pair. If a task has no index for every compared pair, general intelligence is used for all of them and the receipt says so. If the benchmark data has no cost-per-task figures, native settings are kept.
+| Mode         | What it does                                                                         |
+| ------------ | ------------------------------------------------------------------------------------ |
+| Balanced     | The tiers above.                                                                     |
+| Eco          | Floors 5 points lower and a point worth 60%, except critical tasks, which keep both. |
+| High Quality | The strongest comparable score; cost then speed break ties; no wait limit.           |
+| Sports       | The fastest pair that reaches the tier's floor.                                      |
+
+These are transparent heuristics, not measured task-success probabilities, and the shares and wait limits are judgment calls. The wait limit compares AA's median end-to-end seconds, not your prompt. Routing is not held at the model the chat started on: high-risk or twice-failing tasks are held to the critical tier instead, and complex ones to the hard tier. Moving to a different model pays one cache write for the whole conversation, so it is made only when it repays that over the next five requests, counting both usage and score (or, in Sports, is clearly faster; in High Quality, scores higher), or when no effort of the current model reaches the task's floor. A change of effort alone keeps the cache and needs no payback. With benchmark data older than three days nothing goes below the starting pair. If a task has no index for every compared pair, general intelligence is used for all of them and the receipt says so. If the benchmark data has no cost-per-task figures, native settings are kept.
 
 ## Ultracode for the hardest tasks
 

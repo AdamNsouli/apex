@@ -677,6 +677,9 @@ export function register(on, config = {}) {
         });
       const fresh = nextIntent !== intent;
       intent = nextIntent;
+      // A new task is a fresh decision: the hold against flip-flopping covers the
+      // steps of one task, not the next prompt (the cache payback still applies).
+      if (fresh) stepsOnModel = 2;
       if (
         ultra === "idle" &&
         wantsUltracode({

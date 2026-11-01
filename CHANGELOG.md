@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.8.0-beta.1
+
+APEX picks on value instead of "nearly as good as the top model".
+
+Before, a pair qualified only if it reached 88% of the strongest score (92% for hard, 97% for critical), and the cheapest such pair won. With Opus 5.5 max at the top that meant only Opus at high effort or more, or Sonnet at max, qualified for an ordinary prompt, so a chat started on any model ended up on Opus. Coding prompts were also judged on the general score, because AA's index v5 free API no longer fills the coding or agentic index, and the prompt reader matched "code" inside words like "codex".
+
+Now each tier has a lower floor (quick 40%, everyday 60%, hard 80%, critical 90% of the best score for that kind of task), the same kind of wait limit, and a worth for one point of score ($0.03, $0.15, $0.40, $1.20 of benchmark cost per task). Among pairs over the floor and in time, the pick has the highest `score − cost ÷ worth`, so a higher effort on a smaller model and a lower effort on a bigger one compete directly. Eco lowers floors by 5 points and values points at 60%, except for critical tasks; Sports takes the fastest pair over the floor; High Quality is unchanged.
+
+Scores per kind of task come from a dated snapshot of AA's public model pages (`core/task-scores.mjs`, refreshed by `scripts/refresh-task-scores.mjs`): coding is Terminal-Bench 4.0 with FrontierCode 2.0, agentic work AutomationBench with Terminal-Bench 4.0, reasoning HLE-Diamond with CritPt, knowledge AA-Omniscience accuracy. It fills only scores the API leaves empty and is ignored once AA's index version changes. The reader matches whole words, reads changes to code and work through files and tools as agentic, short factual questions as knowledge, and treats tuition, fees, deadlines, admissions, patents, licences, vesting, equity, investors, wages, visas and "should I sign" as high-stakes. A move to another model is judged on score and usage together (it was usage only, so a chat could never move up to better value), and a new prompt resets the hold against flip-flopping between steps.
+
+On 200 of the maintainer's labelled prompts (kept off the repository) with the 30 Oct benchmark data, Balanced starting on Opus 5.5 high: usage 84% of always staying there (110% before), wait 84% (141%), prompts under their labelled need 7% (10%), important prompts under it 21% (46%), and all three models used (two before). Starting on Opus max, Balanced used 29% of always-max usage (38%). The yardstick for "under" changed to the new floors and is the same for both versions. The reader still rates some hard and important prompts as everyday.
+
+The hygiene check, 102 Node tests (9 new, 13 updated for the new policy) and 29 native tests (1 updated) pass locally; the browser checks run only in CI. No live inference was run. Update the marketplace and the plugin, then restart: chats that were already open keep the previous code.
+
 ## 0.7.1-beta.1
 
 The publisher line now reads "APEX by Zoran".
