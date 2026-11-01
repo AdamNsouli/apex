@@ -1,7 +1,12 @@
+import { TASK_SCORES } from "./task-scores.mjs";
 export const LEVELS = ["low", "medium", "high", "xhigh", "max"];
+// AA API field per kind of task. Since AA's index v5 the API no longer fills the
+// coding and agentic indices; those, reasoning and knowledge come from the per-task
+// snapshot instead (TASK_FROM_EVALS), which fills any score the API leaves empty.
 export const TASK_INDEX = Object.freeze({
   general: "artificial_analysis_intelligence_index",
-  math: "artificial_analysis_intelligence_index",
+  math: "artificial_analysis_math_index",
+  knowledge: "artificial_analysis_knowledge_index",
   coding: "artificial_analysis_coding_index",
   agentic_coding: "artificial_analysis_agentic_index",
   engineering: "artificial_analysis_engineering_index",
@@ -13,6 +18,58 @@ export const TASK_INDEX = Object.freeze({
 });
 export const finite = (x) =>
   typeof x === "number" && Number.isFinite(x) ? x : null;
+// The single benchmarks behind each task score (AA index v5), each a 0-1 pass rate.
+// coding: Terminal-Bench 4.0 and FrontierCode 2.0 (real repositories, terminals).
+// agentic_coding: AutomationBench (tool and SaaS workflows) and Terminal-Bench 4.0.
+// math: HLE-Diamond and CritPt (hard reasoning). knowledge: AA-Omniscience accuracy.
+export const EVAL_FIELDS = Object.freeze([
+  "terminalBench40",
+  "frontierCode20",
+  "automationBenchPartialScore",
+  "hleDiamond",
+  "critptAgenticHard",
+  "omniscienceAccuracy",
+  "gdpval",
+]);
+export const TASK_FROM_EVALS = Object.freeze({
+  coding: ["terminalBench40", "frontierCode20"],
+  agentic_coding: ["automationBenchPartialScore", "terminalBench40"],
+  math: ["hleDiamond", "critptAgenticHard"],
+  knowledge: ["omniscienceAccuracy"],
+});
+export function taskScoresFromEvals(row) {
+  if (!row) return {};
+  return Object.fromEntries(
+    Object.entries(TASK_FROM_EVALS).flatMap(([task, fields]) => {
+      const v = fields.map((f) => finite(row[f]));
+      return v.every((x) => x !== null)
+        ? [
+            [
+              task,
+              Number(
+                ((v.reduce((a, b) => a + b, 0) / v.length) * 100).toFixed(1),
+              ),
+            ],
+          ]
+        : [];
+    }),
+  );
+}
+// Fills the task scores the API left empty from the snapshot, for the same index
+// version only (a new methodology rescales every score, so old ones cannot mix in).
+export function withTaskScores(a, snapshot = TASK_SCORES) {
+  if (!a?.scores || !snapshot?.version) return a;
+  if (String(a.benchmarkVersion) !== String(snapshot.version)) return a;
+  const extra = taskScoresFromEvals(snapshot.models?.[a.slug]);
+  const scores = { ...a.scores };
+  let filled = false;
+  for (const [t, v] of Object.entries(extra))
+    if (finite(scores[t]) === null) {
+      scores[t] = v;
+      filled = true;
+    }
+  return filled ? { ...a, scores, taskScoresFrom: snapshot.capturedAt } : a;
+}
 export function runtimeModels(body) {
   if (!Array.isArray(body?.data)) throw new Error("Invalid runtime catalogue");
   return body.data.map((m) => {
@@ -147,7 +204,7 @@ export function joinCatalogue(
   verifiedIds = [],
 ) {
   const allowed = new Set(verifiedIds);
-  const aa = benchmarks.map(withNamedEffort);
+  const aa = benchmarks.map((a) => withTaskScores(withNamedEffort(a)));
   return runtime.flatMap((m) => {
     const explicit = mappings.filter((x) => x.runtimeId === m.id);
     const auto = explicit.length ? [] : suggestMappings(m, aa);

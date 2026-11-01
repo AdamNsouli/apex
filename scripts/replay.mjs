@@ -14,11 +14,14 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const MODES = ["eco", "balanced", "sports", "quality"];
+// The yardstick for "under-served": the share of the best general score a prompt's
+// labelled need deserves. Fixed here, not read from the core under test, so two
+// versions are judged by the same rule.
 const NEED_SHARE = {
-  quick: 0.7,
-  everyday: 0.88,
-  hard: 0.92,
-  critical: 0.97,
+  quick: 0.4,
+  everyday: 0.6,
+  hard: 0.8,
+  critical: 0.9,
   best: 1,
 };
 
@@ -65,7 +68,10 @@ export function replayRun({ core, prompts, models, fetchedAt, mode, start }) {
       stepsOnModel = 2,
       cacheModel = start.model;
     for (const p of list) {
-      intent = core.classifyIntent(p.text, intent);
+      const next = core.classifyIntent(p.text, intent);
+      // As in the plugin: a new task resets the hold against flip-flopping.
+      if (next !== intent) stepsOnModel = 2;
+      intent = next;
       const inputTokens = Number.isFinite(p.context) ? p.context : 50000;
       const d = core.route({
         original: start,

@@ -181,7 +181,7 @@ test("a quick request takes the cheaper pair, an ordinary one keeps the strong p
   const aa = {
     models: [
       row("fixture-alpha", 75, 0.3, 5, 0.5),
-      row("fixture-beta", 100, 5, 60, 1),
+      row("fixture-beta", 100, 3, 60, 1),
     ],
     fetchedAt: NOW,
   };
