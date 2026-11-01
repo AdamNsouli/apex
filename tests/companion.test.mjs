@@ -208,6 +208,7 @@ test("first memory-only AA connection fetches once; key edits and refresh cannot
     for (const asset of [
       "/presentation.mjs",
       "/receipt.mjs",
+      "/scoring.mjs",
       "/tokens.css",
       "/assets/apex-mark.svg",
       "/assets/inter.ttf",
