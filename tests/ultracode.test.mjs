@@ -20,22 +20,43 @@ const ask = (mode, text = CRITICAL, over = {}) =>
     ...over,
   });
 
-test("the mode decides: Sports for hard and critical, High Quality for critical, Balanced and Eco never", () => {
+test("the mode decides: the speed modes for hard and critical, Max Power for critical, the rest never", () => {
   assert.equal(initialControl().ultracode, "auto");
   assert.deepEqual(
-    ["sports", "quality", "balanced", "eco"].map((m) => ask(m, CRITICAL)),
-    [true, true, false, false],
+    [
+      "max_speed",
+      "max_power_speed",
+      "max_power",
+      "balanced",
+      "cost_efficient",
+      "time_efficient",
+    ].map((m) => ask(m, CRITICAL)),
+    [true, true, true, false, false, false],
   );
   assert.deepEqual(
-    ["sports", "quality", "balanced", "eco"].map((m) => ask(m, HARD)),
-    [true, false, false, false],
+    [
+      "max_speed",
+      "max_power_speed",
+      "max_power",
+      "balanced",
+      "cost_efficient",
+      "time_efficient",
+    ].map((m) => ask(m, HARD)),
+    [true, true, false, false, false, false],
   );
-  for (const mode of ["sports", "quality", "balanced", "eco"])
+  for (const mode of [
+    "max_speed",
+    "max_power_speed",
+    "max_power",
+    "balanced",
+    "cost_efficient",
+    "time_efficient",
+  ])
     assert.equal(ask(mode, ORDINARY), false, mode);
-  assert.equal(ask("sports", "format this list"), false);
+  assert.equal(ask("max_speed", "format this list"), false);
 });
 
-test("Quality once counts as High Quality for the next task", () => {
+test("Max Power once counts as Max Power for the next task", () => {
   const once = {
     ...initialControl(),
     mode: "balanced",
@@ -52,7 +73,7 @@ test("the kill switch rules it out in every mode", () => {
     expectedRevision: 0,
   });
   assert.equal(off.ultracode, "off");
-  for (const mode of ["sports", "quality"])
+  for (const mode of ["max_speed", "max_power_speed", "max_power"])
     assert.equal(ask(mode, CRITICAL, { control: { ...off, mode } }), false);
   assert.throws(
     () =>
@@ -68,26 +89,33 @@ test("the kill switch rules it out in every mode", () => {
 test("a continuation does not hold again", () => {
   const critical = classifyIntent(CRITICAL);
   assert.equal(classifyIntent("yes", critical), critical);
-  assert.equal(ask("sports", CRITICAL, { fresh: false }), false);
+  assert.equal(ask("max_speed", CRITICAL, { fresh: false }), false);
 });
 
 test("anything that cannot be sent again safely goes out normally", () => {
   assert.equal(
-    ask("sports", CRITICAL, { attachments: [{ type: "image" }] }),
+    ask("max_speed", CRITICAL, { attachments: [{ type: "image" }] }),
     false,
   );
-  assert.equal(ask("sports", CRITICAL, { turnId: "running-turn" }), false);
-  assert.equal(ask("sports", "/apex why"), false);
-  assert.equal(ask("sports", "   "), false);
+  assert.equal(ask("max_speed", CRITICAL, { turnId: "running-turn" }), false);
+  assert.equal(ask("max_speed", "/apex why"), false);
+  assert.equal(ask("max_speed", "   "), false);
   assert.equal(
-    ask("sports", CRITICAL, { origin: { kind: "plugin", name: "other" } }),
+    ask("max_speed", CRITICAL, { origin: { kind: "plugin", name: "other" } }),
     false,
   );
-  assert.equal(ask("sports", CRITICAL, { origin: { kind: "bridge" } }), false);
+  assert.equal(
+    ask("max_speed", CRITICAL, { origin: { kind: "bridge" } }),
+    false,
+  );
 });
 
 test("held routing and pins leave ultracode alone", () => {
-  const held = { ...initialControl(), mode: "sports", routing: "manual_hold" };
-  assert.equal(ask("sports", CRITICAL, { control: held }), false);
-  assert.equal(ask("sports", CRITICAL, { pinned: true }), false);
+  const held = {
+    ...initialControl(),
+    mode: "max_speed",
+    routing: "manual_hold",
+  };
+  assert.equal(ask("max_speed", CRITICAL, { control: held }), false);
+  assert.equal(ask("max_speed", CRITICAL, { pinned: true }), false);
 });

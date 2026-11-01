@@ -40,22 +40,31 @@
             role="group"
             aria-label="Routing modes"
           >
-            <button data-mode="eco" aria-pressed="false">
-              <span>Eco</span
-              ><small
-                >Lower cost within the protected quality floor.</small
-              ></button
-            ><button data-mode="balanced" aria-pressed="true">
+            <button data-mode="balanced" aria-pressed="true">
               <span>Balanced</span
-              ><small>Balance quality, forecast cost and speed.</small></button
-            ><button data-mode="quality" aria-pressed="false">
-              <span>High Quality</span
+              ><small>Most score for the usage, without a long wait.</small>
+            </button>
+            <button data-mode="cost_efficient" aria-pressed="false">
+              <span>Cost Efficient</span
+              ><small>Cheapest pair good enough for the task.</small>
+            </button>
+            <button data-mode="time_efficient" aria-pressed="false">
+              <span>Time Efficient</span
               ><small
-                >Favor the strongest comparable task evidence.</small
-              ></button
-            ><button data-mode="sports" aria-pressed="false">
-              <span>Sports</span
-              ><small>Favor speed close to the strongest evidence.</small>
+                >Fastest pair good enough, at most twice the cheapest.</small
+              >
+            </button>
+            <button data-mode="max_power" aria-pressed="false">
+              <span>Max Power</span
+              ><small>Strongest pair for the task, whatever it costs.</small>
+            </button>
+            <button data-mode="max_speed" aria-pressed="false">
+              <span>Max Speed</span
+              ><small>Fastest pair over a low floor, whatever it costs.</small>
+            </button>
+            <button data-mode="max_power_speed" aria-pressed="false">
+              <span>Max Power + Speed</span
+              ><small>Fastest pair within 95% of the strongest.</small>
             </button>
             <p id="mode-protection">
               Baseline protection still applies when required.
@@ -145,7 +154,7 @@
           </section>
           <div class="interventions">
             <button id="auto">Hold native settings</button
-            ><button id="quality-once">Quality once</button
+            ><button id="quality-once">Max Power once</button
             ><button id="receipt-export">Export selected receipt</button
             ><button id="receipt-json-toggle">Show JSON</button>
           </div>

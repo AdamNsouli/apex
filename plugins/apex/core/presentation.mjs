@@ -1,28 +1,50 @@
 import { duration, verdict } from "./receipt.mjs";
-export const VERSION = "0.8.0-beta.1";
+import { migrateMode } from "./scoring.mjs";
+export const VERSION = "0.9.0-beta.1";
 export const MODES = {
-  eco: {
-    label: "Eco",
-    detail:
-      "Settle for a little less: lower floors and cheaper points, except on critical tasks.",
-  },
   balanced: {
     label: "Balanced",
+    short: "Balanced",
     detail:
       "Most score for the usage among pairs good enough for the task, without a long wait.",
   },
-  quality: {
-    label: "High Quality",
+  cost_efficient: {
+    label: "Cost Efficient",
+    short: "Cost",
     detail:
-      "Favor the strongest comparable task evidence; ultracode for critical tasks.",
+      "Cheapest pair that is good enough for the task, however long it takes.",
   },
-  sports: {
-    label: "Sports",
+  time_efficient: {
+    label: "Time Efficient",
+    short: "Time",
     detail:
-      "Fastest pair that is good enough for the task; ultracode for hard and critical tasks.",
+      "Fastest pair that is good enough for the task, at no more than twice the cheapest.",
+  },
+  max_power: {
+    label: "Max Power",
+    short: "Power",
+    detail:
+      "Strongest pair for the task, whatever it costs or takes; ultracode for critical tasks.",
+  },
+  max_speed: {
+    label: "Max Speed",
+    short: "Speed",
+    detail:
+      "Fastest pair over a low floor, whatever it costs; parallel subagents, ultracode for hard and critical tasks.",
+  },
+  max_power_speed: {
+    label: "Max Power + Speed",
+    short: "Power+Speed",
+    detail:
+      "Fastest pair within 95% of the strongest, whatever it costs; parallel subagents, ultracode for hard and critical tasks.",
   },
 };
+// A mode saved by an older version (eco, quality, sports) or unknown reads as the
+// mode it became, never as a crash.
+export const modeSpec = (mode) => MODES[migrateMode(mode)];
 export const REASONS = {
+  stale_data_floor:
+    "The benchmark data is over three days old, so APEX stayed at or above your starting model whatever the mode. Run /apex refresh.",
   manual_hold: "Your native model and effort settings are in control.",
   evidence_missing_or_expired:
     "Fresh Artificial Analysis evidence is needed before switching.",
@@ -58,10 +80,20 @@ export const REASONS = {
     "Stayed on the model that holds this chat: moving would cost more to re-store the conversation than it saves over the next few requests.",
   switch_cost_unknown:
     "Stayed on the model that holds this chat: the prices needed to judge a move are missing.",
-  eco_policy:
-    "Selected for the most score for the usage, with Eco's lower floor and cheaper points.",
   balanced_policy:
     "Selected for the most score for the usage among pairs good enough for this task, without a long wait.",
+  cost_efficient_policy:
+    "Selected as the cheapest pair good enough for this task.",
+  time_efficient_policy:
+    "Selected as the fastest pair good enough for this task that costs at most twice the cheapest.",
+  max_power_policy: "Selected as the strongest pair for this task.",
+  max_speed_policy:
+    "Selected as the fastest pair over the low speed floor, whatever it costs.",
+  max_power_speed_policy:
+    "Selected as the fastest pair within 95% of the strongest, whatever it costs.",
+  // Receipts written by 0.4 to 0.8 carry the earlier mode names.
+  eco_policy:
+    "Selected for the most score for the usage, with Eco's lower floor and cheaper points.",
   quality_policy: "Selected for the strongest comparable task evidence.",
   sports_policy: "Selected as the fastest pair good enough for this task.",
   // Receipts written before 0.4.0 carry the earlier weighted-utility codes.
@@ -165,9 +197,9 @@ export function present(
   }
   const pending =
     (control.modeRevision ?? 0) > (control.modeConsumedRevision ?? 0);
-  const mode = MODES[control.mode] ?? MODES.balanced;
+  const mode = modeSpec(control.mode);
   const pendingText = control.qualityOnce
-    ? "High Quality once saved · next main request"
+    ? "Max Power once saved · next main request"
     : pending
       ? mode.label + " saved · next main request"
       : null;

@@ -1,9 +1,9 @@
 import { test, expect, mock } from "claude-code/testing";
-test("Quality once is main-only, consumed under hold and cleared on session restart", async ($, on) => {
+test("Max Power once is main-only, consumed under hold and cleared on session restart", async ($, on) => {
   const writes = {
     control: {
       revision: 0,
-      mode: "eco",
+      mode: "cost_efficient",
       routing: "manual_hold",
       backend: "unknown",
       verifiedIds: [],
@@ -70,7 +70,7 @@ test("Quality once is main-only, consumed under hold and cleared on session rest
   expect(writes.control.qualityOnce.revision).toBe(1);
   await dispatch(null, 1);
   expect(writes.control.qualityOnce).toBe(null);
-  expect(writes.control.mode).toBe("eco");
+  expect(writes.control.mode).toBe("cost_efficient");
   expect(writes.control.consumedBy).toBe("once:1:main");
   expect(forwarded.length).toBe(2);
   expect(forwarded[1].model).toBe("native-pair");
@@ -89,7 +89,7 @@ test("Quality once is main-only, consumed under hold and cleared on session rest
   });
   await ui.press({ key: "receipt-once:1:main" });
   expect(
-    await ui.find({ type: "Text", text: /High Quality · Quality once/ }),
+    await ui.find({ type: "Text", text: /Max Power · Max Power once/ }),
   ).toBeDefined();
   expect(
     await ui.find({
@@ -133,7 +133,7 @@ test("main request routes through the actual host hook chain; stream retained", 
   mock.store(on, {
     control: {
       revision: 0,
-      mode: "quality",
+      mode: "max_power",
       routing: "auto",
       creditsConsent: true,
       budgetUsd: 10,
@@ -251,7 +251,7 @@ test("main request routes through the actual host hook chain; stream retained", 
   let item = await agent.next();
   while (!item.done) item = await agent.next();
   // The agent asked for the session's own model, so it is routed under the mode
-  // (High Quality here) like the main chat. agents.test.ts covers the rest.
+  // (Max Power here) like the main chat. agents.test.ts covers the rest.
   expect(forwarded.model).toBe("model-b");
   expect(forwarded.agentId).toBe("fixture-agent");
 });
@@ -272,8 +272,8 @@ test("native pane mode controls exist and change state", async ($, on) => {
     },
   });
   await ui.press({ key: "mode-toggle" });
-  expect(await ui.find({ key: "mode-sports" })).toBeDefined();
-  await ui.press({ key: "mode-sports" });
+  expect(await ui.find({ key: "mode-max_speed" })).toBeDefined();
+  await ui.press({ key: "mode-max_speed" });
   expect(await ui.find({ type: "Text", text: /revision 1/ })).toBeDefined();
   await ui.unmount();
 });
@@ -315,7 +315,7 @@ test("mode changed during a stream affects the next request and changes effort",
   mock.store(on, {
     control: {
       revision: 0,
-      mode: "quality",
+      mode: "max_power",
       routing: "auto",
       creditsConsent: false,
       budgetUsd: 0,
@@ -392,7 +392,7 @@ test("mode changed during a stream affects the next request and changes effort",
     },
   });
   await ui.press({ key: "mode-toggle" });
-  await ui.press({ key: "mode-sports" });
+  await ui.press({ key: "mode-max_speed" });
   expect((await stream.next()).value.text).toBe("second");
   expect((await stream.next()).done).toBe(true);
   expect(forwarded[0].effort).toBe("high");

@@ -46,7 +46,7 @@ const options = () => ({
   original: { model: "a", effort: "high" },
   control: {
     ...initialControl(),
-    mode: "quality",
+    mode: "max_power",
     backend: "subscription",
     verifiedIds: ["a", "b"],
   },
@@ -184,7 +184,7 @@ test("revision conflict does not silently update mode", () =>
     () =>
       applyControl(initialControl(), {
         kind: "mode",
-        mode: "sports",
+        mode: "max_speed",
         expectedRevision: 3,
       }),
     /conflict/,
@@ -249,7 +249,7 @@ test("benchmark methods cannot be mixed", () =>
         { model: "a", rawScore: 1, benchmarkVersion: "a" },
         { model: "b", rawScore: 2, benchmarkVersion: "b" },
       ],
-      "quality",
+      "max_power",
     ).kind,
     "hold",
   ));
@@ -278,7 +278,7 @@ test("changed thinking profile is not silently routed", () => {
 test("high risk never sacrifices baseline quality", () => {
   const o = options();
   o.intent = { ...o.intent, risk: "high" };
-  o.control.mode = "eco";
+  o.control.mode = "cost_efficient";
   o.models = o.models.map((m) => ({
     ...m,
     evidence: {
@@ -337,7 +337,7 @@ test("unknown effort capability remains unknown", () =>
   ));
 test("hysteresis retains the previously dispatched eligible pair, not the native fallback", () => {
   const o = options();
-  o.control.mode = "eco";
+  o.control.mode = "cost_efficient";
   o.models = [
     ...o.models.map((m) =>
       m.runtimeId === "b"

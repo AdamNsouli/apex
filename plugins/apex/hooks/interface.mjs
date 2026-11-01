@@ -1,5 +1,6 @@
 import {
   MODES,
+  modeSpec,
   REASONS,
   present,
   money,
@@ -64,7 +65,7 @@ function chooser(k, state, actions) {
           await actions.change({ kind: "mode", mode });
           actions.modeMenu();
         },
-        { hotkey: ["e", "b", "q", "s"][i] },
+        { hotkey: ["b", "c", "t", "p", "s", "x"][i] },
       ),
     ),
   );
@@ -72,9 +73,9 @@ function chooser(k, state, actions) {
 function modeButton(k, state, actions, width = 72) {
   return k.button(
     "mode-toggle",
-    (width < 48 && state.control.mode === "quality"
-      ? "Quality"
-      : MODES[state.control.mode].label) + " ▾",
+    (width < 48
+      ? modeSpec(state.control.mode).short
+      : modeSpec(state.control.mode).label) + " ▾",
     actions.modeMenu,
     { hotkey: "m" },
   );
@@ -128,9 +129,9 @@ function receipt(k, state, e, actions) {
           ? " (scored on " + e.scoreBasis + ")"
           : "") +
         " · " +
-        (MODES[e.mode]?.label ?? "Native") +
+        (e.mode ? modeSpec(e.mode).label : "Native") +
         (e.tier ? " · " + e.tier + " tier" : "") +
-        (e.onceRevision ? " · Quality once" : ""),
+        (e.onceRevision ? " · Max Power once" : ""),
     ),
     k.muted("Risk " + e.risk + " · revision " + e.revision),
     k.rule("COST"),
@@ -229,7 +230,7 @@ export function dock(elements, props, state, actions) {
         k.text(
           short(
             pair,
-            Math.max(8, width - MODES[state.control.mode].label.length - 26),
+            Math.max(8, width - modeSpec(state.control.mode).label.length - 26),
           ),
           { bold: true },
         ),
@@ -243,7 +244,7 @@ export function dock(elements, props, state, actions) {
         k.text("APEX", { bold: true }),
         k.muted(d.status),
         k.text(
-          short(pair, width - MODES[state.control.mode].label.length - 39),
+          short(pair, width - modeSpec(state.control.mode).label.length - 39),
           { bold: true },
         ),
         mode,
@@ -738,7 +739,7 @@ export function pane(elements, props, state, actions) {
       ),
       k.button(
         "quality-once",
-        state.control.qualityOnce ? "Cancel quality once" : "Quality once",
+        state.control.qualityOnce ? "Cancel Max Power once" : "Max Power once",
         () =>
           actions.change({
             kind: "quality_once",

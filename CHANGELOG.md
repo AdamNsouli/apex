@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.9.0-beta.1
+
+Six modes replace Eco, Balanced, High Quality and Sports, and each one does what its name says.
+
+In every mode the task's tier still sets the quality floor, a critical task (money, legal, admissions, production) keeps its full floor, and a pair without benchmark cost data is never picked.
+
+- **Balanced**: unchanged from 0.8: floor, wait limit, then the most score for the usage.
+- **Cost Efficient**: the cheapest pair over the floor, with no wait limit. Ties go to the higher score, then the faster. A move to another model is judged on usage alone.
+- **Time Efficient**: among pairs over the floor that cost at most three times what Balanced would pay, the fastest; ties go to the cheaper. A move is judged on the wait.
+- **Max Power**: the highest score, cost and time ignored (what High Quality did). Ultracode for critical tasks.
+- **Max Speed**: the fastest pair over the quick floor (40% of the best) whatever the tier, cost ignored; critical tasks keep their own floor. Ultracode for hard and critical tasks.
+- **Max Power + Speed**: the fastest pair within 95% of the best score, cost ignored. Ultracode for hard and critical tasks.
+
+In the two speed modes subagents are routed as quick tasks (the fastest pair over the quick floor) unless the main task is critical, and a freshly typed task carries a short note for Claude, attached through the `prompt.submit` context the mod API provides and not shown to you, asking it to split independent parts across parallel subagents. No note is sent with continuations, slash commands, messages typed over a running turn, with `/apex agents off`, or with a task sent under ultracode (a plugin's own resubmit cannot carry context, and ultracode is already multi-agent).
+
+Saved settings carry over: `eco` becomes Cost Efficient, `quality` Max Power, `sports` Time Efficient, and an unknown saved mode becomes Balanced. `/apex mode` takes the new names, friendly forms (`cost`, `time`, `power`, `speed`, `power+speed`) and the old names. Quality once is now Max Power once. The mode chooser hotkeys are `b`, `c`, `t`, `p`, `s`, `x`.
+
+On the maintainer's 200 labelled prompts (kept off the repository) with the 30 Oct benchmark data, starting on Opus 5.5 high: Cost Efficient used 48% of always staying there and Max Speed 48% with 59% of the wait; Max Power used 293%; Balanced is unchanged (84% usage, 84% wait). Time Efficient used 67% with 72% of the wait (faster than Balanced's 84%; a first draft capped it at twice the cheapest pair, which left it as slow as Cost Efficient at 495%). With benchmark data over three days old every mode stays at or above the starting pair and the receipt now says so (`stale_data_floor`) instead of naming the mode. "Max Power once" also covers that turn's subagents, and the subagent note is not added while routing is on hold or off. No live inference was run.
+
 ## 0.8.0-beta.1
 
 APEX picks on value instead of "nearly as good as the top model".
