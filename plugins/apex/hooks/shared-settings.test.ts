@@ -3,7 +3,7 @@ import { test, expect, mock } from "claude-code/testing";
 // tests play the other chat by writing a newer revision straight to the store.
 const otherChatSaved = {
   revision: 4,
-  mode: "max_power",
+  mode: "best",
   modeRevision: 4,
   backend: "subscription",
   verifiedIds: ["m5"],
@@ -13,7 +13,7 @@ function sharedSettingsHarness($, on) {
   const writes: Record<string, any> = {
     control: {
       revision: 0,
-      mode: "cost_efficient",
+      mode: "save",
       routing: "auto",
       backend: "unknown",
       verifiedIds: [],
@@ -85,7 +85,7 @@ test("a request step in an older chat does not overwrite settings another chat s
   expect(h.writes.control.verifiedIds).toEqual(["m5"]);
   expect(h.writes.control.mappings.length).toBe(1);
   expect(h.writes.control.backend).toBe("subscription");
-  expect(h.writes.control.mode).toBe("max_power");
+  expect(h.writes.control.mode).toBe("best");
   expect(h.writes.control.revision).toBe(4);
   expect(h.writes.control.consumedBy).toBe("shared:0:main");
 });
@@ -97,7 +97,7 @@ test("a change in an older chat is applied on top of settings another chat saved
   expect(h.writes.control.routing).toBe("manual_hold");
   expect(h.writes.control.verifiedIds).toEqual(["m5"]);
   expect(h.writes.control.mappings.length).toBe(1);
-  expect(h.writes.control.mode).toBe("max_power");
+  expect(h.writes.control.mode).toBe("best");
   expect(h.writes.control.revision).toBe(5);
 });
 test("an older chat routes with the backend another chat saved but not its paid-routing consent", async ($, on) => {
@@ -115,7 +115,7 @@ test("an older chat routes with the backend another chat saved but not its paid-
   });
   h.writes.control = {
     ...h.writes.control,
-    mode: "max_power",
+    mode: "best",
     backend: "subscription",
     verifiedIds: ["model-a", "model-b"],
   };

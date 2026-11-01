@@ -65,7 +65,7 @@ function chooser(k, state, actions) {
           await actions.change({ kind: "mode", mode });
           actions.modeMenu();
         },
-        { hotkey: ["b", "c", "t", "p", "s", "x"][i] },
+        { hotkey: ["s", "b", "e"][i] },
       ),
     ),
   );
@@ -131,7 +131,7 @@ function receipt(k, state, e, actions) {
         " · " +
         (e.mode ? modeSpec(e.mode).label : "Native") +
         (e.tier ? " · " + e.tier + " tier" : "") +
-        (e.onceRevision ? " · Max Power once" : ""),
+        (e.onceRevision && e.mode !== "best_once" ? " · Max Power once" : ""),
     ),
     k.muted("Risk " + e.risk + " · revision " + e.revision),
     k.rule("COST"),

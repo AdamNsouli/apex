@@ -23,48 +23,49 @@ export const TIERS = Object.freeze({
   critical: { share: 0.9, wtp: 1.2, waitS: 300 },
   best: { share: 1, wtp: Infinity, waitS: Infinity },
 });
-// Six modes, each named for what it decides on. In every mode the task's tier sets
-// the quality floor (a share of the strongest score), and a critical task (money,
-// legal, admissions, production) keeps its full floor whatever the mode.
-//   balanced         floor, wait limit, then most score for the usage (score - cost/wtp)
-//   cost_efficient   the cheapest pair over the floor; no wait limit; unpriced never chosen
-//   time_efficient   the fastest pair over the floor among those at most 3x Balanced's cost
-//   max_power        the highest score, cost and time ignored
-//   max_speed        the fastest pair over the quick floor (critical keeps its own)
-//   max_power_speed  the fastest pair within 95% of the best score
+// Three modes, all on one rule: drop pairs under the task's floor or over its wait
+// limit, then take the most score for the usage (score - cost/wtp). They differ only
+// in how much a better answer is worth: `wtpScale` scales the worth of a point,
+// `shift` moves the floor, `waitScale` the wait limit. A critical task (money,
+// legal, admissions, production) keeps at least Balanced's floor and worth in every
+// mode. One more mode, best_once ("Max Power once"), is never listed: one prompt on
+// the strongest pair whatever it costs or takes.
+//   save      a point is worth 70%, same floor: for a tight usage limit
+//   balanced  the tiers as they are: almost everything
+//   best      a point is worth 6x as much, floor 10 points higher, waits up to 2x
 // `payback` is what a move to another model is judged on (see switchPayback).
 export const MODES = Object.freeze({
-  balanced: { objective: "value", payback: "value", wait: true },
-  cost_efficient: { objective: "cost", payback: "cost" },
-  time_efficient: {
-    objective: "speed",
-    payback: "speed",
-    costCapOfBalanced: 3,
+  save: { objective: "value", payback: "value", wtpScale: 0.7 },
+  balanced: { objective: "value", payback: "value" },
+  best: {
+    objective: "value",
+    payback: "value",
+    wtpScale: 6,
+    shift: 0.1,
+    waitScale: 2,
   },
-  max_power: { objective: "score", payback: "score" },
-  max_speed: { objective: "speed", payback: "speed", floorTier: "quick" },
-  max_power_speed: { objective: "speed", payback: "speed", minShare: 0.95 },
 });
-// Stored settings and commands from before 0.9 used four other names.
-// Names are read lower-case with spaces and dashes as "_" and "and" as "+", so
-// "Max Power + Speed", "max-speed" and "power and speed" all resolve.
+export const ONCE = Object.freeze({ objective: "score", payback: "score" });
+// Names from 0.9 and earlier, and friendly forms. Read lower-case, with spaces and
+// dashes as "_" and "and" as "+".
 export const MODE_ALIASES = Object.freeze({
-  eco: "cost_efficient",
-  quality: "max_power",
-  high_quality: "max_power",
-  sports: "time_efficient",
-  cost: "cost_efficient",
-  cheap: "cost_efficient",
-  cheapest: "cost_efficient",
-  time: "time_efficient",
-  power: "max_power",
-  speed: "max_speed",
-  fast: "max_speed",
-  fastest: "max_speed",
-  "power+speed": "max_power_speed",
-  "max_power+speed": "max_power_speed",
-  "max_power+max_speed": "max_power_speed",
-  power_speed: "max_power_speed",
+  eco: "save",
+  cost_efficient: "save",
+  cost: "save",
+  cheap: "save",
+  saver: "save",
+  quality: "best",
+  high_quality: "best",
+  max_power: "best",
+  max_power_speed: "best",
+  "max_power+speed": "best",
+  "power+speed": "best",
+  power: "best",
+  sports: "balanced",
+  time_efficient: "balanced",
+  max_speed: "balanced",
+  speed: "balanced",
+  default: "balanced",
 });
 // The mode a stored or typed name means, or null when it means none.
 export function modeName(name) {
@@ -75,12 +76,11 @@ export function modeName(name) {
     .replace(/\s+and\s+/g, "+")
     .replace(/\s*\+\s*/g, "+")
     .replace(/[\s-]+/g, "_");
-  if (Object.hasOwn(MODES, n)) return n;
+  if (Object.hasOwn(MODES, n) || n === "best_once") return n;
   return Object.hasOwn(MODE_ALIASES, n) ? MODE_ALIASES[n] : null;
 }
 // A stored mode from any version: an unknown one falls back to Balanced.
 export const migrateMode = (name) => modeName(name) ?? "balanced";
-export const SPEED_MODES = Object.freeze(["max_speed", "max_power_speed"]);
 // A broad tier from the local intent classification. High risk or repeated failure
 // make a task critical, complexity makes it at least "hard". An unclear request (unknown risk)
 // stays "everyday"; the router still stops it falling below the native pair.
@@ -122,32 +122,25 @@ export function selectPair(
   // without it cannot be ranked against the others, so it is not offered.
   const priced = candidates.filter((p) => p.costPerTaskUsd != null);
   if (!priced.length) return { kind: "hold", reason: "cost_evidence_missing" };
-  const spec = MODES[mode];
+  const spec = mode === "best_once" ? ONCE : MODES[mode];
+  // A critical task never gets a lower floor or a cheaper point than Balanced's.
   const protect = tier === "critical";
   const t = TIERS[tier];
   const best = Math.max(...priced.map((p) => p.rawScore));
-  // Max Speed asks only for the quick floor; a critical task keeps its own.
-  let share =
-    spec.floorTier && !protect ? TIERS[spec.floorTier].share : t.share;
-  if (spec.minShare) share = Math.max(share, spec.minShare);
-  share = Math.min(1, share);
-  const wtp = t.wtp;
-  const waitMs = spec.wait ? t.waitS * 1000 : Infinity;
+  const shift = protect ? Math.max(0, spec.shift ?? 0) : (spec.shift ?? 0);
+  const share = Math.min(1, Math.max(0.2, t.share + shift));
+  const wtpScale = protect
+    ? Math.max(1, spec.wtpScale ?? 1)
+    : (spec.wtpScale ?? 1);
+  const wtp = t.wtp * wtpScale;
+  const waitMs =
+    spec.objective === "score"
+      ? Infinity
+      : t.waitS * 1000 * (spec.waitScale ?? 1);
   // The strongest pair always qualifies, so this is never empty.
   const floor = best > 0 ? share * best : best;
-  let good = priced.filter((p) => p.rawScore >= floor);
-  // Time Efficient will not pay more than twice the cheapest acceptable pair.
-  let costCapUsd = null;
-  // Time Efficient may pay up to 3x what Balanced would for the same task, so it is
-  // faster than Balanced without the blank cheque Max Speed has. (A cap on the
-  // cheapest pair was tried and left it as slow as Cost Efficient on real data.)
-  if (spec.costCapOfBalanced) {
-    const bal = selectPair(candidates, "balanced", currentKey, { tier });
-    costCapUsd =
-      spec.costCapOfBalanced *
-      (bal.kind === "select" ? bal.selected.costPerTaskUsd : Infinity);
-    good = good.filter((p) => p.costPerTaskUsd <= costCapUsd + 1e-12);
-  }
+  const good = priced.filter((p) => p.rawScore >= floor);
+  const costCapUsd = null;
   // A missing latency cannot show a pair is too slow. If every acceptable pair is
   // too slow, the wait limit is relaxed and the fastest of them wins.
   const inTime = good.filter(

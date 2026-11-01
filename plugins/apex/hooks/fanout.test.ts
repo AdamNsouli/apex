@@ -1,9 +1,10 @@
 import { test, expect, mock } from "claude-code/testing";
 
-// In Max Speed and Max Power + Speed APEX attaches a note the model reads beside a
+// For big tasks in Best (hard and critical) and Balanced (critical) APEX attaches a note the model reads beside a
 // fresh prompt (prompt.submit `context`), asking it to fan work out to subagents.
 const CRITICAL = "architect a complex security migration for production";
 const ORDINARY = "Please explain a general concept clearly";
+const HARD = "architect a comprehensive multi-file refactor of the app";
 function harness(
   $,
   on,
@@ -70,16 +71,16 @@ function harness(
   return { writes, clock, commands, entered, start, type, finish };
 }
 
-test("Max Speed attaches the parallel-subagents note to a fresh composer prompt", async ($, on) => {
-  const h = harness($, on, "max_speed");
+test("Best attaches the parallel-subagents note to a fresh hard task when ultracode is off", async ($, on) => {
+  const h = harness($, on, "best", {}, "off");
   await h.start();
-  const r = await h.type(ORDINARY);
+  const r = await h.type(HARD);
   expect(r.drop).toBeUndefined();
   expect(h.entered.length).toBe(1);
-  expect(h.entered[0].text).toBe(ORDINARY);
+  expect(h.entered[0].text).toBe(HARD);
   expect(h.entered[0].context?.length).toBe(1);
   expect(h.entered[0].context[0]).toMatch(
-    /^APEX Max Speed: split independent parts of this task across parallel subagents/,
+    /^APEX: this is a big task. Split independent parts of it across parallel subagents/,
   );
   // A continuation of the same task gets no second note.
   await h.finish();
@@ -87,10 +88,10 @@ test("Max Speed attaches the parallel-subagents note to a fresh composer prompt"
   expect(h.entered[1].context ?? []).toEqual([]);
 });
 
-test("Max Power + Speed: a hard task goes to ultracode, which is the fan-out; no note on the resubmit", async ($, on) => {
-  const h = harness($, on, "max_power_speed");
+test("Best: a hard task goes to ultracode, which is the fan-out; no note on the resubmit", async ($, on) => {
+  const h = harness($, on, "best");
   await h.start();
-  const held = await h.type(CRITICAL);
+  const held = await h.type(HARD);
   expect(held.drop).toMatch(/ultracode/);
   await h.clock.advance(100);
   expect(h.commands).toEqual(["effort ultracode on"]);
@@ -99,23 +100,23 @@ test("Max Power + Speed: a hard task goes to ultracode, which is the fan-out; no
   expect(h.entered[0].context ?? []).toEqual([]);
 });
 
-test("Max Power + Speed names itself in the note; Balanced attaches none", async ($, on) => {
-  const s = harness($, on, "max_power_speed");
-  await s.start();
-  await s.type(ORDINARY);
-  expect(s.entered[0].context?.[0]).toMatch(/^APEX Max Power \+ Speed:/);
+test("ordinary tasks get no note in any mode; Save never attaches one", async ($, on) => {
+  const b = harness($, on, "best", {}, "off");
+  await b.start();
+  await b.type(ORDINARY);
+  expect(b.entered[0].context ?? []).toEqual([]);
 });
 
-test("Balanced attaches no note", async ($, on) => {
-  const h = harness($, on, "balanced");
+test("Save attaches no note, even to a hard task", async ($, on) => {
+  const h = harness($, on, "save", {}, "off");
   await h.start();
-  await h.type(ORDINARY);
+  await h.type(HARD);
   expect(h.entered[0].context ?? []).toEqual([]);
 });
 
-test("with agent routing off the speed modes attach no note", async ($, on) => {
-  const h = harness($, on, "max_speed", {}, "auto", "off");
+test("with agent routing off no note is attached", async ($, on) => {
+  const h = harness($, on, "best", {}, "off", "off");
   await h.start();
-  await h.type(ORDINARY);
+  await h.type(HARD);
   expect(h.entered[0].context ?? []).toEqual([]);
 });

@@ -65,26 +65,17 @@ test("when no acceptable pair is quick enough the wait limit is relaxed and the 
   assert.equal(pick(slow, "balanced", "quick").selected.model, "b");
 });
 
-test("Max Power takes the strongest score and Time Efficient the fastest good-enough pair", () => {
-  assert.equal(pick(ladder(), "max_power", "quick").selected.model, "top");
-  const near = [...ladder(), pair("swift", 70, 4, 30)];
-  // A quick task: anything over its floor will do, so the fastest of them.
-  assert.equal(pick(near, "time_efficient", "quick").selected.model, "cheap");
-  // A critical one needs 90% of the best: swift is the fastest that reaches it.
-  assert.equal(
-    pick(near, "time_efficient", "critical").selected.model,
-    "swift",
-  );
-});
-
-test("Cost Efficient takes the cheapest pair over the floor where Balanced pays for points", () => {
+test("Max Power once takes the strongest score; Best pays more for points than Balanced", () => {
+  assert.equal(pick(ladder(), "best_once", "quick").selected.model, "top");
   const c = [
     pair("lean", 50, 0.5, 10),
     pair("full", 66, 2, 30),
     pair("top", 72, 6, 90),
   ];
+  // Balanced pays 15 cents a point on everyday work: full's 16 points for $1.50 yes.
   assert.equal(pick(c, "balanced", "everyday").selected.model, "full");
-  assert.equal(pick(c, "cost_efficient", "everyday").selected.model, "lean");
+  // Best pays 90 cents: top's 6 more points for $4 more are worth it too.
+  assert.equal(pick(c, "best", "everyday").selected.model, "top");
 });
 
 test("a higher effort of a small model and a lower effort of a big one compete on the same terms", () => {

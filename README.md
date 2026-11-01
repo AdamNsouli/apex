@@ -8,6 +8,8 @@
 
 APEX is executable middleware, not just instructions to Claude. It wraps the official `turn.step` hook and forwards the selected model and effort while preserving the streamed response and conversation. Six modes (Balanced, Cost Efficient, Time Efficient, Max Power, Max Speed, Max Power + Speed) can be selected while work is running.
 
+**0.10.0-beta.1:** three modes instead of six: Save, Balanced and Best. All use Balanced's rule (good enough for the task, no long wait, most score for the usage) and differ only in how much a better answer is worth, so none of them gives an 11-minute or far-too-weak answer to an ordinary prompt. Ultracode and parallel subagents follow the size of the task: Best for hard and critical tasks, Balanced for critical ones, Save never. Max Power once stays for a single strongest answer. Saved modes carry over.
+
 **0.9.0-beta.1:** six modes, each doing what its name says: Balanced (the 0.8 value rule), Cost Efficient (cheapest pair good enough), Time Efficient (fastest pair good enough at no more than 3x what Balanced would pay), Max Power (strongest), Max Speed (fastest over a low floor, cost ignored) and Max Power + Speed (fastest within 95% of the strongest). The two speed modes use ultracode for hard and critical tasks, route subagents as quick tasks, and ask Claude to split fresh tasks across parallel subagents. Critical tasks keep their full floor in every mode. Old saved modes carry over (Eco → Cost Efficient, High Quality → Max Power, Sports → Time Efficient).
 
 **0.8.0-beta.1:** APEX picks on value, not on "nearly as good as the top model". Every model at every effort is weighed on the benchmark for the kind of task (coding, agentic work, reasoning, knowledge, a sector or general), and the pick is the most score for the usage among pairs that are good enough and quick enough. Ordinary prompts no longer default to Opus at high effort, agentic work often goes to Sonnet, and money, legal and admissions questions are held to the critical tier in every mode. Checked offline with a 200-prompt replay; see the changelog.
@@ -68,30 +70,29 @@ Since AA's index v5 its free API no longer fills the coding and agentic indices,
 | Hard     | complex requests                                                           | 80%                   | $0.40            | 150 s      |
 | Critical | high-risk (money, legal, admissions, production, security) or failed twice | 90%                   | $1.20            | 300 s      |
 
-| Mode (`/apex mode …`)             | What it does                                                                                                          |
-| --------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| Balanced (`balanced`)             | The tiers above: floor, wait limit, most score for the usage.                                                         |
-| Cost Efficient (`cost`)           | The cheapest pair over the tier's floor; no wait limit; ties go to the higher score, then the faster.                 |
-| Time Efficient (`time`)           | Among pairs over the floor costing at most 3x what Balanced would pay, the fastest; ties go to the cheaper.           |
-| Max Power (`power`)               | The highest score; cost then speed break ties; no wait limit.                                                         |
-| Max Speed (`speed`)               | The fastest pair over the quick floor (40% of best) whatever the tier, cost ignored. Critical tasks keep their floor. |
-| Max Power + Speed (`power+speed`) | The fastest pair within 95% of the best score, cost ignored.                                                          |
+| Mode (`/apex mode …`) | What it is for                        | How it differs from Balanced                                       |
+| --------------------- | ------------------------------------- | ------------------------------------------------------------------ |
+| Save (`save`)         | when your usage limit is close        | a point of score is worth 70%, so it settles for cheaper pairs     |
+| Balanced (`balanced`) | almost everything                     | the tiers above                                                    |
+| Best (`best`)         | exams, university, money, launch work | a point is worth 6×, the floor is 10 points higher, waits up to 2× |
 
-The tier's floor always applies, and a critical task keeps its full floor in every mode. A pair without benchmark cost data is never picked. `/apex mode` also takes the full names (`cost_efficient`, `max_power_speed`, "Max Power + Speed") and the old names `eco`, `quality` and `sports`, which map to Cost Efficient, Max Power and Time Efficient; a saved mode from an older version is carried over the same way, and an unknown one becomes Balanced.
+All three use the same rule: drop pairs under the tier's floor or over its wait limit, then take the most score for the usage. So no mode ever hands an ordinary prompt a five-minute answer or a model far too weak for it. A critical task keeps at least Balanced's floor and point worth in Save. **Max Power once** (`/apex quality-once`, or the button) sends one prompt to the strongest pair whatever it costs or takes, then goes back to your mode. Names from earlier versions still work and carry over: eco and Cost Efficient become Save; quality, Max Power and Max Power + Speed become Best; sports, Time Efficient and Max Speed become Balanced. An unknown saved mode becomes Balanced.
 
-**Subagents in the speed modes.** Max Speed and Max Power + Speed route every subagent as a quick task (the fastest pair over the quick floor) unless the main task is critical, and attach a short note to a freshly typed task, read by Claude and not shown to you, asking it to split independent parts across parallel subagents (the Agent tool). The note goes through the mod API's prompt context; it is not sent with continuations, slash commands, messages typed over a running turn, with `/apex agents off`, or with a task sent under ultracode, which is already multi-agent.
+**Subagents.** Search agents are always routed as quick tasks. In Save, every subagent of a task that is not critical is too, so helpers stay cheap; in Balanced and Best they follow the main task. For the same big tasks that qualify for ultracode (below), if ultracode is off or cannot be used, APEX attaches a short note, read by Claude and not shown to you, asking it to split independent parts across parallel subagents. It is never sent with continuations, slash commands, messages typed over a running turn, or with `/apex agents off`.
 
-These are transparent heuristics, not measured task-success probabilities, and the shares and wait limits are judgment calls. The wait limit compares AA's median end-to-end seconds, not your prompt. Routing is not held at the model the chat started on: high-risk or twice-failing tasks are held to the critical tier instead, and complex ones to the hard tier. Moving to a different model pays one cache write for the whole conversation, so it is made only when it repays that over the next five requests, counting both usage and score (Cost Efficient counts usage only; the time and speed modes need it to be clearly faster; Max Power needs a higher score), or when no effort of the current model reaches the task's floor. A change of effort alone keeps the cache and needs no payback. With benchmark data older than three days nothing goes below the starting pair. If a task has no index for every compared pair, general intelligence is used for all of them and the receipt says so. If the benchmark data has no cost-per-task figures, native settings are kept.
+On 200 of the maintainer's labelled prompts with the 30 Oct data, starting on Opus 5.5 high (benchmark cost per AA task; real prompts are smaller, so compare modes, not bills): always Opus high $3.52 and 37 s; Save $2.58, typically 15 s, 43 of 200 below their labelled need; Balanced $2.96, 19 s, 14 of 200; Best $5.39, 37 s, 8 of 200; Max Power once $10.30, about 11 minutes, 0 of 200.
+
+These are transparent heuristics, not measured task-success probabilities, and the shares and wait limits are judgment calls. The wait limit compares AA's median end-to-end seconds, not your prompt. Routing is not held at the model the chat started on: high-risk or twice-failing tasks are held to the critical tier instead, and complex ones to the hard tier. Moving to a different model pays one cache write for the whole conversation, so it is made only when it repays that over the next five requests, counting both usage and score (Max Power once needs a higher score), or when no effort of the current model reaches the task's floor. A change of effort alone keeps the cache and needs no payback. With benchmark data older than three days nothing goes below the starting pair. If a task has no index for every compared pair, general intelligence is used for all of them and the receipt says so. If the benchmark data has no cost-per-task figures, native settings are kept.
 
 ## Ultracode for the hardest tasks
 
-Ultracode is Claude Code's multi-agent mode. It is a session switch, not a field of a request, so APEX cannot set it the way it sets model and effort. The mode you choose decides whether APEX uses it:
+Ultracode is Claude Code's multi-agent mode. It is a session switch, not a field of a request, so APEX cannot set it the way it sets model and effort. It follows the size of the task within your mode:
 
-| Mode                                     | Ultracode               |
-| ---------------------------------------- | ----------------------- |
-| Max Speed, Max Power + Speed             | hard and critical tasks |
-| Max Power                                | critical tasks only     |
-| Balanced, Cost Efficient, Time Efficient | never                   |
+| Mode                 | Ultracode               |
+| -------------------- | ----------------------- |
+| Best, Max Power once | hard and critical tasks |
+| Balanced             | critical tasks only     |
+| Save                 | never                   |
 
 A qualifying task typed at an idle prompt is held for a moment: APEX runs `/effort ultracode on`, sends your message as your own words, and runs `/effort ultracode off` when that turn ends. Everything else is sent as typed: ordinary tasks, continuations such as "yes", slash commands, messages with attachments, and messages typed over a running turn. Held routing and pins leave it alone. If a session ends while it is on, the next session start turns it off. Ultracode uses far more than a normal request and has no benchmark, so these tiers are a judgment call; `/apex ultracode off` rules it out in every mode, and `/apex ultracode auto` restores the table.
 

@@ -40,31 +40,19 @@
             role="group"
             aria-label="Routing modes"
           >
+            <button data-mode="save" aria-pressed="false">
+              <span>Save</span
+              ><small>Spends less, for when your usage limit is close.</small>
+            </button>
             <button data-mode="balanced" aria-pressed="true">
               <span>Balanced</span
-              ><small>Most score for the usage, without a long wait.</small>
-            </button>
-            <button data-mode="cost_efficient" aria-pressed="false">
-              <span>Cost Efficient</span
-              ><small>Cheapest pair good enough for the task.</small>
-            </button>
-            <button data-mode="time_efficient" aria-pressed="false">
-              <span>Time Efficient</span
               ><small
-                >Fastest pair good enough, at most twice the cheapest.</small
+                >Good enough for the task, no long wait, least usage.</small
               >
             </button>
-            <button data-mode="max_power" aria-pressed="false">
-              <span>Max Power</span
-              ><small>Strongest pair for the task, whatever it costs.</small>
-            </button>
-            <button data-mode="max_speed" aria-pressed="false">
-              <span>Max Speed</span
-              ><small>Fastest pair over a low floor, whatever it costs.</small>
-            </button>
-            <button data-mode="max_power_speed" aria-pressed="false">
-              <span>Max Power + Speed</span
-              ><small>Fastest pair within 95% of the strongest.</small>
+            <button data-mode="best" aria-pressed="false">
+              <span>Best</span
+              ><small>Stronger picks for work that matters.</small>
             </button>
             <p id="mode-protection">
               Baseline protection still applies when required.

@@ -2,11 +2,11 @@ import {
   selectPair,
   tierFor,
   MODES,
+  ONCE,
   modeName,
   migrateMode,
-  SPEED_MODES,
 } from "./scoring.mjs";
-export { modeName, migrateMode, SPEED_MODES };
+export { modeName, migrateMode };
 import { LEVELS, TASK_INDEX, finite } from "./catalogue.mjs";
 export const initialControl = () => ({
   revision: 0,
@@ -25,34 +25,31 @@ export const initialControl = () => ({
   agents: "auto",
 });
 // Ultracode is Claude Code's multi-agent mode. It is a session switch, not a field
-// of a request, and it uses far more than one model call. Choosing a mode is what
-// opts in: the two speed modes (Max Speed, Max Power + Speed) use it for hard and
-// critical tasks, Max Power (or Max Power once) for critical tasks only, Balanced,
-// Cost Efficient and Time Efficient never. `ultracode: "off"` rules it out
+// of a request, and it uses far more than one model call. It follows the size of
+// the task within the mode: Best (and Max Power once) for hard and critical tasks,
+// Balanced for critical tasks, Save never. `ultracode: "off"` rules it out
 // altogether. Even then only a newly classified task typed at an idle prompt
 // qualifies: a continuation ("yes", "go ahead"), a slash command, a message with
 // attachments (a plugin's prompt cannot carry them) and a message typed over a
 // running turn are all sent normally.
 export const ULTRACODE_TIERS = Object.freeze({
-  max_speed: ["hard", "critical"],
-  max_power_speed: ["hard", "critical"],
-  max_power: ["critical"],
+  best: ["hard", "critical"],
+  best_once: ["hard", "critical"],
+  balanced: ["critical"],
+  save: [],
 });
 // The mode a main request is dispatched under: a saved "Max Power once" wins.
 export const effectiveMode = (control) =>
-  control.qualityOnce ? "max_power" : migrateMode(control.mode);
-// In the speed modes APEX also asks Claude to split a fresh task across parallel
-// subagents. It is a note the model reads beside the prompt (never shown), sent
-// under the same conditions as ultracode's but for any tier: a continuation, a
-// slash command or a message typed over a running turn gets none.
-export const fanOutNote = (mode) =>
-  "APEX " +
-  (mode === "max_speed" ? "Max Speed" : "Max Power + Speed") +
-  ": split independent parts of this task across parallel subagents (Agent tool) and work on them at the same time.";
-export function wantsFanOut({ control, fresh, text, origin, turnId }) {
+  control.qualityOnce ? "best_once" : migrateMode(control.mode);
+// For the same tasks APEX also asks Claude to split the work across parallel
+// subagents: a note the model reads beside the prompt (never shown). A continuation,
+// a slash command or a message typed over a running turn gets none.
+export const fanOutNote = () =>
+  "APEX: this is a big task. Split independent parts of it across parallel subagents (Agent tool) and work on them at the same time.";
+export function wantsFanOut({ control, intent, fresh, text, origin, turnId }) {
   const mode = effectiveMode(control);
   return (
-    SPEED_MODES.includes(mode) &&
+    (ULTRACODE_TIERS[mode] ?? []).includes(tierFor(intent ?? {})) &&
     control.routing === "auto" &&
     (control.agents ?? "auto") === "auto" &&
     fresh === true &&
@@ -172,11 +169,12 @@ export function agentPlan({
     return { route: false, reason: "agent_routing_off" };
   if (!mainModel || agentModel !== mainModel)
     return { route: false, reason: "agent_model_chosen" };
-  // "Max Power once" covers the subagents of that turn too.
-  const speed = SPEED_MODES.includes(effectiveMode(control));
+  // Search and lookup agents are quick tasks; Save routes every subagent of a task
+  // that is not critical as quick, so helpers do not cost what the main task does.
+  const save = effectiveMode(control) === "save";
   if (
     QUICK_AGENTS.includes(agentType) ||
-    (speed && tierFor(mainIntent ?? {}) !== "critical")
+    (save && tierFor(mainIntent ?? {}) !== "critical")
   )
     return {
       route: true,
@@ -504,7 +502,7 @@ export function route({
         winner,
         stay,
         inputTokens,
-        MODES[mode].payback,
+        (MODES[mode] ?? ONCE).payback,
         r.target.wtp,
       );
       if (!(move?.pays === true)) {

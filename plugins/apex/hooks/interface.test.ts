@@ -60,12 +60,10 @@ test("prompt dock preserves downstream UI, opens inspector and yields to surveys
     await ui.find({ type: "Text", text: "Another mod's controls" }),
   ).toBeDefined();
   await ui.press({ key: "mode-toggle" });
-  const sports = await ui.find({ key: "mode-max_speed" });
+  const sports = await ui.find({ key: "mode-best" });
   expect(sports).toBeDefined();
-  await ui.press({ key: "mode-max_speed" });
-  expect(
-    await ui.find({ type: "Text", text: /Max Speed saved/ }),
-  ).toBeDefined();
+  await ui.press({ key: "mode-best" });
+  expect(await ui.find({ type: "Text", text: /Best saved/ })).toBeDefined();
   await ui.press({ key: "dock-inspect" });
   expect(opened.id).toBe("apex");
   expect(opened.columns).toBe(34);
@@ -138,8 +136,8 @@ test("native terminal and desktop panes mount compact, inspector, settings and e
         props: paneProps(width),
       });
       await ui.press({ key: "mode-toggle" });
-      expect(await ui.find({ key: "mode-max_speed" })).toBeDefined();
-      await ui.press({ key: "mode-max_speed" });
+      expect(await ui.find({ key: "mode-best" })).toBeDefined();
+      await ui.press({ key: "mode-best" });
       await ui.press({ key: "inspect" });
       expect((await ui.drawn()).type).toBe("Box");
       await ui.press({ key: "settings" });
@@ -167,11 +165,11 @@ test("dock hiding and compact layout remain recoverable through slash command", 
   expect(await ui.find({ key: "dock-inspect" })).toBeUndefined();
   await $.command.run({ command: "apex", args: "dock compact" });
   expect(await ui.find({ key: "dock-inspect" })).toBeDefined();
-  expect(await ui.find({ key: "mode-max_speed" })).toBeUndefined();
+  expect(await ui.find({ key: "mode-best" })).toBeUndefined();
   await $.command.run({ command: "apex", args: "dock expanded" });
   expect(await ui.find({ key: "mode-toggle" })).toBeDefined();
   await ui.press({ key: "mode-toggle" });
-  expect(await ui.find({ key: "mode-max_speed" })).toBeDefined();
+  expect(await ui.find({ key: "mode-best" })).toBeDefined();
   await ui.unmount();
 });
 

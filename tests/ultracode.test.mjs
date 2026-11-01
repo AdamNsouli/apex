@@ -20,50 +20,30 @@ const ask = (mode, text = CRITICAL, over = {}) =>
     ...over,
   });
 
-test("the mode decides: the speed modes for hard and critical, Max Power for critical, the rest never", () => {
+test("ultracode follows the task within the mode: Best for hard and critical, Balanced for critical, Save never", () => {
   assert.equal(initialControl().ultracode, "auto");
   assert.deepEqual(
-    [
-      "max_speed",
-      "max_power_speed",
-      "max_power",
-      "balanced",
-      "cost_efficient",
-      "time_efficient",
-    ].map((m) => ask(m, CRITICAL)),
-    [true, true, true, false, false, false],
+    ["best", "balanced", "save"].map((m) => ask(m, CRITICAL)),
+    [true, true, false],
   );
   assert.deepEqual(
-    [
-      "max_speed",
-      "max_power_speed",
-      "max_power",
-      "balanced",
-      "cost_efficient",
-      "time_efficient",
-    ].map((m) => ask(m, HARD)),
-    [true, true, false, false, false, false],
+    ["best", "balanced", "save"].map((m) => ask(m, HARD)),
+    [true, false, false],
   );
-  for (const mode of [
-    "max_speed",
-    "max_power_speed",
-    "max_power",
-    "balanced",
-    "cost_efficient",
-    "time_efficient",
-  ])
+  for (const mode of ["best", "balanced", "save"])
     assert.equal(ask(mode, ORDINARY), false, mode);
-  assert.equal(ask("max_speed", "format this list"), false);
+  assert.equal(ask("best", "format this list"), false);
 });
 
-test("Max Power once counts as Max Power for the next task", () => {
+test("Max Power once uses ultracode for hard and critical tasks", () => {
   const once = {
     ...initialControl(),
-    mode: "balanced",
+    mode: "save",
     qualityOnce: { revision: 1 },
   };
-  assert.equal(ask("balanced", CRITICAL, { control: once }), true);
-  assert.equal(ask("balanced", HARD, { control: once }), false);
+  assert.equal(ask("save", CRITICAL, { control: once }), true);
+  assert.equal(ask("save", HARD, { control: once }), true);
+  assert.equal(ask("save", ORDINARY, { control: once }), false);
 });
 
 test("the kill switch rules it out in every mode", () => {
@@ -73,7 +53,7 @@ test("the kill switch rules it out in every mode", () => {
     expectedRevision: 0,
   });
   assert.equal(off.ultracode, "off");
-  for (const mode of ["max_speed", "max_power_speed", "max_power"])
+  for (const mode of ["best", "balanced"])
     assert.equal(ask(mode, CRITICAL, { control: { ...off, mode } }), false);
   assert.throws(
     () =>
