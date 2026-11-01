@@ -1,6 +1,6 @@
 # hooks — Index
 
-Current status: APEX 0.8.0-beta.1, premium native rail and route workspace.
+Current status: APEX 0.9.0-beta.1, premium native rail and route workspace.
 Code and assets are public; dataset and inference fixtures are synthetic.
 See the root README and verification document for actual limits.
 
@@ -13,3 +13,4 @@ See the root README and verification document for actual limits.
 - [ultracode.test.ts](./ultracode.test.ts) — official native harness tests for holding a critical task, switching ultracode on and off, and the `/apex ultracode` command.
 - [agents.test.ts](./agents.test.ts) — official native harness test for routing subagents and `/apex agents auto|off`.
 - [policy.test.ts](./policy.test.ts) — official native harness tests for the tier policy through the hook chain, the daily change record and `/apex confirm-models`.
+- [fanout.test.ts](./fanout.test.ts) — official native harness tests for the parallel-subagents note the speed modes attach to a fresh prompt.

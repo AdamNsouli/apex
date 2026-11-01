@@ -10,9 +10,14 @@ import {
   agentPlan,
   forecastCost,
   wantsUltracode,
+  wantsFanOut,
+  fanOutNote,
+  effectiveMode,
+  migrateMode,
+  modeName,
 } from "../core/router.mjs";
 import { freezeDecision } from "../core/receipt.mjs";
-import { VERSION } from "../core/presentation.mjs";
+import { VERSION, MODES as MODE_TEXT } from "../core/presentation.mjs";
 import {
   runtimeModels,
   joinCatalogue,
@@ -164,6 +169,7 @@ const isRecord = (v) => v && typeof v === "object";
 const shared = (stored) => ({
   ...initialControl(),
   ...stored,
+  mode: migrateMode(stored.mode),
   ...pick(control, [...OWN, "modeConsumedRevision"]),
 });
 // Take settings another chat saved since this one last looked, before using them.
@@ -569,6 +575,8 @@ export function register(on, config = {}) {
         control = {
           ...initialControl(),
           ...stored,
+          // 0.8 and earlier saved eco, quality or sports; unknown is Balanced.
+          mode: migrateMode(stored.mode),
           creditsConsent: false,
           budgetUsd: 0,
           qualityOnce: null,
@@ -617,7 +625,7 @@ export function register(on, config = {}) {
       name: "apex",
       description: "APEX request routing, modes and receipts",
       argumentHint:
-        "mode eco|balanced|quality|sports; dashboard; refresh; auto; hold; why; credits; map-efforts; confirm-models; ultracode auto|off; agents auto|off",
+        "mode balanced|cost|time|power|speed|power+speed; dashboard; refresh; auto; hold; why; credits; map-efforts; confirm-models; ultracode auto|off; agents auto|off",
       immediate: true,
     });
     now = await $.clock.now();
@@ -680,6 +688,15 @@ export function register(on, config = {}) {
       // A new task is a fresh decision: the hold against flip-flopping covers the
       // steps of one task, not the next prompt (the cache payback still applies).
       if (fresh) stepsOnModel = 2;
+      const note = wantsFanOut({
+        control,
+        fresh,
+        text: e.text,
+        origin: e.origin,
+        turnId: e.turnId,
+      })
+        ? fanOutNote(effectiveMode(control))
+        : null;
       if (
         ultra === "idle" &&
         wantsUltracode({
@@ -693,11 +710,16 @@ export function register(on, config = {}) {
           pinned: pins,
         })
       ) {
+        // Ultracode is itself the multi-agent mode, so the resubmitted prompt
+        // needs no note (and a plugin's own submit cannot carry context, nor
+        // pass through this plugin's hook).
         armUltracode($, e.text);
         return {
           drop: "APEX is turning ultracode on for this task and sending your message.",
         };
       }
+      // Speed modes: a note the model reads beside the prompt, never shown.
+      if (note) return next({ ...e, context: [...(e.context ?? []), note] });
     }
     return next(e);
   });
@@ -760,7 +782,7 @@ export function register(on, config = {}) {
             text:
               "APEX ultracode is " +
               (control.ultracode ?? "auto") +
-              ". Use /apex ultracode auto|off. Auto uses ultracode for hard and critical tasks in Sports and for critical tasks in High Quality, and turns it off when each turn ends; Balanced and Eco never use it. It uses far more than a normal request.",
+              ". Use /apex ultracode auto|off. Auto uses ultracode for hard and critical tasks in Max Speed and Max Power + Speed and for critical tasks in Max Power, and turns it off when each turn ends; Balanced, Cost Efficient and Time Efficient never use it. It uses far more than a normal request.",
           };
         await change($, {
           kind: "ultracode",
@@ -771,7 +793,7 @@ export function register(on, config = {}) {
         return {
           text:
             value === "auto"
-              ? "APEX uses ultracode for hard and critical tasks in Sports and for critical tasks in High Quality, and turns it off when each one ends. It uses far more than a normal request."
+              ? "APEX uses ultracode for hard and critical tasks in Max Speed and Max Power + Speed and for critical tasks in Max Power, and turns it off when each one ends. It uses far more than a normal request."
               : "APEX will not turn ultracode on in any mode.",
         };
       }
@@ -781,7 +803,7 @@ export function register(on, config = {}) {
             text:
               "APEX agent routing is " +
               (control.agents ?? "auto") +
-              ". Use /apex agents auto|off. Auto routes subagents under the current mode (search agents as quick tasks); an agent given its own model keeps it.",
+              ". Use /apex agents auto|off. Auto routes subagents under the current mode (search agents as quick tasks; in Max Speed and Max Power + Speed every agent below critical, and APEX asks Claude to split fresh tasks across parallel agents); an agent given its own model keeps it.",
           };
         await change($, {
           kind: "agents",
@@ -806,20 +828,30 @@ export function register(on, config = {}) {
         return {
           text:
             value === "cancel"
-              ? "Quality once canceled."
-              : "High Quality once saved for the next main request; base mode unchanged.",
+              ? "Max Power once canceled."
+              : "Max Power once saved for the next main request; base mode unchanged.",
         };
       }
       if (verb === "mode") {
+        const wanted = modeName([value, ...extra].join(" "));
+        if (!wanted)
+          return {
+            text:
+              "APEX mode is " +
+              MODE_TEXT[migrateMode(control.mode)].label +
+              ". Use /apex mode " +
+              Object.keys(MODE_TEXT).join("|") +
+              " (or cost, time, power, speed, power+speed).",
+          };
         await change($, {
           kind: "mode",
-          mode: value,
+          mode: wanted,
           expectedRevision: control.revision,
         });
         await sync($);
         return {
           text:
-            value +
+            MODE_TEXT[wanted].label +
             " queued for next unsent request · revision " +
             control.revision,
         };

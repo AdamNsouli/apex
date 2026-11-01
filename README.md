@@ -6,7 +6,9 @@
 
 **A native Claude Code mod that changes the model and effort on the next unsent main request, with a live timeline and evidence-backed routing.**
 
-APEX is executable middleware, not just instructions to Claude. It wraps the official `turn.step` hook and forwards the selected model and effort while preserving the streamed response and conversation. Eco, Balanced, High Quality and Sports can be selected while work is running.
+APEX is executable middleware, not just instructions to Claude. It wraps the official `turn.step` hook and forwards the selected model and effort while preserving the streamed response and conversation. Six modes (Balanced, Cost Efficient, Time Efficient, Max Power, Max Speed, Max Power + Speed) can be selected while work is running.
+
+**0.9.0-beta.1:** six modes, each doing what its name says: Balanced (the 0.8 value rule), Cost Efficient (cheapest pair good enough), Time Efficient (fastest pair good enough at no more than 3x what Balanced would pay), Max Power (strongest), Max Speed (fastest over a low floor, cost ignored) and Max Power + Speed (fastest within 95% of the strongest). The two speed modes use ultracode for hard and critical tasks, route subagents as quick tasks, and ask Claude to split fresh tasks across parallel subagents. Critical tasks keep their full floor in every mode. Old saved modes carry over (Eco → Cost Efficient, High Quality → Max Power, Sports → Time Efficient).
 
 **0.8.0-beta.1:** APEX picks on value, not on "nearly as good as the top model". Every model at every effort is weighed on the benchmark for the kind of task (coding, agentic work, reasoning, knowledge, a sector or general), and the pick is the most score for the usage among pairs that are good enough and quick enough. Ordinary prompts no longer default to Opus at high effort, agentic work often goes to Sonnet, and money, legal and admissions questions are held to the critical tier in every mode. Checked offline with a 200-prompt replay; see the changelog.
 
@@ -66,25 +68,30 @@ Since AA's index v5 its free API no longer fills the coding and agentic indices,
 | Hard     | complex requests                                                           | 80%                   | $0.40            | 150 s      |
 | Critical | high-risk (money, legal, admissions, production, security) or failed twice | 90%                   | $1.20            | 300 s      |
 
-| Mode         | What it does                                                                         |
-| ------------ | ------------------------------------------------------------------------------------ |
-| Balanced     | The tiers above.                                                                     |
-| Eco          | Floors 5 points lower and a point worth 60%, except critical tasks, which keep both. |
-| High Quality | The strongest comparable score; cost then speed break ties; no wait limit.           |
-| Sports       | The fastest pair that reaches the tier's floor.                                      |
+| Mode (`/apex mode …`)             | What it does                                                                                                          |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Balanced (`balanced`)             | The tiers above: floor, wait limit, most score for the usage.                                                         |
+| Cost Efficient (`cost`)           | The cheapest pair over the tier's floor; no wait limit; ties go to the higher score, then the faster.                 |
+| Time Efficient (`time`)           | Among pairs over the floor costing at most 3x what Balanced would pay, the fastest; ties go to the cheaper.           |
+| Max Power (`power`)               | The highest score; cost then speed break ties; no wait limit.                                                         |
+| Max Speed (`speed`)               | The fastest pair over the quick floor (40% of best) whatever the tier, cost ignored. Critical tasks keep their floor. |
+| Max Power + Speed (`power+speed`) | The fastest pair within 95% of the best score, cost ignored.                                                          |
 
-These are transparent heuristics, not measured task-success probabilities, and the shares and wait limits are judgment calls. The wait limit compares AA's median end-to-end seconds, not your prompt. Routing is not held at the model the chat started on: high-risk or twice-failing tasks are held to the critical tier instead, and complex ones to the hard tier. Moving to a different model pays one cache write for the whole conversation, so it is made only when it repays that over the next five requests, counting both usage and score (or, in Sports, is clearly faster; in High Quality, scores higher), or when no effort of the current model reaches the task's floor. A change of effort alone keeps the cache and needs no payback. With benchmark data older than three days nothing goes below the starting pair. If a task has no index for every compared pair, general intelligence is used for all of them and the receipt says so. If the benchmark data has no cost-per-task figures, native settings are kept.
+The tier's floor always applies, and a critical task keeps its full floor in every mode. A pair without benchmark cost data is never picked. `/apex mode` also takes the full names (`cost_efficient`, `max_power_speed`, "Max Power + Speed") and the old names `eco`, `quality` and `sports`, which map to Cost Efficient, Max Power and Time Efficient; a saved mode from an older version is carried over the same way, and an unknown one becomes Balanced.
+
+**Subagents in the speed modes.** Max Speed and Max Power + Speed route every subagent as a quick task (the fastest pair over the quick floor) unless the main task is critical, and attach a short note to a freshly typed task, read by Claude and not shown to you, asking it to split independent parts across parallel subagents (the Agent tool). The note goes through the mod API's prompt context; it is not sent with continuations, slash commands, messages typed over a running turn, with `/apex agents off`, or with a task sent under ultracode, which is already multi-agent.
+
+These are transparent heuristics, not measured task-success probabilities, and the shares and wait limits are judgment calls. The wait limit compares AA's median end-to-end seconds, not your prompt. Routing is not held at the model the chat started on: high-risk or twice-failing tasks are held to the critical tier instead, and complex ones to the hard tier. Moving to a different model pays one cache write for the whole conversation, so it is made only when it repays that over the next five requests, counting both usage and score (Cost Efficient counts usage only; the time and speed modes need it to be clearly faster; Max Power needs a higher score), or when no effort of the current model reaches the task's floor. A change of effort alone keeps the cache and needs no payback. With benchmark data older than three days nothing goes below the starting pair. If a task has no index for every compared pair, general intelligence is used for all of them and the receipt says so. If the benchmark data has no cost-per-task figures, native settings are kept.
 
 ## Ultracode for the hardest tasks
 
 Ultracode is Claude Code's multi-agent mode. It is a session switch, not a field of a request, so APEX cannot set it the way it sets model and effort. The mode you choose decides whether APEX uses it:
 
-| Mode         | Ultracode               |
-| ------------ | ----------------------- |
-| Sports       | hard and critical tasks |
-| High Quality | critical tasks only     |
-| Balanced     | never                   |
-| Eco          | never                   |
+| Mode                                     | Ultracode               |
+| ---------------------------------------- | ----------------------- |
+| Max Speed, Max Power + Speed             | hard and critical tasks |
+| Max Power                                | critical tasks only     |
+| Balanced, Cost Efficient, Time Efficient | never                   |
 
 A qualifying task typed at an idle prompt is held for a moment: APEX runs `/effort ultracode on`, sends your message as your own words, and runs `/effort ultracode off` when that turn ends. Everything else is sent as typed: ordinary tasks, continuations such as "yes", slash commands, messages with attachments, and messages typed over a running turn. Held routing and pins leave it alone. If a session ends while it is on, the next session start turns it off. Ultracode uses far more than a normal request and has no benchmark, so these tiers are a judgment call; `/apex ultracode off` rules it out in every mode, and `/apex ultracode auto` restores the table.
 
@@ -96,7 +103,7 @@ A qualifying task typed at an idle prompt is held for a moment: APEX runs `/effo
 
 This is actual Claude Code 2.1.292 ANSI output converted to an image, with local font rendering. No inference or real benchmark data is shown. [Narrow terminal](docs/screenshots/native-terminal-inline.png) · [Acknowledged pending mode](docs/screenshots/native-terminal-inline-pending.png).
 
-The **prompt strip** is the two-row fallback. Its expanded, compact or hidden preference is saved locally. It yields to native surveys, preserves other mods, and suppresses duplicate controls while the rail is docked. Focus it with Claude's `ctrl+x tab`; `m` opens modes and `i` opens the rail. The mode chooser uses `e`, `b`, `q`, `s` while its site has focus. Host fonts, button chrome, scrolling and focus remain native. Desktop panes have harness coverage; live desktop rendering is unverified.
+The **prompt strip** is the two-row fallback. Its expanded, compact or hidden preference is saved locally. It yields to native surveys, preserves other mods, and suppresses duplicate controls while the rail is docked. Focus it with Claude's `ctrl+x tab`; `m` opens modes and `i` opens the rail. The mode chooser uses `b`, `c`, `t`, `p`, `s`, `x` (Balanced, Cost, Time, Power, Speed, Power + Speed) while its site has focus. Host fonts, button chrome, scrolling and focus remain native. Desktop panes have harness coverage; live desktop rendering is unverified.
 
 **Inspect** puts history, the selected receipt and its frozen evidence together. Selection stays on the historical request until you choose Follow live. Settings, consent and catalogue comparisons open contextually. Main and observed agent scopes remain distinct; agent receipts show how each agent was routed.
 
@@ -106,7 +113,7 @@ The optional **browser workspace** has one command bar, stepped request history 
 
 [Compact workspace](docs/screenshots/dashboard-compact.png) · [Evidence setup](docs/screenshots/model-evidence.png) · [Mobile light theme](docs/screenshots/dashboard-mobile-light.png). Browser pictures use synthetic fixtures, not measured model results. [Native interface contract](docs/Native_Interface.md) · [UI specification](docs/UI_Specification.md) · [Assets and licenses](docs/Asset_Inventory.md).
 
-**Quality once** arms High Quality for the next main dispatch, then returns to your base mode. It does not replay a request or bypass safeguards. Agents cannot consume it. Cancellation is explicit; restart or clear cancels the arm. If a guard holds native settings, the arm is still consumed and the receipt records why.
+**Max Power once** arms Max Power for the next main dispatch, then returns to your base mode. It does not replay a request or bypass safeguards. Agents cannot consume it. Cancellation is explicit; restart or clear cancels the arm. If a guard holds native settings, the arm is still consumed and the receipt records why.
 
 ## Credits and costs
 

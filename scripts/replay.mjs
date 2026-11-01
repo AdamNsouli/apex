@@ -13,7 +13,14 @@ import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const MODES = ["eco", "balanced", "sports", "quality"];
+const MODES = [
+  "balanced",
+  "cost_efficient",
+  "time_efficient",
+  "max_power",
+  "max_speed",
+  "max_power_speed",
+];
 // The yardstick for "under-served": the share of the best general score a prompt's
 // labelled need deserves. Fixed here, not read from the core under test, so two
 // versions are judged by the same rule.

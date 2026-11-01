@@ -1,6 +1,7 @@
 import {
   VERSION,
   MODES,
+  modeSpec,
   present,
   reason,
   money,
@@ -346,7 +347,7 @@ function renderReceipt(e) {
           ],
           ["Response model", e.responseModel ?? "unknown"],
           ["Effective effort", e.effectiveEffort ?? "not reported by Claude"],
-          ["Preference", MODES[e.mode]?.label ?? "native"],
+          ["Preference", e.mode ? modeSpec(e.mode).label : "native"],
           ["Task category", e.task ?? "unknown"],
           ["Scope", e.agentId ? "Agent " + e.agentId : "Main"],
           ["State", e.status],
@@ -617,8 +618,8 @@ function render() {
       ? "Resume routing"
       : "Hold native settings";
   $("quality-once").textContent = c.qualityOnce
-    ? "Cancel Quality once"
-    : "Quality once";
+    ? "Cancel Max Power once"
+    : "Max Power once";
   $("next-intention").textContent =
     p.pendingText ??
     "Next main request · " + p.mode.label + " preference evaluated at dispatch";

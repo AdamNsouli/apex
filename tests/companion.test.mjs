@@ -71,7 +71,7 @@ test("loopback authentication, origin, CSRF and actual queued control transport"
       id: "mode-1",
       expectedRevision: 0,
       kind: "mode",
-      mode: "sports",
+      mode: "max_speed",
     };
     assert.equal(
       (
@@ -89,9 +89,9 @@ test("loopback authentication, origin, CSRF and actual queued control transport"
       runtime: [],
       catalogue: [],
     });
-    assert.equal(queue.controls[0].mode, "sports");
+    assert.equal(queue.controls[0].mode, "max_speed");
     await native(server.socketPath, {
-      control: { revision: 1, mode: "sports" },
+      control: { revision: 1, mode: "max_speed" },
       events: [],
       runtime: [],
       catalogue: [],
@@ -100,7 +100,7 @@ test("loopback authentication, origin, CSRF and actual queued control transport"
     const state = await (
       await fetch(base + "/api/state", { headers: { Cookie: cookie } })
     ).json();
-    assert.equal(state.control.mode, "sports");
+    assert.equal(state.control.mode, "max_speed");
     assert.equal(state.control.revision, 1);
     assert.equal(state.accountBilling, "unknown");
     assert.equal(state.token, undefined);
@@ -208,6 +208,7 @@ test("first memory-only AA connection fetches once; key edits and refresh cannot
     for (const asset of [
       "/presentation.mjs",
       "/receipt.mjs",
+      "/scoring.mjs",
       "/tokens.css",
       "/assets/apex-mark.svg",
       "/assets/inter.ttf",

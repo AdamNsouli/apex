@@ -199,7 +199,7 @@ test("the cache payback sum: one cache write against five cheaper requests", () 
   assert.ok(Math.abs(small.moveUsd - 2.529) < 1e-9);
   assert.equal(small.pays, true);
   assert.equal(switchPayback(winner, stay, 900000).pays, false);
-  // Sports judges the wait, High Quality the score.
+  // The speed modes judge the wait, Max Power the score, Cost Efficient usage only.
   assert.equal(switchPayback(winner, stay, 900000, "speed").pays, true);
   assert.equal(switchPayback(winner, stay, 10000, "score").pays, false);
   // Missing prices never count as free.
@@ -269,12 +269,19 @@ test("the replay runs offline over the example prompts and reports each mode", a
   });
   assert.deepEqual(
     results.map((r) => r.mode),
-    ["eco", "balanced", "sports", "quality"],
+    [
+      "balanced",
+      "cost_efficient",
+      "time_efficient",
+      "max_power",
+      "max_speed",
+      "max_power_speed",
+    ],
   );
   const balanced = results.find((r) => r.mode === "balanced");
   assert.equal(balanced.prompts, prompts.length);
   assert.ok(balanced.modelMoved > 0, "balanced moves off the starting model");
   assert.ok(balanced.usageVsStart < 1, "balanced uses less than always-max");
-  const quality = results.find((r) => r.mode === "quality");
+  const quality = results.find((r) => r.mode === "max_power");
   assert.equal(quality.underserved, 0);
 });

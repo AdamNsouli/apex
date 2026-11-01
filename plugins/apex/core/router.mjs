@@ -1,4 +1,12 @@
-import { selectPair, tierFor, MODES } from "./scoring.mjs";
+import {
+  selectPair,
+  tierFor,
+  MODES,
+  modeName,
+  migrateMode,
+  SPEED_MODES,
+} from "./scoring.mjs";
+export { modeName, migrateMode, SPEED_MODES };
 import { LEVELS, TASK_INDEX, finite } from "./catalogue.mjs";
 export const initialControl = () => ({
   revision: 0,
@@ -18,16 +26,43 @@ export const initialControl = () => ({
 });
 // Ultracode is Claude Code's multi-agent mode. It is a session switch, not a field
 // of a request, and it uses far more than one model call. Choosing a mode is what
-// opts in: Sports uses it for hard and critical tasks, High Quality (or Quality
-// once) for critical tasks only, Balanced and Eco never. `ultracode: "off"` rules
-// it out altogether. Even then only a newly classified task typed at an idle prompt
+// opts in: the two speed modes (Max Speed, Max Power + Speed) use it for hard and
+// critical tasks, Max Power (or Max Power once) for critical tasks only, Balanced,
+// Cost Efficient and Time Efficient never. `ultracode: "off"` rules it out
+// altogether. Even then only a newly classified task typed at an idle prompt
 // qualifies: a continuation ("yes", "go ahead"), a slash command, a message with
 // attachments (a plugin's prompt cannot carry them) and a message typed over a
 // running turn are all sent normally.
 export const ULTRACODE_TIERS = Object.freeze({
-  sports: ["hard", "critical"],
-  quality: ["critical"],
+  max_speed: ["hard", "critical"],
+  max_power_speed: ["hard", "critical"],
+  max_power: ["critical"],
 });
+// The mode a main request is dispatched under: a saved "Max Power once" wins.
+export const effectiveMode = (control) =>
+  control.qualityOnce ? "max_power" : migrateMode(control.mode);
+// In the speed modes APEX also asks Claude to split a fresh task across parallel
+// subagents. It is a note the model reads beside the prompt (never shown), sent
+// under the same conditions as ultracode's but for any tier: a continuation, a
+// slash command or a message typed over a running turn gets none.
+export const fanOutNote = (mode) =>
+  "APEX " +
+  (mode === "max_speed" ? "Max Speed" : "Max Power + Speed") +
+  ": split independent parts of this task across parallel subagents (Agent tool) and work on them at the same time.";
+export function wantsFanOut({ control, fresh, text, origin, turnId }) {
+  const mode = effectiveMode(control);
+  return (
+    SPEED_MODES.includes(mode) &&
+    control.routing === "auto" &&
+    (control.agents ?? "auto") === "auto" &&
+    fresh === true &&
+    origin?.kind === "composer" &&
+    !turnId &&
+    typeof text === "string" &&
+    text.trim().length > 0 &&
+    !/^\s*\//.test(text)
+  );
+}
 export function wantsUltracode({
   control,
   intent,
@@ -38,7 +73,7 @@ export function wantsUltracode({
   turnId,
   pinned = false,
 }) {
-  const mode = control.qualityOnce ? "quality" : control.mode;
+  const mode = effectiveMode(control);
   return (
     control.ultracode === "auto" &&
     control.routing === "auto" &&
@@ -57,8 +92,8 @@ export function applyControl(state, c) {
   if (c.expectedRevision !== state.revision)
     throw new Error("revision_conflict");
   const next = { ...state };
-  if (c.kind === "mode" && Object.hasOwn(MODES, c.mode)) {
-    next.mode = c.mode;
+  if (c.kind === "mode" && modeName(c.mode)) {
+    next.mode = modeName(c.mode);
     next.modeRevision = state.revision + 1;
   } else if (c.kind === "quality_once" && typeof c.armed === "boolean")
     next.qualityOnce = c.armed ? { revision: state.revision + 1 } : null;
@@ -118,7 +153,9 @@ export function applyControl(state, c) {
 // that was given its own model (by its definition or the Agent call) keeps it: an
 // agent is taken to have inherited the session's model only when it asks for the
 // same one the main chat does. Search and lookup agents are routed as quick tasks;
-// any other agent is routed as the main chat's current task.
+// any other agent is routed as the main chat's current task. In the speed modes
+// every agent is a quick task (the fastest pair over the quick floor), unless the
+// main task is critical: a critical floor is never lowered.
 export const QUICK_AGENTS = Object.freeze([
   "Explore",
   "claude-code-guide",
@@ -135,7 +172,12 @@ export function agentPlan({
     return { route: false, reason: "agent_routing_off" };
   if (!mainModel || agentModel !== mainModel)
     return { route: false, reason: "agent_model_chosen" };
-  if (QUICK_AGENTS.includes(agentType))
+  // "Max Power once" covers the subagents of that turn too.
+  const speed = SPEED_MODES.includes(effectiveMode(control));
+  if (
+    QUICK_AGENTS.includes(agentType) ||
+    (speed && tierFor(mainIntent ?? {}) !== "critical")
+  )
     return {
       route: true,
       intent: {
@@ -153,7 +195,7 @@ export function agentPlan({
 export function captureDispatch(control, requestId) {
   const once = control.qualityOnce;
   return {
-    effective: once ? { ...control, mode: "quality" } : { ...control },
+    effective: { ...control, mode: effectiveMode(control) },
     onceRevision: once?.revision ?? null,
     next: {
       ...control,
@@ -308,16 +350,16 @@ export const PAYBACK_REQUESTS = 5;
 // Is moving the conversation to `winner` worth it, against staying on the model that
 // holds the cache at its best acceptable effort (`stay`)? The move pays the new
 // model's cache write for the whole context once; afterwards both only read it.
-// Cost modes compare usage, Sports compares waiting, High Quality the score. Given
-// `wtp` (what a point of score is worth, from the task's tier), cost modes compare
-// value instead: score over the next requests minus their usage priced in points,
-// so a move up to a stronger model can pay for itself, not only a move down.
+// Cost Efficient compares usage only, the time and speed modes compare waiting,
+// Max Power the score. Balanced, given `wtp` (what a point of score is worth, from
+// the task's tier), compares value: score over the next requests minus their usage
+// priced in points, so a move up to a stronger model can pay for itself.
 // Returns null when a price or cost needed for the sum is unknown.
 export function switchPayback(
   winner,
   stay,
   inputTokens,
-  objective = "cost",
+  objective = "value",
   wtp = null,
 ) {
   const w = winner.record?.evidence?.prices,
@@ -344,7 +386,7 @@ export function switchPayback(
         ? winner.latencyMs != null &&
           stay.latencyMs != null &&
           winner.latencyMs < stay.latencyMs * 0.9
-        : Number.isFinite(wtp) && wtp > 0
+        : objective === "value" && Number.isFinite(wtp) && wtp > 0
           ? n * winner.rawScore - moveUsd / wtp >
             n * stay.rawScore - stayUsd / wtp
           : moveUsd < stayUsd * 0.95;
@@ -428,9 +470,10 @@ export function route({
     record: m,
   }));
   const cacheModel = lastModel ?? original.model;
+  const mode = migrateMode(control.mode);
   const r = selectPair(
     candidates,
-    control.mode,
+    mode,
     cacheModel +
       "|" +
       (lastModel ? (lastEffort ?? "default") : (original.effort ?? "default")),
@@ -438,7 +481,9 @@ export function route({
   );
   if (r.kind !== "select") return hold(original, r.reason);
   let winner = r.selected;
-  let reason = control.mode + "_policy";
+  // Old data keeps every pick at or above the starting pair, whatever the mode, so
+  // the receipt says that instead of naming a mode rule it could not follow.
+  let reason = stale ? "stale_data_floor" : mode + "_policy";
   // Standard tasks keep the previous pair for one more step rather than flap.
   if (lastModel && winner.model !== lastModel && stepsOnModel < 2 && !risky) {
     const previous = r.ranked.find(
@@ -459,7 +504,7 @@ export function route({
         winner,
         stay,
         inputTokens,
-        MODES[control.mode]?.objective,
+        MODES[mode].payback,
         r.target.wtp,
       );
       if (!(move?.pays === true)) {
