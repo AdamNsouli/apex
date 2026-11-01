@@ -3,7 +3,7 @@ test("Max Power once is main-only, consumed under hold and cleared on session re
   const writes = {
     control: {
       revision: 0,
-      mode: "cost_efficient",
+      mode: "save",
       routing: "manual_hold",
       backend: "unknown",
       verifiedIds: [],
@@ -70,7 +70,7 @@ test("Max Power once is main-only, consumed under hold and cleared on session re
   expect(writes.control.qualityOnce.revision).toBe(1);
   await dispatch(null, 1);
   expect(writes.control.qualityOnce).toBe(null);
-  expect(writes.control.mode).toBe("cost_efficient");
+  expect(writes.control.mode).toBe("save");
   expect(writes.control.consumedBy).toBe("once:1:main");
   expect(forwarded.length).toBe(2);
   expect(forwarded[1].model).toBe("native-pair");
@@ -89,7 +89,7 @@ test("Max Power once is main-only, consumed under hold and cleared on session re
   });
   await ui.press({ key: "receipt-once:1:main" });
   expect(
-    await ui.find({ type: "Text", text: /Max Power · Max Power once/ }),
+    await ui.find({ type: "Text", text: /· Max Power once/ }),
   ).toBeDefined();
   expect(
     await ui.find({
@@ -133,7 +133,7 @@ test("main request routes through the actual host hook chain; stream retained", 
   mock.store(on, {
     control: {
       revision: 0,
-      mode: "max_power",
+      mode: "best",
       routing: "auto",
       creditsConsent: true,
       budgetUsd: 10,
@@ -251,7 +251,7 @@ test("main request routes through the actual host hook chain; stream retained", 
   let item = await agent.next();
   while (!item.done) item = await agent.next();
   // The agent asked for the session's own model, so it is routed under the mode
-  // (Max Power here) like the main chat. agents.test.ts covers the rest.
+  // (Best here) like the main chat. agents.test.ts covers the rest.
   expect(forwarded.model).toBe("model-b");
   expect(forwarded.agentId).toBe("fixture-agent");
 });
@@ -272,8 +272,8 @@ test("native pane mode controls exist and change state", async ($, on) => {
     },
   });
   await ui.press({ key: "mode-toggle" });
-  expect(await ui.find({ key: "mode-max_speed" })).toBeDefined();
-  await ui.press({ key: "mode-max_speed" });
+  expect(await ui.find({ key: "mode-best" })).toBeDefined();
+  await ui.press({ key: "mode-best" });
   expect(await ui.find({ type: "Text", text: /revision 1/ })).toBeDefined();
   await ui.unmount();
 });
@@ -304,7 +304,9 @@ test("mode changed during a stream affects the next request and changes effort",
     benchmarkVersion: "synthetic",
     scores: { general: score },
     prices: { input: 1, output: 2, cacheRead: 0.1, cacheWrite: 1.25 },
-    benchmarkCostPerTask: score / 100,
+    // beta medium is far cheaper for one point less: Save takes it, Best does not.
+    benchmarkCostPerTask:
+      slug === "fixture-beta" && effort === "medium" ? 0.5 : score / 100,
     latencyMs: latency,
   }));
   const mappings = variants.map((m) => ({
@@ -315,7 +317,7 @@ test("mode changed during a stream affects the next request and changes effort",
   mock.store(on, {
     control: {
       revision: 0,
-      mode: "max_power",
+      mode: "best",
       routing: "auto",
       creditsConsent: false,
       budgetUsd: 0,
@@ -392,7 +394,7 @@ test("mode changed during a stream affects the next request and changes effort",
     },
   });
   await ui.press({ key: "mode-toggle" });
-  await ui.press({ key: "mode-max_speed" });
+  await ui.press({ key: "mode-save" });
   expect((await stream.next()).value.text).toBe("second");
   expect((await stream.next()).done).toBe(true);
   expect(forwarded[0].effort).toBe("high");

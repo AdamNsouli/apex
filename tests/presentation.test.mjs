@@ -30,13 +30,10 @@ test("mode acknowledgment waits for main consumption; unrelated revisions do not
   let s = ready();
   s.control = applyControl(s.control, {
     kind: "mode",
-    mode: "time_efficient",
+    mode: "best",
     expectedRevision: 0,
   });
-  assert.equal(
-    present(s).pendingText,
-    "Time Efficient saved · next main request",
-  );
+  assert.equal(present(s).pendingText, "Best saved · next main request");
   s.control = captureDispatch(s.control, "main-1").next;
   assert.equal(present(s).pendingText, null);
   s.control = applyControl(s.control, {
@@ -48,15 +45,15 @@ test("mode acknowledgment waits for main consumption; unrelated revisions do not
 });
 test("one-shot is claimed exactly once and preserves the base preference", () => {
   let c = applyControl(
-    { ...initialControl(), mode: "cost_efficient" },
+    { ...initialControl(), mode: "save" },
     { kind: "quality_once", armed: true, expectedRevision: 0 },
   );
   const first = captureDispatch(c, "main-1"),
     next = captureDispatch(first.next, "main-2");
-  assert.equal(first.effective.mode, "max_power");
-  assert.equal(first.next.mode, "cost_efficient");
+  assert.equal(first.effective.mode, "best_once");
+  assert.equal(first.next.mode, "save");
   assert.equal(first.onceRevision, 1);
-  assert.equal(next.effective.mode, "cost_efficient");
+  assert.equal(next.effective.mode, "save");
   assert.equal(next.onceRevision, null);
   assert.equal(first.next.revision, 1);
 });

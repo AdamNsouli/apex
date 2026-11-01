@@ -269,19 +269,14 @@ test("the replay runs offline over the example prompts and reports each mode", a
   });
   assert.deepEqual(
     results.map((r) => r.mode),
-    [
-      "balanced",
-      "cost_efficient",
-      "time_efficient",
-      "max_power",
-      "max_speed",
-      "max_power_speed",
-    ],
+    ["save", "balanced", "best"],
   );
   const balanced = results.find((r) => r.mode === "balanced");
   assert.equal(balanced.prompts, prompts.length);
   assert.ok(balanced.modelMoved > 0, "balanced moves off the starting model");
   assert.ok(balanced.usageVsStart < 1, "balanced uses less than always-max");
-  const quality = results.find((r) => r.mode === "max_power");
-  assert.equal(quality.underserved, 0);
+  const best = results.find((r) => r.mode === "best");
+  assert.ok(best.underserved <= balanced.underserved);
+  const save = results.find((r) => r.mode === "save");
+  assert.ok(save.usageVsStart <= balanced.usageVsStart);
 });

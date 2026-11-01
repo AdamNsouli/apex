@@ -625,7 +625,7 @@ export function register(on, config = {}) {
       name: "apex",
       description: "APEX request routing, modes and receipts",
       argumentHint:
-        "mode balanced|cost|time|power|speed|power+speed; dashboard; refresh; auto; hold; why; credits; map-efforts; confirm-models; ultracode auto|off; agents auto|off",
+        "mode save|balanced|best; dashboard; refresh; auto; hold; why; credits; map-efforts; confirm-models; ultracode auto|off; agents auto|off",
       immediate: true,
     });
     now = await $.clock.now();
@@ -689,6 +689,7 @@ export function register(on, config = {}) {
       // steps of one task, not the next prompt (the cache payback still applies).
       if (fresh) stepsOnModel = 2;
       const note = wantsFanOut({
+        intent,
         control,
         fresh,
         text: e.text,
@@ -718,7 +719,7 @@ export function register(on, config = {}) {
           drop: "APEX is turning ultracode on for this task and sending your message.",
         };
       }
-      // Speed modes: a note the model reads beside the prompt, never shown.
+      // Big tasks in Balanced and Best: a note the model reads beside the prompt, never shown.
       if (note) return next({ ...e, context: [...(e.context ?? []), note] });
     }
     return next(e);
@@ -782,7 +783,7 @@ export function register(on, config = {}) {
             text:
               "APEX ultracode is " +
               (control.ultracode ?? "auto") +
-              ". Use /apex ultracode auto|off. Auto uses ultracode for hard and critical tasks in Max Speed and Max Power + Speed and for critical tasks in Max Power, and turns it off when each turn ends; Balanced, Cost Efficient and Time Efficient never use it. It uses far more than a normal request.",
+              ". Use /apex ultracode auto|off. Auto uses ultracode for hard and critical tasks in Best (and Max Power once) and for critical tasks in Balanced, and turns it off when each turn ends; Save never uses it. It uses far more than a normal request.",
           };
         await change($, {
           kind: "ultracode",
@@ -793,7 +794,7 @@ export function register(on, config = {}) {
         return {
           text:
             value === "auto"
-              ? "APEX uses ultracode for hard and critical tasks in Max Speed and Max Power + Speed and for critical tasks in Max Power, and turns it off when each one ends. It uses far more than a normal request."
+              ? "APEX uses ultracode for hard and critical tasks in Best and for critical tasks in Balanced, and turns it off when each one ends. It uses far more than a normal request."
               : "APEX will not turn ultracode on in any mode.",
         };
       }
@@ -803,7 +804,7 @@ export function register(on, config = {}) {
             text:
               "APEX agent routing is " +
               (control.agents ?? "auto") +
-              ". Use /apex agents auto|off. Auto routes subagents under the current mode (search agents as quick tasks; in Max Speed and Max Power + Speed every agent below critical, and APEX asks Claude to split fresh tasks across parallel agents); an agent given its own model keeps it.",
+              ". Use /apex agents auto|off. Auto routes subagents under the current mode (search agents as quick tasks; in Save every agent below critical; for the same tasks that use ultracode APEX asks Claude to split the work across parallel agents); an agent given its own model keeps it.",
           };
         await change($, {
           kind: "agents",
@@ -841,7 +842,7 @@ export function register(on, config = {}) {
               MODE_TEXT[migrateMode(control.mode)].label +
               ". Use /apex mode " +
               Object.keys(MODE_TEXT).join("|") +
-              " (or cost, time, power, speed, power+speed).",
+              " (older names such as eco, quality or max power still work).",
           };
         await change($, {
           kind: "mode",

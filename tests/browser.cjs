@@ -225,13 +225,13 @@ const path = require("node:path");
       .getByText("fixture-alpha", { exact: true })
       .waitFor();
     await page.locator("#mode-toggle").click();
-    await page.locator('[data-mode="max_speed"]').click();
+    await page.locator('[data-mode="best"]').click();
     await page.getByText(/Saved to host · revision 1/).waitFor();
-    assert.equal(control.mode, "max_speed");
+    assert.equal(control.mode, "best");
     assert.equal(ledger.events[0].mode, "balanced");
     assert.equal(ledger.events[0].status, "streaming");
     await page
-      .getByText("Max Speed saved · next main request", { exact: true })
+      .getByText("Best saved · next main request", { exact: true })
       .first()
       .waitFor();
     await page.locator("#quality-once").click();
@@ -243,8 +243,8 @@ const path = require("node:path");
     begin("once-request", 2);
     finish("once-request", false);
     assert.equal(control.qualityOnce, null);
-    assert.equal(control.mode, "max_speed");
-    assert.equal(ledger.events.at(-1).mode, "max_power");
+    assert.equal(control.mode, "best");
+    assert.equal(ledger.events.at(-1).mode, "best_once");
     finish("fixture-request");
     await page
       .locator("#observed")

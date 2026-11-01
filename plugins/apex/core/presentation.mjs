@@ -1,47 +1,38 @@
 import { duration, verdict } from "./receipt.mjs";
 import { migrateMode } from "./scoring.mjs";
-export const VERSION = "0.9.0-beta.1";
+export const VERSION = "0.10.0-beta.1";
 export const MODES = {
+  save: {
+    label: "Save",
+    short: "Save",
+    detail:
+      "Spends less: a slightly lower bar and cheaper picks, for when your usage limit is close. Critical tasks keep their full bar.",
+  },
   balanced: {
     label: "Balanced",
     short: "Balanced",
     detail:
-      "Most score for the usage among pairs good enough for the task, without a long wait.",
+      "Good enough for the task, without a long wait, for the least usage. Ultracode for critical tasks.",
   },
-  cost_efficient: {
-    label: "Cost Efficient",
-    short: "Cost",
+  best: {
+    label: "Best",
+    short: "Best",
     detail:
-      "Cheapest pair that is good enough for the task, however long it takes.",
-  },
-  time_efficient: {
-    label: "Time Efficient",
-    short: "Time",
-    detail:
-      "Fastest pair that is good enough for the task, at no more than twice the cheapest.",
-  },
-  max_power: {
-    label: "Max Power",
-    short: "Power",
-    detail:
-      "Strongest pair for the task, whatever it costs or takes; ultracode for critical tasks.",
-  },
-  max_speed: {
-    label: "Max Speed",
-    short: "Speed",
-    detail:
-      "Fastest pair over a low floor, whatever it costs; parallel subagents, ultracode for hard and critical tasks.",
-  },
-  max_power_speed: {
-    label: "Max Power + Speed",
-    short: "Power+Speed",
-    detail:
-      "Fastest pair within 95% of the strongest, whatever it costs; parallel subagents, ultracode for hard and critical tasks.",
+      "A higher bar and stronger picks, waiting up to twice as long. Ultracode and parallel subagents for hard and critical tasks.",
   },
 };
-// A mode saved by an older version (eco, quality, sports) or unknown reads as the
-// mode it became, never as a crash.
-export const modeSpec = (mode) => MODES[migrateMode(mode)];
+// "Max Power once": one prompt on the strongest pair. Not a mode you stay in.
+export const ONCE_MODE = {
+  label: "Max Power once",
+  short: "Once",
+  detail: "This prompt only: the strongest pair, whatever it costs or takes.",
+};
+// A mode saved by an older version (eco, quality, sports, max speed...) or unknown
+// reads as the mode it became, never as a crash.
+export const modeSpec = (mode) => {
+  const m = migrateMode(mode);
+  return m === "best_once" ? ONCE_MODE : MODES[m];
+};
 export const REASONS = {
   stale_data_floor:
     "The benchmark data is over three days old, so APEX stayed at or above your starting model whatever the mode. Run /apex refresh.",
@@ -80,6 +71,12 @@ export const REASONS = {
     "Stayed on the model that holds this chat: moving would cost more to re-store the conversation than it saves over the next few requests.",
   switch_cost_unknown:
     "Stayed on the model that holds this chat: the prices needed to judge a move are missing.",
+  save_policy:
+    "Selected for the most score for the usage, with Save's slightly lower bar and cheaper points.",
+  best_policy:
+    "Selected for the most score for the usage, with Best's higher bar and stronger points.",
+  best_once_policy:
+    "Max Power once: selected as the strongest pair for this task.",
   balanced_policy:
     "Selected for the most score for the usage among pairs good enough for this task, without a long wait.",
   cost_efficient_policy:
@@ -91,7 +88,7 @@ export const REASONS = {
     "Selected as the fastest pair over the low speed floor, whatever it costs.",
   max_power_speed_policy:
     "Selected as the fastest pair within 95% of the strongest, whatever it costs.",
-  // Receipts written by 0.4 to 0.8 carry the earlier mode names.
+  // Receipts written by 0.4 to 0.9 carry the earlier mode names.
   eco_policy:
     "Selected for the most score for the usage, with Eco's lower floor and cheaper points.",
   quality_policy: "Selected for the strongest comparable task evidence.",

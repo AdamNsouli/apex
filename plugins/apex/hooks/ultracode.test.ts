@@ -65,8 +65,8 @@ function harness(
   return { writes, clock, commands, entered, start, type, finish };
 }
 
-test("in Max Power a critical task is held, sent with ultracode on, and ultracode is turned off when the turn ends", async ($, on) => {
-  const h = harness($, on, "max_power");
+test("in Best a critical task is held, sent with ultracode on, and ultracode is turned off when the turn ends", async ($, on) => {
+  const h = harness($, on, "best");
   await h.start();
   const held = await h.type(CRITICAL);
   expect(held.drop).toMatch(/ultracode/);
@@ -83,8 +83,8 @@ test("in Max Power a critical task is held, sent with ultracode on, and ultracod
   expect(h.writes.ultracodeArmed).toBe(false);
 });
 
-test("ordinary messages are never held, even in Max Speed", async ($, on) => {
-  const h = harness($, on, "max_speed");
+test("ordinary messages are never held, even in Best", async ($, on) => {
+  const h = harness($, on, "best");
   await h.start();
   const plain = await h.type("Please explain a general concept clearly");
   expect(plain.drop).toBeUndefined();
@@ -95,8 +95,8 @@ test("ordinary messages are never held, even in Max Speed", async ($, on) => {
   expect(h.entered.length).toBe(1);
 });
 
-test("in Balanced, and with the kill switch, a critical task goes out as typed", async ($, on) => {
-  const h = harness($, on, "balanced");
+test("in Save, and with the kill switch, a critical task goes out as typed", async ($, on) => {
+  const h = harness($, on, "save");
   await h.start();
   const sent = await h.type(CRITICAL);
   expect(sent.drop).toBeUndefined();
@@ -105,13 +105,13 @@ test("in Balanced, and with the kill switch, a critical task goes out as typed",
 });
 
 test("the ultracode command turns the setting on and off", async ($, on) => {
-  const h = harness($, on, "max_speed", {}, "off");
+  const h = harness($, on, "best", {}, "off");
   await h.start();
   const onText = await $.command.run({
     command: "apex",
     args: "ultracode auto",
   });
-  expect(onText.text).toMatch(/Max Speed/);
+  expect(onText.text).toMatch(/Best/);
   expect(h.writes.control.ultracode).toBe("auto");
   const status = await $.command.run({ command: "apex", args: "ultracode" });
   expect(status.text).toMatch(/APEX ultracode is auto/);
@@ -126,8 +126,8 @@ test("a session that ended with ultracode on has it turned off at the next start
   expect(h.writes.ultracodeArmed).toBe(false);
 });
 
-test("in Max Speed a hard task is held too, and the kill switch stops it", async ($, on) => {
-  const h = harness($, on, "max_speed");
+test("in Best a hard task is held too, and the kill switch stops it", async ($, on) => {
+  const h = harness($, on, "best");
   await h.start();
   const held = await h.type("architect a complex system");
   expect(held.drop).toMatch(/ultracode/);

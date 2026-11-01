@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.10.0-beta.1
+
+Three modes instead of six: Save, Balanced and Best.
+
+The six 0.9 modes each pushed one thing to its limit, which gave answers that felt wrong: Cost Efficient chose 5.5-minute answers to save money, Max Power 11-minute ones, Max Speed handed 131 of 200 prompts a weaker model than they needed, and several modes overlapped. Now every mode uses Balanced's rule (drop pairs under the tier's floor or over its wait limit, take the most score for the usage) and differs only in how much a better answer is worth. Save values a point at 70% (same floor); Best at 6×, with a floor 10 points higher and wait limits doubled. Critical tasks keep at least Balanced's floor and point worth in Save.
+
+Ultracode follows the size of the task within the mode: Best (and Max Power once) for hard and critical tasks, Balanced for critical ones, Save never. The note asking Claude to split work across parallel subagents goes with the same tasks when ultracode is off or not used. In Save, subagents of a task that is not critical are routed as quick tasks. Max Power once stays: one prompt on the strongest pair. Saved modes carry over (eco and Cost Efficient → Save; quality, Max Power and Max Power + Speed → Best; sports, Time Efficient and Max Speed → Balanced); old receipts keep their reasons. Hotkeys in the rail are s, b and e.
+
+On the maintainer's 200 labelled prompts (kept off the repository) with the 30 Oct data, starting on Opus 5.5 high, per prompt in benchmark cost (AA tasks are larger than real prompts, so this compares modes rather than predicting bills): always Opus high $3.52 and 37 s; Save $2.58, typically 15 s, 43 below their labelled need; Balanced $2.96, 19 s, 14; Best $5.39, 37 s, 8; Max Power once $10.30, about 11 minutes, 0. A Save at half the point worth saved more ($2.33) but left 72 prompts below their need, so 70% was kept.
+
+The hygiene check, Node tests, native tests, plugin validation and the browser test pass locally. No live inference was run. Update the marketplace and the plugin, then restart: chats that were already open keep the previous code.
+
 ## 0.9.0-beta.1
 
 Six modes replace Eco, Balanced, High Quality and Sports, and each one does what its name says.
