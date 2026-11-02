@@ -87,9 +87,14 @@ export const migrateMode = (name) => modeName(name) ?? "balanced";
 export function tierFor(intent = {}) {
   const complex = intent.difficulty === "complex";
   const risky = intent.risk === "high";
-  // High risk alone is critical: routing is no longer held at the starting model,
-  // so the tier is what keeps a risky task on a strong pair.
-  if ((intent.failures ?? 0) >= 2 || risky) return "critical";
+  // Unresolved high-risk work stays critical. A concrete implementation contract
+  // can reduce reasoning demand without erasing its separate risk signal.
+  if ((intent.failures ?? 0) >= 2) return "critical";
+  // Concrete implementation contracts reduce judgment, not risk. Never use the
+  // quick tier, and move back up as soon as a check fails.
+  if (intent.execution === "specified")
+    return (intent.failures ?? 0) > 0 ? "hard" : "everyday";
+  if (risky) return "critical";
   if (complex || risky) return "hard";
   return intent.difficulty === "simple" ? "quick" : "everyday";
 }
