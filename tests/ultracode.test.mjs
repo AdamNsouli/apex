@@ -20,11 +20,11 @@ const ask = (mode, text = CRITICAL, over = {}) =>
     ...over,
   });
 
-test("ultracode follows the task within the mode: Best for hard and critical, Balanced for critical, Save never", () => {
+test("only Best enables ultracode automatically; Balanced and Save never do", () => {
   assert.equal(initialControl().ultracode, "auto");
   assert.deepEqual(
     ["best", "balanced", "save"].map((m) => ask(m, CRITICAL)),
-    [true, true, false],
+    [true, false, false],
   );
   assert.deepEqual(
     ["best", "balanced", "save"].map((m) => ask(m, HARD)),

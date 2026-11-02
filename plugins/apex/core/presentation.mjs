@@ -1,6 +1,6 @@
 import { duration, verdict } from "./receipt.mjs";
 import { migrateMode } from "./scoring.mjs";
-export const VERSION = "0.10.0-beta.1";
+export const VERSION = "0.11.0-beta.1";
 export const MODES = {
   save: {
     label: "Save",
@@ -12,7 +12,7 @@ export const MODES = {
     label: "Balanced",
     short: "Balanced",
     detail:
-      "Good enough for the task, without a long wait, for the least usage. Ultracode for critical tasks.",
+      "Matches reasoning to the task. Specified implementation uses a smaller execution budget; harder decisions keep stronger picks. No automatic Ultracode or parallel-agent nudge.",
   },
   best: {
     label: "Best",
@@ -34,6 +34,10 @@ export const modeSpec = (mode) => {
   return m === "best_once" ? ONCE_MODE : MODES[m];
 };
 export const REASONS = {
+  specified_execution_policy:
+    "The implementation has a concrete supplied contract. Selected against the current mode's implementation floor; safety constraints and high-risk classification remain visible.",
+  execution_failure_escalation:
+    "The specified implementation hit a failing check. Raised the reasoning tier; repeated failures use the critical floor.",
   stale_data_floor:
     "The benchmark data is over three days old, so APEX stayed at or above your starting model whatever the mode. Run /apex refresh.",
   manual_hold: "Your native model and effort settings are in control.",

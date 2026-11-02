@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.11.0-beta.1
+
+Treat supplied implementation contracts as execution rather than unresolved design. Require a software change request, concrete references and corroborating instructions; do not infer low decision demand from length alone. Keep risk visible and raise the reasoning tier after a failing check and repeated failures. Software implementation stays coding when medical/legal vocabulary appears in its constraints.
+
+Balanced and Save never automatically enable Ultracode or add a parallel-agent nudge. Specified tasks get a bounded single-main-agent note instead. Best retains explicit stronger-compute behavior. This note is guidance, not a host-enforced prohibition on Agent/Workflow tools.
+
+Workflow mapping/search labels can receive an ordinary implementation budget independent of a critical parent. Reviewers, architects and unknown workers retain the parent's demands, and explicitly selected worker models are respected. Worker failures are tracked for escalation.
+
+Manual controls, stale/missing evidence, model availability, cache payback and API-consent/budget gates remain active. Routing tests and offline replay do not establish unchanged real-task quality or measured subscription savings. Reload/restart after updating; existing chats keep loaded plugin code.
+
 ## 0.10.0-beta.1
 
 Three modes instead of six: Save, Balanced and Best.

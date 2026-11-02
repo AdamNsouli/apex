@@ -12,6 +12,8 @@ import {
   wantsUltracode,
   wantsFanOut,
   fanOutNote,
+  executionNote,
+  wantsExecutionNote,
   effectiveMode,
   migrateMode,
   modeName,
@@ -698,6 +700,14 @@ export function register(on, config = {}) {
       })
         ? fanOutNote(effectiveMode(control))
         : null;
+      const specified = wantsExecutionNote({
+        intent,
+        control,
+        fresh,
+        text: e.text,
+        origin: e.origin,
+        turnId: e.turnId,
+      });
       if (
         ultra === "idle" &&
         wantsUltracode({
@@ -719,7 +729,9 @@ export function register(on, config = {}) {
           drop: "APEX is turning ultracode on for this task and sending your message.",
         };
       }
-      // Big tasks in Balanced and Best: a note the model reads beside the prompt, never shown.
+      if (specified)
+        return next({ ...e, context: [...(e.context ?? []), executionNote()] });
+      // Best can opt into amplification; Balanced never silently fans out.
       if (note) return next({ ...e, context: [...(e.context ?? []), note] });
     }
     return next(e);
@@ -783,7 +795,7 @@ export function register(on, config = {}) {
             text:
               "APEX ultracode is " +
               (control.ultracode ?? "auto") +
-              ". Use /apex ultracode auto|off. Auto uses ultracode for hard and critical tasks in Best (and Max Power once) and for critical tasks in Balanced, and turns it off when each turn ends; Save never uses it. It uses far more than a normal request.",
+              ". Use /apex ultracode auto|off. Auto uses ultracode for hard and critical tasks in Best (and Max Power once), and turns it off when each turn ends; Balanced and Save never enable it automatically. It uses far more than a normal request.",
           };
         await change($, {
           kind: "ultracode",
@@ -794,7 +806,7 @@ export function register(on, config = {}) {
         return {
           text:
             value === "auto"
-              ? "APEX uses ultracode for hard and critical tasks in Best and for critical tasks in Balanced, and turns it off when each one ends. It uses far more than a normal request."
+              ? "APEX uses ultracode for hard and critical tasks in Best, and turns it off when each one ends. Balanced and Save never enable it automatically. It uses far more than a normal request."
               : "APEX will not turn ultracode on in any mode.",
         };
       }
@@ -804,7 +816,7 @@ export function register(on, config = {}) {
             text:
               "APEX agent routing is " +
               (control.agents ?? "auto") +
-              ". Use /apex agents auto|off. Auto routes subagents under the current mode (search agents as quick tasks; in Save every agent below critical; for the same tasks that use ultracode APEX asks Claude to split the work across parallel agents); an agent given its own model keeps it.",
+              ". Use /apex agents auto|off. Auto routes positively labelled mapping/search workers by their own bounded task; unknown workers keep the main task's demands. Only Best asks for parallel agents. Off disables APEX routing and nudges, not Claude's native agent tools; an agent given its own model keeps it.",
           };
         await change($, {
           kind: "agents",
@@ -1122,14 +1134,17 @@ export function register(on, config = {}) {
     if (e.agentId) {
       agent = agentRoutes.get(e.agentId);
       if (!agent) {
-        let type = "unknown";
+        let type = "unknown",
+          description = "";
         try {
-          type =
-            (await $.agent.list()).find((a) => a.id === e.agentId)?.type ??
-            "unknown";
+          const info = (await $.agent.list()).find((a) => a.id === e.agentId);
+          type = info?.type ?? "unknown";
+          description = info?.description ?? "";
         } catch {}
         agent = {
           type,
+          description,
+          failures: 0,
           lastModel: null,
           lastEffort: undefined,
           steps: 2,
@@ -1142,10 +1157,19 @@ export function register(on, config = {}) {
       plan = agentPlan({
         control,
         agentType: agent.type,
+        agentDescription: agent.description,
         agentModel: e.model,
         mainModel: mainNativeModel,
         mainIntent: intent,
       });
+      if (plan.route && agent.failures > 0)
+        plan = {
+          ...plan,
+          intent: {
+            ...plan.intent,
+            failures: Math.max(plan.intent.failures ?? 0, agent.failures),
+          },
+        };
     }
     const captured = e.agentId ? null : captureDispatch(control, id);
     const dispatchControl = captured?.effective ?? { ...control };
@@ -1240,6 +1264,7 @@ export function register(on, config = {}) {
         scoreBasis: decision.scoreBasis ?? null,
         tier: decision.tier ?? null,
         risk: e.agentId ? "unknown" : intent.risk,
+        execution: (e.agentId ? plan.intent : intent)?.execution ?? null,
         original,
         apexRequested: decision.pair,
         reason: decision.reason,
@@ -1317,12 +1342,17 @@ export function register(on, config = {}) {
         row.status = result.isError || result.deny ? "error" : "complete";
         row.completedAt = await $.clock.now();
       }
-      if (!e.agentId && (result.isError || result.deny))
-        intent = { ...intent, failures: intent.failures + 1 };
+      if (result.isError || result.deny) {
+        const worker = e.agentId ? agentRoutes.get(e.agentId) : null;
+        if (worker) worker.failures++;
+        else if (!e.agentId) intent = { ...intent, failures: intent.failures + 1 };
+      }
       draw($);
       return result;
     } catch (error) {
-      if (!e.agentId) intent = { ...intent, failures: intent.failures + 1 };
+      const worker = e.agentId ? agentRoutes.get(e.agentId) : null;
+      if (worker) worker.failures++;
+      else if (!e.agentId) intent = { ...intent, failures: intent.failures + 1 };
       const row = ledger.events.find((x) => x.id === id);
       if (row) {
         row.status = "error";

@@ -117,9 +117,9 @@ test("old and friendly names map onto the three modes; unknown is Balanced", () 
   assert.equal(modeSpec("eco").label, "Save");
 });
 
-test("ultracode and the subagent note follow the task: Best hard+critical, Balanced critical, Save never", () => {
+test("only Best auto-amplifies hard and critical tasks; Balanced and Save never do", () => {
   assert.deepEqual(ULTRACODE_TIERS.best, ["hard", "critical"]);
-  assert.deepEqual(ULTRACODE_TIERS.balanced, ["critical"]);
+  assert.deepEqual(ULTRACODE_TIERS.balanced, []);
   assert.deepEqual(ULTRACODE_TIERS.save, []);
   const hard = {
     task: "general",

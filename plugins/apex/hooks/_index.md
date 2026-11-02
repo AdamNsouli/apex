@@ -1,8 +1,10 @@
 # hooks — Index
 
-Current status: APEX 0.10.0-beta.1, premium native rail and route workspace.
+Current status: APEX 0.11.0-beta.1, premium native rail and route workspace.
 Code and assets are public; dataset and inference fixtures are synthetic.
 See the root README and verification document for actual limits.
+
+- [specified.test.ts](./specified.test.ts) — native synthetic specified-execution routing, bounded guidance, independent mapper budgets and critical/reviewer protection.
 
 - [hooks.json](./hooks.json) — release source or supporting artifact.
 - [register.mjs](./register.mjs) — release source or supporting artifact.

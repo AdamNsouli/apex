@@ -27,7 +27,7 @@ export const initialControl = () => ({
 // Ultracode is Claude Code's multi-agent mode. It is a session switch, not a field
 // of a request, and it uses far more than one model call. It follows the size of
 // the task within the mode: Best (and Max Power once) for hard and critical tasks,
-// Balanced for critical tasks, Save never. `ultracode: "off"` rules it out
+// Balanced and Save never enable it automatically. `ultracode: "off"` rules it out
 // altogether. Even then only a newly classified task typed at an idle prompt
 // qualifies: a continuation ("yes", "go ahead"), a slash command, a message with
 // attachments (a plugin's prompt cannot carry them) and a message typed over a
@@ -35,7 +35,7 @@ export const initialControl = () => ({
 export const ULTRACODE_TIERS = Object.freeze({
   best: ["hard", "critical"],
   best_once: ["hard", "critical"],
-  balanced: ["critical"],
+  balanced: [],
   save: [],
 });
 // The mode a main request is dispatched under: a saved "Max Power once" wins.
@@ -45,7 +45,23 @@ export const effectiveMode = (control) =>
 // subagents: a note the model reads beside the prompt (never shown). A continuation,
 // a slash command or a message typed over a running turn gets none.
 export const fanOutNote = () =>
-  "APEX: this is a big task. Split independent parts of it across parallel subagents (Agent tool) and work on them at the same time.";
+  "APEX: this is a big task. Split independent parts of it across parallel subagents (Agent tool) and work on them at the same time. Keep the team small, give each worker a bounded non-overlapping task, and ask for concise findings rather than full repeated audits.";
+// Guidance, not a tool-level prohibition: APEX cannot disable native agent tools.
+export const executionNote = () =>
+  "APEX: this is specified implementation work. Follow the supplied plan incrementally, reuse its existing research, and verify the relevant source rather than repeating a broad codebase audit. Use one main agent; do not launch Workflow, parallel research or subagents unless the user explicitly requested parallel work. If a material design gap or failing check needs deeper reasoning, report it and investigate that bounded issue. Keep all safety, approval and acceptance requirements.";
+export function wantsExecutionNote({ control, intent, fresh, text, origin, turnId }) {
+  return (
+    intent?.execution === "specified" &&
+    ["save", "balanced"].includes(effectiveMode(control)) &&
+    control.routing === "auto" &&
+    fresh === true &&
+    origin?.kind === "composer" &&
+    !turnId &&
+    typeof text === "string" &&
+    text.trim().length > 0 &&
+    !/^\s*\//.test(text)
+  );
+}
 export function wantsFanOut({ control, intent, fresh, text, origin, turnId }) {
   const mode = effectiveMode(control);
   return (
@@ -161,6 +177,7 @@ export const QUICK_AGENTS = Object.freeze([
 export function agentPlan({
   control,
   agentType,
+  agentDescription = "",
   agentModel,
   mainModel,
   mainIntent,
@@ -169,9 +186,29 @@ export function agentPlan({
     return { route: false, reason: "agent_routing_off" };
   if (!mainModel || agentModel !== mainModel)
     return { route: false, reason: "agent_model_chosen" };
-  // Search and lookup agents are quick tasks; Save routes every subagent of a task
-  // that is not critical as quick, so helpers do not cost what the main task does.
-  const save = effectiveMode(control) === "save";
+  // Unknown workflow workers may be architects/reviewers. Require a positive
+  // bounded reader label before assigning ordinary execution rather than judgment.
+  if (
+    agentType === "workflow-subagent" &&
+    typeof agentDescription === "string" &&
+    (/^map:[a-z][\w-]*$/i.test(agentDescription.trim()) ||
+      (/^(?:read[- ]only\s+)?(?:map|search|lookup|locate|find files)\b/i.test(agentDescription.trim()) &&
+        /\b(?:existing|source|files?|fields?|definitions?|references?|call sites)\b/i.test(agentDescription))) &&
+    !/architect|review|audit|design|diagnos|security|decid|solution|strategy|safe (?:way|approach)|choose|compare|investigat|figure out|determine/i.test(agentDescription)
+  )
+    return {
+      route: true,
+      intent: {
+        task: "agentic_coding",
+        risk: "normal",
+        difficulty: "standard",
+        execution: "specified",
+        failures: 0,
+      },
+    };
+  // Search and lookup agents are quick tasks. The legacy Save helper shortcut
+  // cannot erase a specified parent's implementation floor or risk signal.
+  const save = effectiveMode(control) === "save" && mainIntent?.execution !== "specified";
   if (
     QUICK_AGENTS.includes(agentType) ||
     (save && tierFor(mainIntent ?? {}) !== "critical")
@@ -185,6 +222,12 @@ export function agentPlan({
         failures: 0,
       },
     };
+  // The main task's contract does not establish the work of an unknown worker or
+  // reviewer. Keep its risk/difficulty, without assuming specified execution.
+  if (mainIntent?.execution === "specified") {
+    const { execution, ...judgment } = mainIntent;
+    return { route: true, intent: judgment };
+  }
   return { route: true, intent: mainIntent };
 }
 // Called synchronously at a MAIN dispatch boundary, before any await. Subagents
@@ -230,15 +273,50 @@ const MATH =
 const isSimple = (t) =>
   SIMPLE_START.test(t) ||
   (QUESTION_START.test(t) && t.trim().length <= 80 && !NEEDS_THOUGHT.test(t));
+// Specification detail reduces decisions, not the consequences of an error.
+// Require corroborating evidence; neither length nor a path alone establishes it.
+const SOURCE_PATH = /(?:^|[\s(\x60])(?:\.{0,2}\/|\/)?[\w@.-]+(?:\/[\w@.-]+)*\.(?:[cm]?[jt]sx?|py|rs|go|swift|jsonc?|md)\b/i;
+const CODE_PATH = /(?:^|[\s(\x60])(?:\.{0,2}\/|\/)?[\w@.-]+(?:\/[\w@.-]+)*\.(?:[cm]?[jt]sx?|py|rs|go|swift|jsonc?)\b/i;
+const SOFTWARE_REQUEST =
+  /\b(?:implement|build|fix|refactor|debug|update|change|edit|add|remove|rewrite|migrate|design|architect|review|audit)\b[^.!?\n]{0,180}\b(?:code|bug|app|feature|function|component|endpoint|api|repo|website|test|ui|software|implementation)\b/i;
+const SPEC_REFERENCE =
+  /\b(?:approved|existing|supplied|provided|attached|reviewed|detailed|complete|exact)\s+(?:[\w-]+\s+){0,3}(?:plan|spec(?:ification)?|instructions|patch)\b|(?:execution|implementation)[_ -]plan\.md\b|(?:feature|repair|change)\s+(?:described|specified)\s+in\b/i;
+const UNRESOLVED =
+  /\b(?:choose|decide)\s+(?:(?:the|an?|between|which|our|best|right)\s+){0,3}(?:architecture|approach|strategy|design|solution|two|competing)\b|\b(?:architecture|approach|root cause|solution|diagnosis)\s+(?:is|remains)\s+(?:unknown|unclear|undecided)\b|\b(?:design|architect|investigate|diagnose|research|figure out|find|determine|debug)\b[^.!?\n]{0,70}\b(?:from scratch|root cause|unknown|conflicting|tradeoffs|trade-offs)\b|\b(?:work out|assess|evaluate|determine|decide|figure out)\s+(?:whether|which|how|if)\b|\bcompare\b[^.!?\n]{0,160}\b(?:select|choose|decide|tradeoffs|trade-offs)\b|\b(?:select|choose|decide|design)\b[^.!?\n]{0,80}\b(?:best|optimal|safest|appropriate)\b[^.!?\n]{0,50}\b(?:architecture|approach|strategy|design|solution|storage|migration)\b/i;
+function specifiedExecution(text, software) {
+  if (!software || UNRESOLVED.test(text)) return false;
+  const lead = text.replace(/<[^>]*>/g, "").trim().slice(0, 400);
+  if (/^(?:please\s+)?(?:design|architect|investigate|diagnose|research|review|audit|choose|decide)\b/.test(lead))
+    return false;
+  const path = SOURCE_PATH.test(text);
+  const evidence = [
+    /\b(?:acceptance|exit gate|verify|verification|expected (?:behavior|result)|tests? must|run (?:the )?tests?)\b/,
+    /\b(?:preserve|keep [^.\n]{0,80}(?:intact|unchanged)|do not (?:change|delete|modify)|in.scope|out.of.scope|constraints?|must not)\b/,
+    /\b(?:stage[sd]?|step[sd]?|file.level|file.by.file|implementation map|delivery sequence|bounded local)\b|(?:^|\n)\s*[1-9][.)]\s/m,
+  ].filter((pattern) => pattern.test(text)).length;
+  // Literal pairs or explicitly named symbols establish an edit; a broad
+  // "change architecture to whatever is best" still requires judgment.
+  const atom = "(?:\\x60[^\\x60\\n]+\\x60|\"[^\"\\n]+\"|'[^'\\n]+')";
+  const exactEdit =
+    new RegExp("\\b(?:replace|rename|change)\\s+(?:the\\s+)?(?:(?:string|literal|text|label)\\s+)?" + atom + "\\s+(?:with|to)\\s+" + atom).test(text) ||
+    /\brename\s+(?:the\s+)?(?:identifier|function|variable|component|field|symbol)\s+[a-z_$][\w$]*\s+to\s+[a-z_$][\w$]*\b/.test(text);
+  return path && ((SPEC_REFERENCE.test(text) && evidence >= 2) || (exactEdit && evidence >= 1));
+}
 export function classifyIntent(text, previous) {
-  const t = String(text ?? "")
-    .slice(0, 12000)
-    .toLowerCase();
+  const full = String(text ?? "").toLowerCase();
+  const t = full.slice(0, 12000);
   if (previous && /^\s*(yes|continue|go ahead|do it|ok|okay)[.!\s]*$/.test(t))
     return previous;
-  const risk = RISK.test(t) ? "high" : "normal";
+  const risk = RISK.test(full) ? "high" : "normal";
+  const lead = t.replace(/<[^>]*>/g, "").trim().slice(0, 1000);
+  const software =
+    SOFTWARE_REQUEST.test(lead) ||
+    (CODE_PATH.test(lead) && /\b(?:replace|rename|change|edit|update)\b/.test(lead));
   let task = "general";
   for (const [name, re] of [
+    // Requested software work wins over domain vocabulary in its constraints.
+    // Risk is retained independently.
+    ["coding", software ? /./s : /$a/],
     ["healthcare", /medical|diagnos|healthcare/],
     ["legal", /legal|contract|lawsuit|patent|licen[cs]e|trademark/],
     [
@@ -279,6 +357,7 @@ export function classifyIntent(text, previous) {
     risk: ambiguous ? "unknown" : risk,
     difficulty,
     ambiguous,
+    ...(specifiedExecution(full, software) ? { execution: "specified" } : {}),
     failures: 0,
   };
 }
@@ -481,7 +560,13 @@ export function route({
   let winner = r.selected;
   // Old data keeps every pick at or above the starting pair, whatever the mode, so
   // the receipt says that instead of naming a mode rule it could not follow.
-  let reason = stale ? "stale_data_floor" : mode + "_policy";
+  let reason = stale
+    ? "stale_data_floor"
+    : intent.execution === "specified" && mode !== "best_once"
+      ? (intent.failures ?? 0) > 0
+        ? "execution_failure_escalation"
+        : "specified_execution_policy"
+      : mode + "_policy";
   // Standard tasks keep the previous pair for one more step rather than flap.
   if (lastModel && winner.model !== lastModel && stepsOnModel < 2 && !risky) {
     const previous = r.ranked.find(
