@@ -1,4 +1,4 @@
-# Routing policy — 0.11.1-beta.1
+# Routing policy — 0.12.0-beta.1
 
 APEX compares model/effort pairs using benchmark evidence. The policy does not establish which model will succeed on an individual task. It contains no preferred model name: refreshed scores, measured benchmark cost and latency determine the pick. Offline replays and synthetic hook tests verify the policy, not real task quality or subscription savings.
 

@@ -1,11 +1,13 @@
 # tests — Index
 
-Current status: APEX 0.11.1-beta.1 executable beta.
+Current status: APEX 0.12.0-beta.1 executable beta.
 Code and assets are public; dataset and inference fixtures are synthetic.
 See the root README and verification document for actual limits.
 
 - [browser.cjs](./browser.cjs) — release source or supporting artifact.
 - [failures.test.mjs](./failures.test.mjs) — which tool errors count as real failures and how failures raise the tier.
+- [overhead.test.mjs](./overhead.test.mjs) — fixed-load maths, server grouping, advice thresholds and malformed input.
+- [wiring.test.mjs](./wiring.test.mjs) — the settings-wiring check passes on the source and fails on deliberately broken copies.
 - [companion.test.mjs](./companion.test.mjs) — release source or supporting artifact.
 - [core.test.mjs](./core.test.mjs) — release source or supporting artifact.
 - [presentation.test.mjs](./presentation.test.mjs) — dispatch consumption, frozen evidence and shared UI state contracts.

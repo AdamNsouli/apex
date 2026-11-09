@@ -1,6 +1,6 @@
 import { duration, verdict } from "./receipt.mjs";
 import { migrateMode } from "./scoring.mjs";
-export const VERSION = "0.11.1-beta.1";
+export const VERSION = "0.12.0-beta.1";
 export const MODES = {
   save: {
     label: "Save",

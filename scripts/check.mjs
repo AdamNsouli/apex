@@ -63,6 +63,21 @@ for (const p of files) {
     if (/\.json$/.test(p)) JSON.parse(text);
   }
 }
+const { checkWiring } = await import("./settings-wiring.mjs");
+const { initialControl } = await import("../plugins/apex/core/router.mjs");
+const read = (f) => readFile(path.join(root, f), "utf8");
+const wiringProblems = checkWiring({
+  router: await read("plugins/apex/core/router.mjs"),
+  register: await read("plugins/apex/hooks/register.mjs"),
+  app: await read("plugins/apex/web/app.js"),
+  companion: await read("plugins/apex/companion/server.mjs"),
+  defaults: initialControl(),
+});
+assert.deepEqual(
+  wiringProblems,
+  [],
+  "settings wiring:\n" + wiringProblems.join("\n"),
+);
 console.log(
   `Checked ${files.length} public files: executable syntax, JSON, manifest/version agreement and private-material patterns. This is a hygiene check, not a security audit.`,
 );
