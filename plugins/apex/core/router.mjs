@@ -566,7 +566,9 @@ export function route({
       ? (intent.failures ?? 0) > 0
         ? "execution_failure_escalation"
         : "specified_execution_policy"
-      : mode + "_policy";
+      : (intent.failures ?? 0) >= 2
+        ? "failure_escalation"
+        : mode + "_policy";
   // Standard tasks keep the previous pair for one more step rather than flap.
   if (lastModel && winner.model !== lastModel && stepsOnModel < 2 && !risky) {
     const previous = r.ranked.find(

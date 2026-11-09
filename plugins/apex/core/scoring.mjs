@@ -89,13 +89,17 @@ export function tierFor(intent = {}) {
   const risky = intent.risk === "high";
   // Unresolved high-risk work stays critical. A concrete implementation contract
   // can reduce reasoning demand without erasing its separate risk signal.
-  if ((intent.failures ?? 0) >= 2) return "critical";
+  const failures = intent.failures ?? 0;
   // Concrete implementation contracts reduce judgment, not risk. Never use the
   // quick tier, and move back up as soon as a check fails.
-  if (intent.execution === "specified")
-    return (intent.failures ?? 0) > 0 ? "hard" : "everyday";
-  if (risky) return "critical";
-  if (complex || risky) return "hard";
+  if (intent.execution === "specified") {
+    if (failures >= 2) return "critical";
+    return failures > 0 ? "hard" : "everyday";
+  }
+  // Failures count real failed checks only (see countsAsFailure). They raise the
+  // tier one step at a time: two make it at least hard, three make it critical.
+  if (failures >= 3 || risky) return "critical";
+  if (complex || failures >= 2) return "hard";
   return intent.difficulty === "simple" ? "quick" : "everyday";
 }
 const key = (p) => `${p.model}|${p.effort ?? "default"}`;
@@ -205,4 +209,25 @@ export function selectPair(
     },
     evidence: "share_of_best_score_not_success_probability",
   };
+}
+
+// Whether a finished tool call is a real failure that should raise the tier.
+// Searches that find nothing, missing files, refusals (by the person, a
+// permission rule or another plugin) and browser or connector hiccups are normal
+// work and never count. A failed check, build, script or edit does.
+export const COUNTED_TOOLS = new Set(["Bash", "Edit", "Write", "NotebookEdit"]);
+const SEARCH_EXIT_1 =
+  /^(?:(?:cd|pushd)\s+\S+\s*(?:&&|;)\s*)?(?:grep|egrep|fgrep|rg|diff|cmp|test|\[|pgrep|which|command\s+-v|find|git\s+diff\s+--quiet|git\s+grep)\b/;
+export function countsAsFailure({ tool, command, isError, deny, text } = {}) {
+  if (deny !== undefined || isError !== true) return false;
+  if (!COUNTED_TOOLS.has(tool)) return false;
+  if (tool !== "Bash") return true;
+  const exit = /^Exit code (\d+)/.exec(String(text ?? ""));
+  if (
+    exit &&
+    exit[1] === "1" &&
+    SEARCH_EXIT_1.test(String(command ?? "").trim())
+  )
+    return false;
+  return true;
 }

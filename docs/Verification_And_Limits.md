@@ -1,4 +1,4 @@
-# Verification and limits — 0.11.0-beta.1
+# Verification and limits — 0.11.1-beta.1
 
 The 0.11 change was checked locally with 118 passing offline tests, 38 passing native harness tests on Claude Code 2.1.309, plugin and marketplace validation, and the existing browser integration suite. The native fixtures use synthetic model evidence and mocked inference. Specified coding contracts select an ordinary-floor pair while preserving the high-risk receipt; unresolved critical tasks keep their strong pair; mapping workers are separated from reviewers and explicit worker models. Balanced does not trigger automatic Ultracode or fan-out. These checks establish routing behavior, not equal real-task quality or measured subscription savings.
 

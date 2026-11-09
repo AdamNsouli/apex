@@ -158,6 +158,10 @@ test("the tier follows the classified intent", () => {
   assert.equal(tierFor({ difficulty: "complex", risk: "high" }), "critical");
   assert.equal(
     tierFor({ difficulty: "standard", risk: "normal", failures: 2 }),
+    "hard",
+  );
+  assert.equal(
+    tierFor({ difficulty: "standard", risk: "normal", failures: 3 }),
     "critical",
   );
 });

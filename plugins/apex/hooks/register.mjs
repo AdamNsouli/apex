@@ -18,6 +18,7 @@ import {
   migrateMode,
   modeName,
 } from "../core/router.mjs";
+import { countsAsFailure, COUNTED_TOOLS } from "../core/scoring.mjs";
 import { freezeDecision } from "../core/receipt.mjs";
 import { VERSION, MODES as MODE_TEXT } from "../core/presentation.mjs";
 import {
@@ -1342,7 +1343,15 @@ export function register(on, config = {}) {
         row.status = result.isError || result.deny ? "error" : "complete";
         row.completedAt = await $.clock.now();
       }
-      if (result.isError || result.deny) {
+      if (
+        countsAsFailure({
+          tool: e.tool,
+          command: e.command,
+          isError: result.isError,
+          deny: result.deny,
+          text: result.text,
+        })
+      ) {
         const worker = e.agentId ? agentRoutes.get(e.agentId) : null;
         if (worker) worker.failures++;
         else if (!e.agentId) intent = { ...intent, failures: intent.failures + 1 };
@@ -1351,7 +1360,9 @@ export function register(on, config = {}) {
       return result;
     } catch (error) {
       const worker = e.agentId ? agentRoutes.get(e.agentId) : null;
-      if (worker) worker.failures++;
+      if (!COUNTED_TOOLS.has(e.tool)) {
+        // A connector or browser tool that threw is not a failed check.
+      } else if (worker) worker.failures++;
       else if (!e.agentId) intent = { ...intent, failures: intent.failures + 1 };
       const row = ledger.events.find((x) => x.id === id);
       if (row) {

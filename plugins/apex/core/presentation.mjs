@@ -1,6 +1,6 @@
 import { duration, verdict } from "./receipt.mjs";
 import { migrateMode } from "./scoring.mjs";
-export const VERSION = "0.11.0-beta.1";
+export const VERSION = "0.11.1-beta.1";
 export const MODES = {
   save: {
     label: "Save",
@@ -38,6 +38,8 @@ export const REASONS = {
     "The implementation has a concrete supplied contract. Selected against the current mode's implementation floor; safety constraints and high-risk classification remain visible.",
   execution_failure_escalation:
     "The specified implementation hit a failing check. Raised the reasoning tier; repeated failures use the critical floor.",
+  failure_escalation:
+    "Two or more real checks failed on this task (a failed test, build, script or edit). Raised the reasoning tier one step; three failures use the critical floor. Searches that find nothing and refused calls do not count.",
   stale_data_floor:
     "The benchmark data is over three days old, so APEX stayed at or above your starting model whatever the mode. Run /apex refresh.",
   manual_hold: "Your native model and effort settings are in control.",

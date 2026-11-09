@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.11.1-beta.1
+
+Fix: Save (and Balanced) kept choosing Opus xhigh after harmless tool errors. Any two failed tool calls in a prompt made the rest of it "critical", which every mode answers with the strongest pair. A search that found nothing, a missing file, a refused call or a browser-tool hiccup counted. On the maintainer's last 21 days, 7% of prompts reached two errors, but they were the long ones: 24% of all main-chat requests came after the second.
+
+Now only real failed checks count: a failed command that is not a search with no match, and a failed Edit, Write or notebook edit. Searches (`grep`, `rg`, `diff`, `test`, `find`, `which`, `git diff --quiet`) that exit 1, Read errors, refusals and connector or browser tool errors are ignored. Escalation is gradual: two failures make the task at least hard, three make it critical (a specified implementation keeps its own steps). The receipt reads `failure_escalation` with a plain explanation instead of `save_policy`.
+
+New `scripts/replay-sessions.mjs` replays 14-step tasks with failures part-way and counts model-switch cache costs, which the one-step replay cannot see. On the maintainer's 200 labelled prompts, starting on Opus 5.5 high (cost relative to staying put): with three harmless errors Save went 79% → 131% under 0.11 and stays 79% now; with three real failures Save is 130% and Balanced 124%. No live inference was run, and quality is not part of this cost figure.
+
 ## 0.11.0-beta.1
 
 Treat supplied implementation contracts as execution rather than unresolved design. Require a software change request, concrete references and corroborating instructions; do not infer low decision demand from length alone. Keep risk visible and raise the reasoning tier after a failing check and repeated failures. Software implementation stays coding when medical/legal vocabulary appears in its constraints.
