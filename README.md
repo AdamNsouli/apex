@@ -8,6 +8,8 @@
 
 APEX is executable middleware, not just instructions to Claude. It wraps the official `turn.step` hook and forwards the selected model and effort while preserving the streamed response and conversation. Three modes (Save, Balanced and Best) can be selected while work is running.
 
+**0.11.1-beta.1:** only real failed checks (not searches with no match, refusals or browser errors) raise the tier, and gradually; see the changelog.
+
 **0.11.0-beta.1:** specified implementation is separate from unresolved judgment. A concrete coding contract with file/spec references and corroborating acceptance/preservation instructions uses the ordinary implementation tier while retaining its risk label. It escalates after a failed check and again after repeated failures. Length or a path alone is insufficient; unresolved design/debugging stays protected. Balanced and Save no longer auto-enable Ultracode or inject a parallel-agent nudge. Verified workflow mapping labels get their own implementation budget; unknown workers and reviewers keep the parent demands. This is routing-policy verification, not a measured claim of equal task quality or subscription savings.
 
 **0.10.0-beta.1:** three modes instead of six: Save, Balanced and Best. All use Balanced's rule (good enough for the task, no long wait, most score for the usage) and differ only in how much a better answer is worth, so none of them gives an 11-minute or far-too-weak answer to an ordinary prompt. Ultracode and parallel subagents follow the size of the task: Best for hard and critical tasks, Balanced for critical ones, Save never. Max Power once stays for a single strongest answer. Saved modes carry over.
