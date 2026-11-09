@@ -51,6 +51,30 @@ function facts(id, rows) {
     fragment.append(node("dt", key), node("dd", String(value ?? "unknown")));
   $(id).replaceChildren(fragment);
 }
+// The chat's fixed load, as Claude Code's own breakdown reports it. Unknown stays
+// unknown: nothing is shown until the host has given a reading.
+function renderOverhead(o) {
+  facts(
+    "overhead-facts",
+    o
+      ? [
+          ["Fixed per message", fmt(o.fixedTokens) + " tokens"],
+          ["Conversation so far", fmt(o.messageTokens) + " tokens"],
+          ...o.categories.slice(0, 5).map((c) => [c.name, fmt(c.tokens)]),
+          ...o.servers.slice(0, 3).map((s) => ["MCP " + s.name, fmt(s.tokens)]),
+          ...o.memory
+            .slice(0, 3)
+            .map((m) => ["Memory " + m.name, fmt(m.tokens)]),
+          ...(o.skills ? [["Skills listing", fmt(o.skills.tokens)]] : []),
+        ]
+      : [],
+  );
+  $("overhead-note").textContent = o
+    ? o.advice.length
+      ? o.advice.join(" ")
+      : "Nothing stands out as unusually large. Estimates from Claude Code; APEX changes none of it."
+    : "Run /apex overhead in Claude to read this chat's fixed load.";
+}
 async function request(url, body) {
   const response = await fetch(url, {
     method: body === undefined ? "GET" : "POST",
@@ -631,6 +655,7 @@ function render() {
     " unknown-cost requests";
   renderHistory(p);
   renderReceipt(selected(p));
+  renderOverhead(state.overhead ?? null);
   renderModels();
   $("host-status").textContent =
     "Claude " +

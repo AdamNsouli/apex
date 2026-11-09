@@ -8,6 +8,8 @@
 
 APEX is executable middleware, not just instructions to Claude. It wraps the official `turn.step` hook and forwards the selected model and effort while preserving the streamed response and conversation. Three modes (Save, Balanced and Best) can be selected while work is running.
 
+**0.12.0-beta.1:** `/apex overhead` and an inspector section show what each chat re-reads before you type; a wiring check keeps every setting consistent across code, command, companion and web page. No routing change.
+
 **0.11.1-beta.1:** only real failed checks (not searches with no match, refusals or browser errors) raise the tier, and gradually; see the changelog.
 
 **0.11.0-beta.1:** specified implementation is separate from unresolved judgment. A concrete coding contract with file/spec references and corroborating acceptance/preservation instructions uses the ordinary implementation tier while retaining its risk label. It escalates after a failed check and again after repeated failures. Length or a path alone is insufficient; unresolved design/debugging stays protected. Balanced and Save no longer auto-enable Ultracode or inject a parallel-agent nudge. Verified workflow mapping labels get their own implementation budget; unknown workers and reviewers keep the parent demands. This is routing-policy verification, not a measured claim of equal task quality or subscription savings.

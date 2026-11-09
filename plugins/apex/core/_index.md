@@ -1,10 +1,11 @@
 # core — Index
 
-Current status: APEX 0.11.1-beta.1 executable beta.
+Current status: APEX 0.12.0-beta.1 executable beta.
 Code and assets are public; dataset and inference fixtures are synthetic.
 See the root README and verification document for actual limits.
 
 - [catalogue.mjs](./catalogue.mjs) — release source or supporting artifact.
+- [overhead.mjs](./overhead.mjs) — turns the host's context breakdown into the fixed-load report and plain advice; report only.
 - [router.mjs](./router.mjs) — release source or supporting artifact.
 - [scoring.mjs](./scoring.mjs) — the tier policy: floor, wait limit and value (score minus cost over the worth of a point).
 - [task-scores.mjs](./task-scores.mjs) — dated per-task benchmark snapshot (coding, agentic, reasoning, knowledge) from AA model pages; written by scripts/refresh-task-scores.mjs.

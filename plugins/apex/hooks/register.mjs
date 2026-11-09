@@ -19,6 +19,7 @@ import {
   modeName,
 } from "../core/router.mjs";
 import { countsAsFailure, COUNTED_TOOLS } from "../core/scoring.mjs";
+import { summariseOverhead, overheadText } from "../core/overhead.mjs";
 import { freezeDecision } from "../core/receipt.mjs";
 import { VERSION, MODES as MODE_TEXT } from "../core/presentation.mjs";
 import {
@@ -58,6 +59,7 @@ let control = initialControl(),
   lastEffort = undefined,
   stepsOnModel = 2,
   mainNativeModel = null,
+  overhead = null,
   agentRoutes = new Map(),
   acks = [],
   syncing = null,
@@ -125,6 +127,17 @@ function armUltracode($, text) {
     }
   });
 }
+// The host's own breakdown of what a chat carries on every message. A failure
+// leaves the last reading; this is a report and never blocks routing.
+async function refreshOverhead($) {
+  try {
+    overhead = summariseOverhead(
+      await $.session.usage({ breakdown: "summary" }),
+      now,
+    );
+  } catch {}
+  return overhead;
+}
 const publicState = () => ({
   control,
   connected: true,
@@ -143,6 +156,7 @@ const publicState = () => ({
   catalogue: models,
   hostVersion,
   hostUsage,
+  overhead,
   accountBilling: "unknown",
   intent,
   refreshError,
@@ -628,7 +642,7 @@ export function register(on, config = {}) {
       name: "apex",
       description: "APEX request routing, modes and receipts",
       argumentHint:
-        "mode save|balanced|best; dashboard; refresh; auto; hold; why; credits; map-efforts; confirm-models; ultracode auto|off; agents auto|off",
+        "mode save|balanced|best; dashboard; refresh; auto; hold; why; credits; map-efforts; confirm-models; overhead; ultracode auto|off; agents auto|off",
       immediate: true,
     });
     now = await $.clock.now();
@@ -645,6 +659,7 @@ export function register(on, config = {}) {
   on("session.end", async ($, e, next) => {
     if (["clear", "resume"].includes(e.reason)) {
       ledger = new Ledger();
+      overhead = null;
       intent = {
         task: "general",
         risk: "unknown",
@@ -898,6 +913,11 @@ export function register(on, config = {}) {
       if (verb === "dashboard") {
         return { text: "Open local APEX dashboard: " + (await dashboard($)) };
       }
+      if (verb === "overhead") {
+        await refreshOverhead($);
+        draw($);
+        return { text: overheadText(overhead) };
+      }
       if (verb === "why")
         return {
           text: JSON.stringify(
@@ -1121,6 +1141,7 @@ export function register(on, config = {}) {
     if (!e.agentId) {
       hostUsage = await $.session.usage();
       contextTokens = hostUsage.context?.tokens ?? null;
+      if (!overhead) await refreshOverhead($);
     }
     const original = {
       model: e.model,

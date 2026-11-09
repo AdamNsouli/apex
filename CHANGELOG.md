@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.12.0-beta.1
+
+New: `/apex overhead` and an inspector section, "What every message carries". They report what each chat re-reads before you type, from Claude Code's own context breakdown: system prompt and tools, memory files, MCP servers, the skill and command listings, agent descriptions, and the conversation so far. If one item is large (an MCP server over 3,000 tokens, a memory file over 4,000, a skill listing over 3,000) it says so in one line. APEX only reports; it changes no instruction file and disconnects nothing. Nothing is shown until the host has given a reading, and file paths are shortened to file names.
+
+On the maintainer's last 21 days the median chat re-read about 74,000 tokens before the first message, and the median request carried about 333,000 tokens in total, so the fixed load is roughly a fifth of what is re-read.
+
+New: a settings-wiring check in `npm run check` (`scripts/settings-wiring.mjs`). Every setting the change handler accepts must be declared with where it lives (default, `/apex` command, web page, companion allowed list), and the source must match: a setting added in one place and forgotten in another now fails the check instead of failing quietly. `ultracode` and `agents` are declared command-only on purpose.
+
+No routing behaviour changed.
+
 ## 0.11.1-beta.1
 
 Fix: Save (and Balanced) kept choosing Opus xhigh after harmless tool errors. Any two failed tool calls in a prompt made the rest of it "critical", which every mode answers with the strongest pair. A search that found nothing, a missing file, a refused call or a browser-tool hiccup counted. On the maintainer's last 21 days, 7% of prompts reached two errors, but they were the long ones: 24% of all main-chat requests came after the second.
