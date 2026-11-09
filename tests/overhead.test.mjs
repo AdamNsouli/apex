@@ -98,3 +98,61 @@ test("a missing or malformed breakdown reads as no reading, never a crash", () =
   assert.equal(o.fixedTokens, 0);
   assert.match(overheadText(o), /Nothing stands out/);
 });
+
+// Category names and kinds as Claude Code 2.1.317 reported them for a fresh chat.
+test("a real fresh-chat breakdown sums to the host's own total, deferred tools left out", () => {
+  const o = summariseOverhead({
+    context: {
+      window: 1000000,
+      breakdown: {
+        totalTokens: 34428,
+        percentage: 3,
+        categories: [
+          {
+            name: "System prompt",
+            tokens: 2282,
+            kind: "used",
+            isDeferred: false,
+          },
+          {
+            name: "System tools",
+            tokens: 29980,
+            kind: "used",
+            isDeferred: false,
+          },
+          {
+            name: "System tools (deferred)",
+            tokens: 19897,
+            kind: "deferred",
+            isDeferred: true,
+          },
+          { name: "Skills", tokens: 2166, kind: "used", isDeferred: false },
+          {
+            name: "Autocompact buffer",
+            tokens: 33000,
+            kind: "buffer",
+            isDeferred: false,
+          },
+          {
+            name: "Free space",
+            tokens: 932572,
+            kind: "free",
+            isDeferred: false,
+          },
+        ],
+        mcpTools: [],
+        memoryFiles: [],
+        agents: [],
+        skills: { totalSkills: 15, includedSkills: 15, tokens: 2166 },
+        slashCommands: {
+          totalCommands: 15,
+          includedCommands: 15,
+          tokens: 1403,
+        },
+      },
+    },
+  });
+  assert.equal(o.fixedTokens, 34428);
+  assert.equal(o.messageTokens, 0);
+  assert.deepEqual(o.advice, []);
+});
