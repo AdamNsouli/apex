@@ -28,6 +28,7 @@ import {
 } from "../core/context.mjs";
 import { freezeDecision } from "../core/receipt.mjs";
 import { wantsTrim, trimmedOutput, outputText } from "../core/output.mjs";
+import { limitLean, leanMode, limitsText } from "../core/limits.mjs";
 import {
   READER_MODEL,
   READER_SYSTEM,
@@ -799,7 +800,7 @@ export function register(on, config = {}) {
       name: "apex",
       description: "APEX request routing, modes and receipts",
       argumentHint:
-        "mode save|balanced|best; dashboard; refresh; auto; hold; why; guidance [MODEL_ID]; credits; map-efforts; confirm-models; overhead; context on|off|<N>k; reader auto|local; output trim|off; ultracode auto|off; agents auto|off",
+        "mode save|balanced|best; dashboard; refresh; auto; hold; why; guidance [MODEL_ID]; credits; map-efforts; confirm-models; overhead; context on|off|<N>k; reader auto|local; output trim|off; limits auto|off; ultracode auto|off; agents auto|off",
       immediate: true,
     });
     now = await $.clock.now();
@@ -976,6 +977,26 @@ export function register(on, config = {}) {
               : "inspect";
         await nativeActions($).open(view);
         return { text: "" };
+      }
+      if (verb === "limits") {
+        if (["auto", "off"].includes(value)) {
+          await change($, {
+            kind: "limits",
+            value,
+            expectedRevision: control.revision,
+          });
+          await sync($);
+        }
+        try {
+          hostUsage = await $.session.usage();
+        } catch {}
+        return {
+          text: limitsText(
+            control.limits ?? "auto",
+            hostUsage?.rateLimits,
+            now,
+          ),
+        };
       }
       if (verb === "output") {
         if (["trim", "off"].includes(value)) {
@@ -1175,6 +1196,8 @@ export function register(on, config = {}) {
               context: control.context ?? 200000,
               reader: control.reader ?? "auto",
               output: control.output ?? "trim",
+              limits: control.limits ?? "auto",
+              rateLimits: hostUsage?.rateLimits ?? [],
               outputStats,
               lastReading,
               contextTokens,
@@ -1432,14 +1455,21 @@ export function register(on, config = {}) {
         };
     }
     const captured = e.agentId ? null : captureDispatch(control, id);
-    const dispatchControl = captured?.effective ?? { ...control };
+    let dispatchControl = captured?.effective ?? { ...control };
     // Atomic claim: no await between capturing and clearing the one-shot token.
     if (captured) control = captured.next;
+    // Near a plan limit, lean toward Save (never Max Power once).
+    const lean = limitLean(hostUsage?.rateLimits, control.limits ?? "auto");
+    const leaned = (c) =>
+      lean.steps && !c.qualityOnce
+        ? { ...c, mode: leanMode(c.mode, lean.steps) }
+        : c;
+    if (!captured?.onceRevision) dispatchControl = leaned(dispatchControl);
     const decision = e.agentId
       ? plan.route
         ? route({
             original,
-            control: { ...control, qualityOnce: null },
+            control: leaned({ ...control, qualityOnce: null }),
             intent: plan.intent,
             models,
             fetchedAt: aa?.fetchedAt,
@@ -1517,6 +1547,9 @@ export function register(on, config = {}) {
         startedAt: now,
         mode: dispatchControl.mode,
         baseMode: control.mode,
+        limitLean: lean.steps
+          ? { kind: lean.kind, percent: lean.percent, steps: lean.steps }
+          : null,
         revision: dispatchControl.revision,
         modeRevision: dispatchControl.modeRevision ?? 0,
         onceRevision: captured?.onceRevision ?? null,

@@ -8,6 +8,8 @@
 
 APEX is executable middleware, not just instructions to Claude. It wraps the official `turn.step` hook and forwards the selected model and effort while preserving the streamed response and conversation. Three modes (Save, Balanced and Best) can be selected while work is running.
 
+**0.17.0-beta.1:** APEX watches your plan limits. At 80% of the 5-hour window (or 90% of the week) it routes one step toward Save; at 95% / 97% it uses Save. Critical tasks keep their floor, Max Power once is never changed, and each receipt says when a lean applied. `/apex limits` shows the reading; `/apex limits off` ignores it.
+
 **0.16.0-beta.1:** long Bash output that the command did not bound itself (over 8,000 characters) reaches Claude as head, tail and the error-looking lines from the middle, with the full output saved to a file it can read. Failed commands, diffs and deliberate file dumps are never cut. `/apex output off` turns it off.
 
 **0.15.0-beta.1:** a smarter task reader. Each fresh prompt gets one small Haiku rating (tier, task kind, importance) alongside the word rules. On 200 hand-labelled prompts the tier was right 123 times instead of 96, and important prompts sent below their need fell from 15% to 8% in Balanced at about the same usage. `/apex reader local` keeps the word rules alone.

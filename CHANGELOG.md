@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.17.0-beta.1
+
+New: plan-limit awareness. Claude Code reports the subscription's `five_hour` and `seven_day` windows (percent used and reset time) from the last response. At five_hour ≥ 80% or seven_day ≥ 90%, APEX routes main requests and subagents one mode step toward Save (Best → Balanced → Save). At ≥ 95% / ≥ 97% it uses Save. Save never lowers a critical task's floor, and Max Power once is never leaned. Receipts carry `limitLean` (window, percent, steps) next to `mode` and `baseMode`. `/apex limits auto|off` is shared across chats; `/apex limits` prints the windows, the lean and the reset time, and `/apex doctor` lists them. With no reading (before the first reply, or on API billing) nothing changes. The thresholds are judgment calls, not measured.
+
 ## 0.16.0-beta.1
 
 New: large output guard. Every character of a tool result is re-read on every later request in that chat, and Bash was 53% of all tool output on the maintainer's 21 days. A successful Bash command whose output is over 8,000 characters and that did not bound itself is now saved whole to `$TMPDIR/apex-output/bash-<id>.txt`. Claude reads the first ~2,500 and last ~3,500 characters, up to 30 lines from the middle that look like errors or warnings, and the file path. Never cut: failed commands, commands with `head`, `tail`, `sed -n`, `grep -m`, `wc` or `awk NR`, deliberate dumps (`cat`, `sed`, `nl`, `bat`), diffs and patches (`git diff/show`, `git log -p`, `diff -u`), background commands, images, and reads of the saved file. If saving fails, nothing is cut. `/apex output trim|off` (shared); `/apex output` and `/apex doctor` show how many outputs were trimmed in this chat. The transcript shows the trimmed text too.
