@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.19.0-beta.1
+
+Interface refresh (strip above the prompt and the compact rail), checked in a real terminal at 144, 80 and 44 columns:
+
+- **Next pick by name:** model IDs without a discovered display name read "Sonnet 5.5", not `claude-sonnet-5-5`.
+- **Plan usage:** wide strips and the rail show `5h 82% · week 41%`, plus "near limit: one step cheaper" or "near limit: Save" when the 0.17 lean applies. Strips 48–77 columns wide show the 5-hour figure when there is room.
+- **Why and what:** the second strip row and the rail say why the last pick was made (`Hard task · best value for the task`) and what APEX did in this chat (`2 model switches · 3 outputs trimmed · 1 subagent hint`). Problems that need you (setup, a pending mode) still take that row first.
+- **Plain words:** the status reads Routing, Paused, Watching only or Old benchmarks, and the messages say what to do. In the inspector, "Chat setting", "APEX asked for", "Answered by", "Effort actually used" and "Benchmarks used" replace Native/Outgoing/Response/Effective effort/Recorded evidence, along with "Benchmark entry", "Benchmark method" and "Benchmark cost per task". Costs read "Estimated at API prices · your plan's real usage is not reported".
+- **`/apex demo [off]`:** three made-up requests and a made-up plan reading, labelled "Demo data", to look at the strip and rail without spending usage. Nothing is sent.
+- Terminal screenshots replaced. The old ones still showed the pre-0.10 Sports mode.
+
+The browser dashboard is unchanged.
+
 ## 0.18.0-beta.1
 
 New: delegation notes that save usage and raise quality. A subagent starts with a small context, and APEX routes search agents as quick tasks, so exploration sent to one costs a fraction of the same calls in a long main chat, where every call re-reads everything.

@@ -83,6 +83,7 @@ let control = initialControl(),
   readerPending = null,
   outputStats = { count: 0, chars: 0 },
   exploreState = null,
+  demo = null,
   delegationNotes = { explore: 0, review: 0, team: 0 },
   lastReading = null,
   contextNudge = null,
@@ -187,8 +188,22 @@ const publicState = () => ({
   runtime,
   catalogue: models,
   hostVersion,
-  hostUsage,
+  hostUsage: demo
+    ? { ...(hostUsage ?? {}), rateLimits: demo.rateLimits }
+    : hostUsage,
   overhead,
+  demo: Boolean(demo),
+  activity: {
+    trimmed: outputStats.count + (demo?.trimmed ?? 0),
+    notes: demo
+      ? {
+          explore: delegationNotes.explore + demo.notes.explore,
+          review: delegationNotes.review,
+          team: delegationNotes.team,
+        }
+      : delegationNotes,
+    reader: lastReading,
+  },
   accountBilling: "unknown",
   intent,
   refreshError,
@@ -803,7 +818,7 @@ export function register(on, config = {}) {
       name: "apex",
       description: "APEX request routing, modes and receipts",
       argumentHint:
-        "mode save|balanced|best; dashboard; refresh; auto; hold; why; guidance [MODEL_ID]; credits; map-efforts; confirm-models; overhead; context on|off|<N>k; reader auto|local; output trim|off; limits auto|off; ultracode auto|off; agents auto|off",
+        "mode save|balanced|best; dashboard; refresh; auto; hold; why; guidance [MODEL_ID]; credits; map-efforts; confirm-models; overhead; demo [off]; context on|off|<N>k; reader auto|local; output trim|off; limits auto|off; ultracode auto|off; agents auto|off",
       immediate: true,
     });
     now = await $.clock.now();
@@ -1166,6 +1181,52 @@ export function register(on, config = {}) {
         await refreshOverhead($);
         draw($);
         return { text: overheadText(overhead) };
+      }
+      if (verb === "demo") {
+        // Made-up requests and a made-up plan reading, labelled as such, so the
+        // strip and rail can be looked at without spending usage.
+        if (value === "off") {
+          ledger.events = ledger.events.filter((x) => !x.demo);
+          demo = null;
+          draw($);
+          return { text: "APEX demo data removed." };
+        }
+        const pick = (model, effort, tier, reason, i) => ({
+          id: "demo:" + i,
+          demo: true,
+          sequence: ++ledger.sequence,
+          timestamp: now - (4 - i) * 60000,
+          startedAt: now - (4 - i) * 60000,
+          completedAt: now - (4 - i) * 60000 + 9000,
+          kind: "request",
+          status: "complete",
+          agentId: null,
+          tier,
+          reason,
+          original: { model: "claude-opus-5-5", effort: "high" },
+          apexRequested: { model, effort },
+        });
+        ledger.events.push(
+          pick("claude-sonnet-5-5", "medium", "everyday", "balanced_policy", 1),
+          pick("claude-opus-5-5", "high", "hard", "balanced_policy", 2),
+          pick("claude-sonnet-5-5", "medium", "everyday", "balanced_policy", 3),
+        );
+        demo = {
+          rateLimits: [
+            {
+              kind: "five_hour",
+              percentUsed: 82,
+              resetsAt: new Date(now + 5400000).toISOString(),
+            },
+            { kind: "seven_day", percentUsed: 41 },
+          ],
+          trimmed: 2,
+          notes: { explore: 1, review: 0, team: 0 },
+        };
+        draw($);
+        return {
+          text: "APEX demo: three made-up requests and a made-up plan reading are shown in the strip and rail. Nothing was sent. /apex demo off removes them.",
+        };
       }
       if (verb === "why")
         return {

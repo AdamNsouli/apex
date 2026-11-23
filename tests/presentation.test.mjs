@@ -121,16 +121,16 @@ test("historical selection and main / agent scope survive a new streaming event"
 });
 test("readiness distinguishes disconnection, pins, expired evidence, access and consent", () => {
   const s = ready();
-  assert.equal(present(s).status, "Routing enabled");
+  assert.equal(present(s).status, "Routing");
   assert.equal(present({ ...s, connected: false }).status, "Disconnected");
-  assert.equal(present({ ...s, pins: true }).status, "Held");
+  assert.equal(present({ ...s, pins: true }).status, "Paused");
   assert.equal(
     present({ ...s, evidenceFetchedAt: now - 8 * 86400000 }).status,
-    "Observing only",
+    "Watching only",
   );
   assert.match(
     present({ ...s, control: { ...s.control, verifiedIds: [] } }).blocker,
-    /permitted model/,
+    /models it includes/,
   );
   assert.match(
     present({ ...s, control: { ...s.control, backend: "api" } }).blocker,
