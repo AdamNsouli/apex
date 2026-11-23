@@ -66,6 +66,13 @@ export const WIRING = {
     web: false,
     companion: false,
   },
+  context: {
+    key: "context",
+    verb: "context",
+    command: true,
+    web: false,
+    companion: false,
+  },
 };
 
 const kindsIn = (text) =>

@@ -8,6 +8,8 @@
 
 APEX is executable middleware, not just instructions to Claude. It wraps the official `turn.step` hook and forwards the selected model and effort while preserving the streamed response and conversation. Three modes (Save, Balanced and Best) can be selected while work is running.
 
+**0.14.0-beta.1:** when a turn ends with the chat over 200k tokens, APEX offers one row: Compact now (keeps the plan, changed files and open items) or Not now. It never compacts on its own; `/apex context off|on|<N>k` sets the threshold.
+
 **0.13.0-beta.1:** effort changes are priced honestly. Claude Code sends effort per request, and Anthropic's caching docs list an effort change as invalidating the cached conversation, so APEX no longer treats an effort switch as free: it keeps the current effort unless the move repays the rewrite, raises the task score, or the current effort is below the floor. New `/apex guidance [MODEL_ID]` shows dated, sourced Anthropic advice per model (default effort, starting effort, thinking limits); receipts record the cache assumption. Per-task scores refreshed. Offline: in Balanced from Opus 5.5 high, a 14-step task models 199 → 172 cache rewrites and about 6.7% lower estimated cost, with the important-prompt proxy unchanged in all six mode/start pairs.
 
 **0.12.0-beta.1:** `/apex overhead` and an inspector section show what each chat re-reads before you type; a wiring check keeps every setting consistent across code, command, companion and web page. No routing change.

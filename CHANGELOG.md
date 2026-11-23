@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.14.0-beta.1
+
+New: context budget. Every request re-reads the whole conversation, so in a long chat the context size times the number of requests is most of the usage. When a main turn ends above 200k tokens with no agent still running, APEX adds one row above the prompt: how much this chat re-reads per request, how that compares with a fresh chat's fixed load (from the 0.12 overhead reading), and two buttons, **Compact now** (`k`) and **Not now**. Compact runs Claude Code's own compaction with a keep-list: goal and plan, every file changed and why, decisions, open errors and failing checks, and the verifying commands. APEX never compacts on its own. The offer comes back only after another 100k tokens, and re-arms after a compaction or `/clear`. `/apex context off|on|<N>k` (50k–900k) sets it for every chat; `/apex doctor` shows the setting and the current size. This follows Claude Code's cost guidance (`/compact` with instructions, `/clear` between tasks).
+
+On the maintainer's last 21 days (45,832 main requests), 69% carried over 200k tokens; the rule would have offered 317 times across 79 chats. If every offer had been taken and compaction brought a chat back to ~90k, up to 72% of re-read tokens on those requests would not have been re-read. That is an upper bound, not a measured saving. No routing change.
+
 ## 0.13.0-beta.1
 
 Fix: effort-only changes were assumed to keep the prompt cache. Claude Code 2.1.330's mod API documents effort as a setting of the whole request unless the user sets `CLAUDE_CODE_MODEL_CAPABILITIES=per_turn_effort` (first-party API only), and Anthropic's prompt-caching page lists an effort change as invalidating cached messages. APEX now prices an effort move as one conversation rewrite and makes it only when it repays that over five benchmark-equivalent requests, when it raises the task benchmark score, or when the current effort is below the floor. The cross-model barrier is unchanged and stays conservative. Receipts record `cacheAssessment`; new reasons `effort_change_does_not_pay_back` and `effort_change_cost_unknown`.

@@ -193,6 +193,20 @@ function receipt(k, state, e, actions) {
   );
   return out;
 }
+// One row offering to compact a long chat. Shown even when the strip is hidden:
+// it appears once per threshold crossing and "Not now" clears it.
+export function contextRow(elements, props, offer, actions) {
+  const width = Math.max(16, (props.bodyColumns ?? 80) - 2),
+    k = kit(elements, width);
+  return k.row([
+    k.text("APEX", { bold: true }),
+    k.text(offer.text),
+    k.button("context-compact", "Compact now", actions.compact, {
+      hotkey: "k",
+    }),
+    k.button("context-dismiss", "Not now", actions.dismiss),
+  ]);
+}
 export function dock(elements, props, state, actions) {
   if (
     state.ui.dock === "hidden" ||

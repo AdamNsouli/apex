@@ -1,4 +1,4 @@
-import { dock, pane } from "./interface.mjs";
+import { dock, pane, contextRow } from "./interface.mjs";
 import {
   initialControl,
   applyControl,
@@ -20,6 +20,12 @@ import {
 } from "../core/router.mjs";
 import { countsAsFailure, COUNTED_TOOLS } from "../core/scoring.mjs";
 import { summariseOverhead, overheadText } from "../core/overhead.mjs";
+import {
+  contextOffer,
+  contextText,
+  parseContextArg,
+  COMPACT_INSTRUCTIONS,
+} from "../core/context.mjs";
 import { freezeDecision } from "../core/receipt.mjs";
 import {
   guidanceForModel,
@@ -59,6 +65,8 @@ let control = initialControl(),
   lastChange = null,
   ultra = "idle",
   contextTokens = null,
+  contextArmedAt = null,
+  contextNudge = null,
   pins = false,
   lastModel = null,
   lastEffort = undefined,
@@ -417,6 +425,66 @@ async function uiAction($, run, notice = "") {
   }
   draw($);
 }
+// After a main turn: offer to compact when the chat has grown past the threshold
+// and no agent is still working. Never compacts by itself.
+async function considerContext($, reason) {
+  try {
+    const usage = await $.session.usage();
+    const tokens = usage.context?.tokens ?? null;
+    let busy = false;
+    try {
+      busy = (await $.agent.list()).some((a) =>
+        ["pending", "running", "waiting"].includes(a.status),
+      );
+    } catch {}
+    const r = contextOffer({
+      setting: control.context,
+      tokens,
+      fixedTokens: overhead?.fixedTokens ?? null,
+      armedAt: contextArmedAt,
+      reason,
+      busy,
+    });
+    contextArmedAt = r.armedAt;
+    if (r.offer) contextNudge = r.offer;
+    else if (tokens !== null && tokens < contextSettingThreshold())
+      contextNudge = null;
+    draw($);
+  } catch {}
+}
+const contextSettingThreshold = () =>
+  control.context === "off" ? Infinity : (control.context ?? 200000);
+function contextActions($) {
+  return {
+    compact: async () => {
+      const offer = contextNudge;
+      contextNudge = null;
+      draw($);
+      try {
+        const { skip } = (await $.session.compact({
+          instructions: COMPACT_INSTRUCTIONS,
+        })) ?? { skip: false };
+        if (skip) {
+          contextNudge = {
+            ...offer,
+            text: "Compaction was skipped by another plugin.",
+          };
+          draw($);
+        }
+      } catch (error) {
+        contextNudge = {
+          ...offer,
+          text: "Could not compact now (a turn may be running). Try again when Claude is idle, or type /compact.",
+        };
+        draw($);
+      }
+    },
+    dismiss: () => {
+      contextNudge = null;
+      draw($);
+    },
+  };
+}
 function nativeActions($) {
   return {
     change: (command) =>
@@ -647,7 +715,7 @@ export function register(on, config = {}) {
       name: "apex",
       description: "APEX request routing, modes and receipts",
       argumentHint:
-        "mode save|balanced|best; dashboard; refresh; auto; hold; why; guidance [MODEL_ID]; credits; map-efforts; confirm-models; overhead; ultracode auto|off; agents auto|off",
+        "mode save|balanced|best; dashboard; refresh; auto; hold; why; guidance [MODEL_ID]; credits; map-efforts; confirm-models; overhead; context on|off|<N>k; ultracode auto|off; agents auto|off",
       immediate: true,
     });
     now = await $.clock.now();
@@ -759,6 +827,7 @@ export function register(on, config = {}) {
   });
   on("turn.complete", async ($, e, next) => {
     const result = await next(e);
+    if (!e.agentId) await considerContext($, e.reason);
     if (ultra === "running") {
       ultra = "idle";
       $.clock.after(50, () => ultracodeOff($));
@@ -809,6 +878,21 @@ export function register(on, config = {}) {
               : "inspect";
         await nativeActions($).open(view);
         return { text: "" };
+      }
+      if (verb === "context") {
+        const parsed = parseContextArg(value);
+        if (value === undefined || value === "" || parsed === null)
+          return { text: contextText(control.context, contextTokens) };
+        await change($, {
+          kind: "context",
+          value: parsed,
+          expectedRevision: control.revision,
+        });
+        await sync($);
+        if (parsed === "off") contextNudge = null;
+        contextArmedAt = null;
+        draw($);
+        return { text: contextText(control.context, contextTokens) };
       }
       if (verb === "ultracode") {
         if (!["auto", "off"].includes(value))
@@ -968,6 +1052,8 @@ export function register(on, config = {}) {
               backend: control.backend,
               pins,
               ultracode: control.ultracode ?? "auto",
+              context: control.context ?? 200000,
+              contextTokens,
               dataAgeHours: aa ? (now - aa.fetchedAt) / 3600000 : null,
               refreshError,
               lastChange,
@@ -1442,10 +1528,17 @@ export function register(on, config = {}) {
       { ...publicState(), ui: nativeUi, aaVariants: aa?.models ?? [] },
       nativeActions($),
     );
-    if (!drawing) return previous;
+    const offer = contextNudge
+      ? contextRow(elements, e.props, contextNudge, contextActions($))
+      : null;
+    if (!drawing && !offer) return previous;
     return elements.Box({
       flexDirection: "column",
-      children: [...(previous ? [previous] : []), drawing],
+      children: [
+        ...(previous ? [previous] : []),
+        ...(drawing ? [drawing] : []),
+        ...(offer ? [offer] : []),
+      ],
     });
   });
   on("ui.render", { component: "Pane" }, async ($, e, next) => {
