@@ -261,6 +261,7 @@ export async function createCompanion({
         "/mode-glyphs.svg": "mode-glyphs.svg",
         "/presentation.mjs": "../core/presentation.mjs",
         "/receipt.mjs": "../core/receipt.mjs",
+        "/anthropic-guidance.mjs": "../core/anthropic-guidance.mjs",
         "/scoring.mjs": "../core/scoring.mjs",
         "/assets/marks.svg": "assets/marks.svg",
         "/assets/apex-mark.svg": "assets/apex-mark.svg",

@@ -1,6 +1,6 @@
 import { duration, verdict } from "./receipt.mjs";
 import { migrateMode } from "./scoring.mjs";
-export const VERSION = "0.12.0-beta.1";
+export const VERSION = "0.13.0-beta.1";
 export const MODES = {
   save: {
     label: "Save",
@@ -77,6 +77,10 @@ export const REASONS = {
     "Stayed on the model that holds this chat: moving would cost more to re-store the conversation than it saves over the next few requests.",
   switch_cost_unknown:
     "Stayed on the model that holds this chat: the prices needed to judge a move are missing.",
+  effort_change_does_not_pay_back:
+    "Kept the eligible cached effort: the alternative's estimated benefit does not repay a prompt-cache rewrite (Claude Code sends effort per request unless per_turn_effort is enabled).",
+  effort_change_cost_unknown:
+    "Kept the eligible cached effort: the cache prices needed to evaluate an effort change are missing.",
   save_policy:
     "Selected for the most score for the usage, with Save's slightly lower bar and cheaper points.",
   best_policy:
