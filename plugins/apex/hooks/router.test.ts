@@ -222,15 +222,15 @@ test("main request routes through the actual host hook chain; stream retained", 
   await inspector.press({ key: "inspect" });
   await inspector.press({ key: "receipt-turn-1:0:main" });
   expect(
-    await inspector.find({ type: "Text", text: "Outgoing: model-b / High" }),
+    await inspector.find({ type: "Text", text: "APEX asked for: model-b / High" }),
   ).toBeDefined();
   expect(
-    await inspector.find({ type: "Text", text: "Response: model-b" }),
+    await inspector.find({ type: "Text", text: "Answered by: model-b" }),
   ).toBeDefined();
   expect(
     await inspector.find({
       type: "Text",
-      text: "Effective effort: not reported",
+      text: "Effort actually used: not reported by Claude",
     }),
   ).toBeDefined();
   await inspector.press({ key: "settings" });
@@ -434,9 +434,9 @@ test("manual model command suspends auto routing until explicitly resumed", asyn
       placement: "inline",
     },
   });
-  expect(await ui.find({ type: "Text", text: /Held/ })).toBeDefined();
+  expect(await ui.find({ type: "Text", text: /Paused/ })).toBeDefined();
   await $.command.run({ command: "apex", args: "auto" });
-  expect(await ui.find({ type: "Text", text: /Observing only/ })).toBeDefined();
+  expect(await ui.find({ type: "Text", text: /Watching only/ })).toBeDefined();
   await ui.unmount();
 });
 test("effort variants of a confirmed model join by themselves; map-efforts still confirms them as your own", async ($, on) => {

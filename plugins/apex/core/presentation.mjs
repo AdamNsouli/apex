@@ -1,6 +1,6 @@
 import { duration, verdict } from "./receipt.mjs";
 import { migrateMode } from "./scoring.mjs";
-export const VERSION = "0.18.0-beta.1";
+export const VERSION = "0.19.0-beta.1";
 export const MODES = {
   save: {
     label: "Save",
@@ -33,6 +33,56 @@ export const modeSpec = (mode) => {
   const m = migrateMode(mode);
   return m === "best_once" ? ONCE_MODE : MODES[m];
 };
+// A few words for the strip; the full sentence stays in REASONS for Inspect.
+export const SHORT_REASONS = {
+  balanced_policy: "best value for the task",
+  save_policy: "cheapest that is good enough",
+  best_policy: "strongest worth the wait",
+  specified_execution_policy: "following a supplied plan",
+  failure_escalation: "raised after failed checks",
+  execution_failure_escalation: "raised after a failed check",
+  switch_does_not_pay_back: "kept: switching costs more",
+  effort_change_does_not_pay_back: "kept: an effort change costs more",
+  switch_hysteresis: "kept to avoid flip-flopping",
+  manual_hold: "your settings in control",
+  stale_data_floor: "old benchmarks: no downgrades",
+  quality_floor: "kept to protect quality",
+};
+const TIER_WORDS = {
+  quick: "Quick task",
+  everyday: "Everyday task",
+  hard: "Hard task",
+  critical: "Critical task",
+};
+// "Hard task · best value for the task" for the latest main request.
+export function whyShort(e) {
+  if (!e) return "";
+  return [TIER_WORDS[e.tier], SHORT_REASONS[e.reason]]
+    .filter(Boolean)
+    .join(" · ");
+}
+// "2 model switches · 3 outputs trimmed · 1 subagent hint" for this chat.
+export function activityLine(state) {
+  const main = (state.events ?? []).filter(
+    (e) => e.kind !== "tool" && !e.agentId,
+  );
+  let switches = 0;
+  for (let i = 1; i < main.length; i++)
+    if (main[i].apexRequested?.model !== main[i - 1].apexRequested?.model)
+      switches++;
+  const a = state.activity ?? {};
+  const hints =
+    (a.notes?.explore ?? 0) + (a.notes?.review ?? 0) + (a.notes?.team ?? 0);
+  const n = (count, one, many = one + "s") =>
+    count ? count + " " + (count === 1 ? one : many) : null;
+  return [
+    n(switches, "model switch", "model switches"),
+    n(a.trimmed ?? 0, "output trimmed", "outputs trimmed"),
+    n(hints, "subagent hint"),
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
 export const REASONS = {
   specified_execution_policy:
     "The implementation has a concrete supplied contract. Selected against the current mode's implementation floor; safety constraints and high-risk classification remain visible.",
@@ -126,10 +176,21 @@ export const effortLabel = (effort) =>
   effort == null
     ? "Default"
     : String(effort).replace(/^./, (c) => c.toUpperCase());
+// "claude-sonnet-5-5" → "Sonnet 5.5" when discovery gave no display name.
+function prettyId(id) {
+  const m = /^claude-([a-z]+)-(\d+)(?:-(\d{1,2}))?(?:-\d{8})?$/.exec(id ?? "");
+  return m
+    ? m[1][0].toUpperCase() +
+        m[1].slice(1) +
+        " " +
+        m[2] +
+        (m[3] ? "." + m[3] : "")
+    : id;
+}
 export function modelName(state, id) {
   return (
     state.runtime?.find((m) => m.id === id)?.name ??
-    id ??
+    prettyId(id) ??
     "Waiting for a request"
   );
 }
@@ -161,7 +222,7 @@ export function present(
     null;
   const fetchedAt = state.evidenceFetchedAt ?? state.aa?.fetchedAt ?? null;
   const age = fetchedAt == null ? null : Math.max(0, now - fetchedAt);
-  let status = "Routing enabled",
+  let status = "Routing",
     tone = "ready",
     blocker = null;
   if (state.connected === false) {
@@ -172,35 +233,37 @@ export function present(
     status = "Native agent settings";
     tone = "neutral";
   } else if (state.pins || control.routing !== "auto") {
-    status = "Held";
+    status = "Paused";
     tone = "attention";
-    blocker = "Native overrides are active. Resume routing explicitly.";
+    blocker =
+      "Your /model or /effort choice is in control. /apex auto resumes routing.";
   } else if (age === null || age > 7 * 86400000) {
-    status = "Observing only";
+    status = "Watching only";
     tone = "attention";
     blocker =
       age === null
-        ? "Connect benchmark evidence in Setup."
-        : "Evidence expired. Refresh when eligible.";
+        ? "Connect benchmark data in Setup to start routing."
+        : "Benchmark data expired. Refresh it to start routing again.";
   } else if (
     !["api", "subscription"].includes(control.backend) ||
     !control.verifiedIds?.length
   ) {
-    status = "Observing only";
+    status = "Watching only";
     tone = "attention";
-    blocker = "Confirm backend and permitted model IDs in Setup.";
+    blocker = "Confirm your plan and the models it includes in Setup.";
   } else if (!state.catalogue?.some((m) => m.routable)) {
-    status = "Observing only";
+    status = "Watching only";
     tone = "attention";
-    blocker = "Confirm exact model / effort evidence mappings in Setup.";
+    blocker = "Match each model and effort to its benchmark in Setup.";
   } else if (control.backend === "api" && !control.creditsConsent) {
-    status = "Observing only";
+    status = "Watching only";
     tone = "attention";
     blocker = "Allow APEX API routing within an estimate budget.";
   } else if (age > 72 * 3600000) {
-    status = "Limited evidence";
+    status = "Old benchmarks";
     tone = "attention";
-    blocker = "Quality downgrades are suspended until evidence refreshes.";
+    blocker =
+      "Benchmarks are over 3 days old, so APEX will not pick weaker models until they refresh.";
   }
   const pending =
     (control.modeRevision ?? 0) > (control.modeConsumedRevision ?? 0);

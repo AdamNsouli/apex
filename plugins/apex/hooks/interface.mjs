@@ -9,7 +9,35 @@ import {
   modelName,
   pairLabel,
   effortLabel,
+  whyShort,
+  activityLine,
 } from "../core/presentation.mjs";
+import { limitLabel, limitLean } from "../core/limits.mjs";
+// One plain line on plan usage: the reading, and the lean when one applies.
+function usageLine(state) {
+  const rl = state.hostUsage?.rateLimits;
+  const lean = limitLean(rl, state.control.limits ?? "auto");
+  const label = limitLabel(rl);
+  if (!label) return "";
+  return lean.steps
+    ? label +
+        (lean.steps === 2
+          ? " · near limit: Save"
+          : " · near limit: one step cheaper")
+    : label;
+}
+// The second strip row when nothing needs attention: why the last pick, and what
+// APEX did in this chat.
+function summaryLine(state, d, withUsage) {
+  return [
+    state.demo ? "Demo data" : "",
+    withUsage ? usageLine(state) : "",
+    whyShort(d.latest),
+    activityLine(state),
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
 import { duration, verdict } from "../core/receipt.mjs";
 export { MODES, REASONS, money, short, reason };
 export const describe = (state) =>
@@ -116,10 +144,12 @@ function receipt(k, state, e, actions) {
       k.muted("Arguments, paths and outputs are not collected."),
     ];
   out.push(
-    k.text("Native: " + pairLabel(state, e.original)),
-    k.text("Outgoing: " + pairLabel(state, e.apexRequested), { bold: true }),
-    k.muted("Response: " + (e.responseModel ?? "not reported")),
-    k.muted("Effective effort: not reported"),
+    k.text("Chat setting: " + pairLabel(state, e.original)),
+    k.text("APEX asked for: " + pairLabel(state, e.apexRequested), {
+      bold: true,
+    }),
+    k.muted("Answered by: " + (e.responseModel ?? "not reported")),
+    k.muted("Effort actually used: not reported by Claude"),
     k.rule("WHY"),
     k.text(reason(e.reason)),
     k.muted(
@@ -137,11 +167,11 @@ function receipt(k, state, e, actions) {
     k.rule("COST"),
     k.text("Observed " + money(e.observedUsd)),
     k.muted("Request forecast " + money(e.estimateUsd)),
-    k.muted("API-equivalent estimates · actual charge unknown"),
+    k.muted("Estimated at API prices · your plan's real usage is not reported"),
   );
   const evidence = e.decisionSnapshot?.selected,
     baseline = e.decisionSnapshot?.baseline;
-  out.push(k.rule("RECORDED EVIDENCE"));
+  out.push(k.rule("BENCHMARKS USED"));
   if (evidence)
     out.push(
       k.text(
@@ -156,7 +186,7 @@ function receipt(k, state, e, actions) {
           (evidence.mathProxy ? " · math uses intelligence as a proxy" : ""),
       ),
       k.muted("AA " + evidence.aaSlug + " / " + effortLabel(evidence.effort)),
-      k.muted("Methodology " + evidence.benchmarkVersion),
+      k.muted("Benchmark method " + evidence.benchmarkVersion),
       k.muted(
         "Fetched " +
           (e.decisionSnapshot.fetchedAt
@@ -164,7 +194,7 @@ function receipt(k, state, e, actions) {
             : "unknown"),
       ),
       k.muted(
-        "AA benchmark USD/task " +
+        "Benchmark cost per task " +
           money(evidence.benchmarkCostPerTask) +
           " · separate from this request forecast",
       ),
@@ -237,36 +267,45 @@ export function dock(elements, props, state, actions) {
     );
   else if (width < 48)
     rows.push(k.row([k.text("APEX", { bold: true }), mode, inspect]));
-  else if (width < 78)
+  else if (width < 78) {
+    const five = limitLabel(state.hostUsage?.rateLimits).split(" · ")[0];
+    const room = width - modeSpec(state.control.mode).label.length - 26;
+    const showUsage = Boolean(five) && room - five.length - 1 >= 14;
     rows.push(
       k.row([
         k.text("APEX", { bold: true }),
         k.text(
-          short(
-            pair,
-            Math.max(8, width - modeSpec(state.control.mode).label.length - 26),
-          ),
+          short(pair, Math.max(8, showUsage ? room - five.length - 1 : room)),
           { bold: true },
         ),
+        ...(showUsage ? [k.muted(five)] : []),
         mode,
         inspect,
       ]),
     );
-  else
+  } else {
+    const usage = usageLine(state),
+      status = d.status === "Routing" ? "" : d.status;
+    const room =
+      width -
+      modeSpec(state.control.mode).label.length -
+      22 -
+      (status ? status.length + 1 : 0) -
+      (usage ? usage.length + 1 : 0);
     rows.push(
       k.row([
         k.text("APEX", { bold: true }),
-        k.muted(d.status),
-        k.text(
-          short(pair, width - modeSpec(state.control.mode).label.length - 39),
-          { bold: true },
-        ),
+        ...(status ? [k.muted(status)] : []),
+        k.text(short(pair, Math.max(12, room)), { bold: true }),
+        ...(usage ? [k.muted(usage)] : []),
         mode,
         inspect,
       ]),
     );
+  }
   if (state.ui.dock !== "compact" && (props.maxRows ?? 2) >= 2) {
-    let line = d.pendingText ?? d.blocker ?? d.notice;
+    // The demo shows the summary row it exists to show.
+    let line = state.demo ? null : (d.pendingText ?? d.blocker ?? d.notice);
     if (scope !== "main")
       line =
         "Agent · native settings · " +
@@ -275,27 +314,8 @@ export function dock(elements, props, state, actions) {
       line =
         width < 48
           ? d.status + " · " + pair
-          : width < 78
-            ? d.status + " · " + (d.active ? "streaming" : "idle")
-            : d.scoped
-                .filter((e) => e.kind !== "tool")
-                .slice(-3)
-                .map(
-                  (e, i, a) =>
-                    (i &&
-                    (a[i - 1].apexRequested?.model !== e.apexRequested?.model ||
-                      a[i - 1].apexRequested?.effort !==
-                        e.apexRequested?.effort)
-                      ? "└─ "
-                      : i
-                        ? "── "
-                        : "") +
-                    (e.status === "streaming" ? "●" : "○") +
-                    String(e.sequence).padStart(2, "0"),
-                )
-                .join(" ") +
-              " · Main · " +
-              (d.active ? "streaming" : "idle");
+          : summaryLine(state, d, width < 78) ||
+            d.status + " · " + (d.active ? "working" : "idle");
     if (!d.latest && !d.pendingText && !d.blocker && !d.notice)
       line = "Your first request will appear here.";
     rows.push(k.muted(short(line, width)));
@@ -343,9 +363,9 @@ function evidenceRows(k, state, actions) {
           (m.evidence?.prices?.output ?? "unknown"),
       ),
       k.muted(
-        "AA benchmark USD/task " + money(m.evidence?.benchmarkCostPerTask),
+        "Benchmark cost per task " + money(m.evidence?.benchmarkCostPerTask),
       ),
-      k.muted("AA variant " + (m.evidence?.slug ?? "unmapped")),
+      k.muted("Benchmark entry " + (m.evidence?.slug ?? "unmapped")),
     );
   out.push(
     k.row([
@@ -639,7 +659,12 @@ export function pane(elements, props, state, actions) {
         modeButton(k, state, actions, width),
         k.button("inspect", "Inspect", () => actions.view("inspect")),
       ]),
-      k.muted((d.active ?? d.latest)?.status ?? "No request yet"),
+      ...(usageLine(state) ? [k.text(usageLine(state))] : []),
+      k.muted(
+        whyShort(d.latest) ||
+          ((d.active ?? d.latest)?.status ?? "Nothing routed yet"),
+      ),
+      ...(activityLine(state) ? [k.muted(activityLine(state))] : []),
       k.rule(),
     );
     let previous;
