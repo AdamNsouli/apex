@@ -39,6 +39,10 @@ function setup(on, usage: { tokens: number }, agents: any[] = []) {
     return { messages: [{ role: "user", text: "summary", toolUses: [] }] };
   });
   on("turn.complete", (_$, e) => ({ text: e.answer }));
+  // Older engines need something beneath the strip to mount it.
+  on("ui.render", { component: "AbovePrompt" }, async ($, e) =>
+    $.ui.resolve(e).Text({ children: "" }),
+  );
   return { clock, compacted };
 }
 const props = {
