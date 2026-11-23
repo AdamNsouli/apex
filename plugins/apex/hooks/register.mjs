@@ -18,7 +18,7 @@ import {
   migrateMode,
   modeName,
 } from "../core/router.mjs";
-import { countsAsFailure, COUNTED_TOOLS } from "../core/scoring.mjs";
+import { countsAsFailure, COUNTED_TOOLS, tierFor } from "../core/scoring.mjs";
 import { summariseOverhead, overheadText } from "../core/overhead.mjs";
 import {
   contextOffer,
@@ -29,6 +29,7 @@ import {
 import { freezeDecision } from "../core/receipt.mjs";
 import { wantsTrim, trimmedOutput, outputText } from "../core/output.mjs";
 import { limitLean, leanMode, limitsText } from "../core/limits.mjs";
+import { exploreStep, wantsReview, reviewNote } from "../core/delegation.mjs";
 import {
   READER_MODEL,
   READER_SYSTEM,
@@ -81,6 +82,8 @@ let control = initialControl(),
   contextArmedAt = null,
   readerPending = null,
   outputStats = { count: 0, chars: 0 },
+  exploreState = null,
+  delegationNotes = { explore: 0, review: 0, team: 0 },
   lastReading = null,
   contextNudge = null,
   pins = false,
@@ -917,10 +920,26 @@ export function register(on, config = {}) {
           drop: "APEX is turning ultracode on for this task and sending your message.",
         };
       }
+      if (fresh) exploreState = null;
       if (specified)
         return next({ ...e, context: [...(e.context ?? []), executionNote()] });
-      // Best can opt into amplification; Balanced never silently fans out.
-      if (note) return next({ ...e, context: [...(e.context ?? []), note] });
+      // Best can opt into amplification; Balanced never silently fans out. A
+      // critical software change in Balanced or Best gets one reviewer.
+      const review = wantsReview({
+        mode: effectiveMode(control),
+        tier: tierFor(intent),
+        task: intent.task,
+        execution: intent.execution,
+        agents: control.agents,
+        fresh,
+      })
+        ? reviewNote()
+        : null;
+      const notes = [note, note ? null : review].filter(Boolean);
+      if (note) delegationNotes.team++;
+      else if (review) delegationNotes.review++;
+      if (notes.length)
+        return next({ ...e, context: [...(e.context ?? []), ...notes] });
     }
     return next(e);
   });
@@ -1062,7 +1081,7 @@ export function register(on, config = {}) {
             text:
               "APEX agent routing is " +
               (control.agents ?? "auto") +
-              ". Use /apex agents auto|off. Auto routes positively labelled mapping/search workers by their own bounded task; unknown workers keep the main task's demands. Only Best asks for parallel agents. Off disables APEX routing and nudges, not Claude's native agent tools; an agent given its own model keeps it.",
+              ". Use /apex agents auto|off. Auto routes positively labelled mapping/search workers by their own bounded task; unknown workers keep the main task's demands. Only Best asks for parallel agents; any mode suggests one Explore agent when a long chat keeps searching, and Balanced/Best suggest one reviewer for a critical code change. Off disables APEX routing and these notes, not Claude's native agent tools; an agent given its own model keeps it.",
           };
         await change($, {
           kind: "agents",
@@ -1197,6 +1216,7 @@ export function register(on, config = {}) {
               reader: control.reader ?? "auto",
               output: control.output ?? "trim",
               limits: control.limits ?? "auto",
+              delegationNotes,
               rateLimits: hostUsage?.rateLimits ?? [],
               outputStats,
               lastReading,
@@ -1651,6 +1671,23 @@ export function register(on, config = {}) {
           intent = { ...intent, failures: intent.failures + 1 };
       }
       draw($);
+      if (!e.agentId && !result.deny) {
+        const step = exploreStep(
+          exploreState,
+          { tool: e.tool, command: e.command, isReadOnly: result.isReadOnly },
+          { tokens: contextTokens, agents: control.agents },
+        );
+        exploreState = step.state;
+        if (step.note) {
+          delegationNotes.explore++;
+          const trimmed =
+            e.tool === "Bash" && !result.isError
+              ? await trimBash($, e, result)
+              : null;
+          const base = trimmed ?? result;
+          return { ...base, context: [...(base.context ?? []), step.note] };
+        }
+      }
       if (e.tool === "Bash" && !result.isError && !result.deny) {
         const trimmed = await trimBash($, e, result);
         if (trimmed) return trimmed;

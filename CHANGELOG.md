@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.18.0-beta.1
+
+New: delegation notes that save usage and raise quality. A subagent starts with a small context, and APEX routes search agents as quick tasks, so exploration sent to one costs a fraction of the same calls in a long main chat, where every call re-reads everything.
+
+- **Explore note (every mode):** after four exploration calls in a row in the main chat (Read, Grep, Glob, LS, or read-only Bash such as `rg`, `find`, `git log`) with the context at 100k+ tokens, the fourth result carries one hidden note: hand any further searching to one Explore subagent with a precise question, and ask for paths, line numbers and a short conclusion only. At most once per prompt; never in subagents. On the maintainer's 21 days it would have fired 122 times. The 404 main-chat search calls after those points re-read about 126M tokens. The main chat started an Agent 46 times in all.
+- **Reviewer note (Balanced and Best):** a fresh critical software change (coding or agentic work at the critical tier, not specified execution) gets one note: when the change is made, start one reviewer subagent on the request and the diff, asking for concrete defects with file and line, and fix what it confirms. Save never adds it. The tier is the word-rule tier at submit time; the Haiku reading arrives later.
+- **Team note (Best, unchanged triggers):** it now says how to split the work: bounded non-overlapping jobs, Explore agents for reading, shared-file edits kept in the main chat, and one fresh reviewer at the end.
+
+All of it is guidance; a mod cannot start a subagent itself. `/apex agents off` stops the notes along with agent routing; `/apex doctor` counts the notes given in this chat. Savings are not measured yet.
+
 ## 0.17.0-beta.1
 
 New: plan-limit awareness. Claude Code reports the subscription's `five_hour` and `seven_day` windows (percent used and reset time) from the last response. At five_hour ≥ 80% or seven_day ≥ 90%, APEX routes main requests and subagents one mode step toward Save (Best → Balanced → Save). At ≥ 95% / ≥ 97% it uses Save. Save never lowers a critical task's floor, and Max Power once is never leaned. Receipts carry `limitLean` (window, percent, steps) next to `mode` and `baseMode`. `/apex limits auto|off` is shared across chats; `/apex limits` prints the windows, the lean and the reset time, and `/apex doctor` lists them. With no reading (before the first reply, or on API billing) nothing changes. The thresholds are judgment calls, not measured.

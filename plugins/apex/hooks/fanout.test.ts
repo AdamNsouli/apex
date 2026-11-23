@@ -80,7 +80,7 @@ test("Best attaches the parallel-subagents note to a fresh hard task when ultrac
   expect(h.entered[0].text).toBe(HARD);
   expect(h.entered[0].context?.length).toBe(1);
   expect(h.entered[0].context[0]).toMatch(
-    /^APEX: this is a big task. Split independent parts of it across parallel subagents/,
+    /^APEX: this is a big task. Split independent parts across a small team of parallel subagents/,
   );
   // A continuation of the same task gets no second note.
   await h.finish();

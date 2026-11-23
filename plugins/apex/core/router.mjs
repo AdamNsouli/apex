@@ -49,8 +49,8 @@ export const effectiveMode = (control) =>
 // For the same tasks APEX also asks Claude to split the work across parallel
 // subagents: a note the model reads beside the prompt (never shown). A continuation,
 // a slash command or a message typed over a running turn gets none.
-export const fanOutNote = () =>
-  "APEX: this is a big task. Split independent parts of it across parallel subagents (Agent tool) and work on them at the same time. Keep the team small, give each worker a bounded non-overlapping task, and ask for concise findings rather than full repeated audits.";
+import { teamNote } from "./delegation.mjs";
+export const fanOutNote = () => teamNote();
 // Guidance, not a tool-level prohibition: APEX cannot disable native agent tools.
 export const executionNote = () =>
   "APEX: this is specified implementation work. Follow the supplied plan incrementally, reuse its existing research, and verify the relevant source rather than repeating a broad codebase audit. Use one main agent; do not launch Workflow, parallel research or subagents unless the user explicitly requested parallel work. If a material design gap or failing check needs deeper reasoning, report it and investigate that bounded issue. Keep all safety, approval and acceptance requirements.";

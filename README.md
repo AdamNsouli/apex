@@ -8,6 +8,8 @@
 
 APEX is executable middleware, not just instructions to Claude. It wraps the official `turn.step` hook and forwards the selected model and effort while preserving the streamed response and conversation. Three modes (Save, Balanced and Best) can be selected while work is running.
 
+**0.18.0-beta.1:** smarter delegation. When a long chat (100k+ tokens) keeps searching (four reads or searches in a row), APEX suggests, once per prompt, handing the rest to one Explore subagent that returns paths and conclusions on a cheaper model. A critical code change in Balanced or Best gets one reviewer subagent before it is called done. Best's team note now says how to split work: Explore agents for reading, edits to shared files kept in the main chat, a fresh reviewer at the end. `/apex agents off` stops all of it.
+
 **0.17.0-beta.1:** APEX watches your plan limits. At 80% of the 5-hour window (or 90% of the week) it routes one step toward Save; at 95% / 97% it uses Save. Critical tasks keep their floor, Max Power once is never changed, and each receipt says when a lean applied. `/apex limits` shows the reading; `/apex limits off` ignores it.
 
 **0.16.0-beta.1:** long Bash output that the command did not bound itself (over 8,000 characters) reaches Claude as head, tail and the error-looking lines from the middle, with the full output saved to a file it can read. Failed commands, diffs and deliberate file dumps are never cut. `/apex output off` turns it off.
