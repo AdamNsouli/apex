@@ -27,6 +27,7 @@ import {
   COMPACT_INSTRUCTIONS,
 } from "../core/context.mjs";
 import { freezeDecision } from "../core/receipt.mjs";
+import { wantsTrim, trimmedOutput, outputText } from "../core/output.mjs";
 import {
   READER_MODEL,
   READER_SYSTEM,
@@ -78,6 +79,7 @@ let control = initialControl(),
   contextTokens = null,
   contextArmedAt = null,
   readerPending = null,
+  outputStats = { count: 0, chars: 0 },
   lastReading = null,
   contextNudge = null,
   pins = false,
@@ -438,6 +440,47 @@ async function uiAction($, run, notice = "") {
   }
   draw($);
 }
+// Long, unbounded Bash output: save it whole, give Claude head, tail, error lines
+// and the path. Never trims without a saved copy.
+async function trimBash($, e, result) {
+  const r = result.result;
+  if (!r || typeof r.stdout !== "string" || r.isImage) return null;
+  if (
+    !wantsTrim({
+      command: e.command,
+      stdout: r.stdout,
+      stderr: r.stderr ?? "",
+      setting: control.output,
+      isError: result.isError,
+      background: Boolean(r.backgroundTaskId),
+    })
+  )
+    return null;
+  try {
+    // $.session.info is newer than the oldest supported engine (2.1.292), which
+    // refuses a module that names it, so the saved copy goes under TMPDIR.
+    const dir = (await $.env.get("TMPDIR"))?.replace(/\/$/, "") || "/tmp";
+    const path =
+      dir + "/apex-output/bash-" + String(e.tool_use_id ?? Date.now()) + ".txt";
+    await $.fs.write(
+      path,
+      "$ " +
+        e.command +
+        "\n\n" +
+        r.stdout +
+        (r.stderr ? "\n--- stderr ---\n" + r.stderr : ""),
+    );
+    const t = trimmedOutput({ stdout: r.stdout, stderr: r.stderr ?? "", path });
+    if (!t.cutChars) return null;
+    outputStats = {
+      count: outputStats.count + 1,
+      chars: outputStats.chars + t.cutChars,
+    };
+    return { result: { ...r, stdout: t.stdout, stderr: t.stderr } };
+  } catch {
+    return null;
+  }
+}
 function startReading($, text, base) {
   const t0 = Date.now();
   const promise = $.model
@@ -756,7 +799,7 @@ export function register(on, config = {}) {
       name: "apex",
       description: "APEX request routing, modes and receipts",
       argumentHint:
-        "mode save|balanced|best; dashboard; refresh; auto; hold; why; guidance [MODEL_ID]; credits; map-efforts; confirm-models; overhead; context on|off|<N>k; reader auto|local; ultracode auto|off; agents auto|off",
+        "mode save|balanced|best; dashboard; refresh; auto; hold; why; guidance [MODEL_ID]; credits; map-efforts; confirm-models; overhead; context on|off|<N>k; reader auto|local; output trim|off; ultracode auto|off; agents auto|off",
       immediate: true,
     });
     now = await $.clock.now();
@@ -933,6 +976,17 @@ export function register(on, config = {}) {
               : "inspect";
         await nativeActions($).open(view);
         return { text: "" };
+      }
+      if (verb === "output") {
+        if (["trim", "off"].includes(value)) {
+          await change($, {
+            kind: "output",
+            value,
+            expectedRevision: control.revision,
+          });
+          await sync($);
+        }
+        return { text: outputText(control.output ?? "trim", outputStats) };
       }
       if (verb === "reader") {
         if (["auto", "local"].includes(value)) {
@@ -1120,6 +1174,8 @@ export function register(on, config = {}) {
               ultracode: control.ultracode ?? "auto",
               context: control.context ?? 200000,
               reader: control.reader ?? "auto",
+              output: control.output ?? "trim",
+              outputStats,
               lastReading,
               contextTokens,
               dataAgeHours: aa ? (now - aa.fetchedAt) / 3600000 : null,
@@ -1562,6 +1618,10 @@ export function register(on, config = {}) {
           intent = { ...intent, failures: intent.failures + 1 };
       }
       draw($);
+      if (e.tool === "Bash" && !result.isError && !result.deny) {
+        const trimmed = await trimBash($, e, result);
+        if (trimmed) return trimmed;
+      }
       return result;
     } catch (error) {
       const worker = e.agentId ? agentRoutes.get(e.agentId) : null;

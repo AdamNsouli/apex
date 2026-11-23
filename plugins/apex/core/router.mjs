@@ -26,6 +26,7 @@ export const initialControl = () => ({
   agents: "auto",
   context: CONTEXT_DEFAULT,
   reader: "auto",
+  output: "trim",
 });
 // Ultracode is Claude Code's multi-agent mode. It is a session switch, not a field
 // of a request, and it uses far more than one model call. It follows the size of
@@ -124,6 +125,8 @@ export function applyControl(state, c) {
     next.ultracode = c.value;
   else if (c.kind === "agents" && ["off", "auto"].includes(c.value))
     next.agents = c.value;
+  else if (c.kind === "output" && ["trim", "off"].includes(c.value))
+    next.output = c.value;
   else if (c.kind === "reader" && ["auto", "local"].includes(c.value))
     next.reader = c.value;
   else if (

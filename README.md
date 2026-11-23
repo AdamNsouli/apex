@@ -8,6 +8,8 @@
 
 APEX is executable middleware, not just instructions to Claude. It wraps the official `turn.step` hook and forwards the selected model and effort while preserving the streamed response and conversation. Three modes (Save, Balanced and Best) can be selected while work is running.
 
+**0.16.0-beta.1:** long Bash output that the command did not bound itself (over 8,000 characters) reaches Claude as head, tail and the error-looking lines from the middle, with the full output saved to a file it can read. Failed commands, diffs and deliberate file dumps are never cut. `/apex output off` turns it off.
+
 **0.15.0-beta.1:** a smarter task reader. Each fresh prompt gets one small Haiku rating (tier, task kind, importance) alongside the word rules. On 200 hand-labelled prompts the tier was right 123 times instead of 96, and important prompts sent below their need fell from 15% to 8% in Balanced at about the same usage. `/apex reader local` keeps the word rules alone.
 
 **0.14.0-beta.1:** when a turn ends with the chat over 200k tokens, APEX offers one row: Compact now (keeps the plan, changed files and open items) or Not now. It never compacts on its own; `/apex context off|on|<N>k` sets the threshold.
