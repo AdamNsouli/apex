@@ -96,6 +96,14 @@ export function tierFor(intent = {}) {
     if (failures >= 2) return "critical";
     return failures > 0 ? "hard" : "everyday";
   }
+  // A model-assisted reading (core/reader.mjs) sets the base tier; it already
+  // keeps local high-risk prompts at least hard. Failures still escalate.
+  if (intent.readerTier) {
+    if (failures >= 3) return "critical";
+    if (failures >= 2 && ["quick", "everyday"].includes(intent.readerTier))
+      return "hard";
+    return intent.readerTier;
+  }
   // Failures count real failed checks only (see countsAsFailure). They raise the
   // tier one step at a time: two make it at least hard, three make it critical.
   if (failures >= 3 || risky) return "critical";

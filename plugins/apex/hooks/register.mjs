@@ -28,6 +28,17 @@ import {
 } from "../core/context.mjs";
 import { freezeDecision } from "../core/receipt.mjs";
 import {
+  READER_MODEL,
+  READER_SYSTEM,
+  READER_TIMEOUT_MS,
+  READER_MAX_TOKENS,
+  readerWanted,
+  readerPrompt,
+  parseReading,
+  mergeReading,
+  readerText,
+} from "../core/reader.mjs";
+import {
   guidanceForModel,
   guidanceStatus,
   guidanceText,
@@ -66,6 +77,8 @@ let control = initialControl(),
   ultra = "idle",
   contextTokens = null,
   contextArmedAt = null,
+  readerPending = null,
+  lastReading = null,
   contextNudge = null,
   pins = false,
   lastModel = null,
@@ -425,6 +438,34 @@ async function uiAction($, run, notice = "") {
   }
   draw($);
 }
+function startReading($, text, base) {
+  const t0 = Date.now();
+  const promise = $.model
+    .complete({
+      model: READER_MODEL,
+      system: READER_SYSTEM,
+      prompt: readerPrompt(text),
+      maxTokens: READER_MAX_TOKENS,
+      effort: "low",
+      timeoutMs: READER_TIMEOUT_MS,
+    })
+    .then((r) => {
+      const reading = r.isAnswered ? parseReading(r.text) : null;
+      return {
+        reading,
+        source: reading
+          ? "haiku"
+          : r.isAnswered
+            ? "unreadable"
+            : r.reason === "aborted"
+              ? "timeout"
+              : "error",
+        ms: Date.now() - t0,
+      };
+    })
+    .catch(() => ({ reading: null, source: "error", ms: Date.now() - t0 }));
+  return { promise, base };
+}
 // After a main turn: offer to compact when the chat has grown past the threshold
 // and no agent is still working. Never compacts by itself.
 async function considerContext($, reason) {
@@ -715,7 +756,7 @@ export function register(on, config = {}) {
       name: "apex",
       description: "APEX request routing, modes and receipts",
       argumentHint:
-        "mode save|balanced|best; dashboard; refresh; auto; hold; why; guidance [MODEL_ID]; credits; map-efforts; confirm-models; overhead; context on|off|<N>k; ultracode auto|off; agents auto|off",
+        "mode save|balanced|best; dashboard; refresh; auto; hold; why; guidance [MODEL_ID]; credits; map-efforts; confirm-models; overhead; context on|off|<N>k; reader auto|local; ultracode auto|off; agents auto|off",
       immediate: true,
     });
     now = await $.clock.now();
@@ -775,6 +816,20 @@ export function register(on, config = {}) {
           expectedRevision: control.revision,
         });
       const fresh = nextIntent !== intent;
+      // A fresh prompt gets one small Haiku rating, started now and awaited (with
+      // its own timeout) at the turn's first step. Word rules decide meanwhile.
+      readerPending =
+        fresh &&
+        readerWanted({
+          text: e.text,
+          previous: intent,
+          origin: e.origin,
+          setting: control.reader,
+        })
+          ? startReading($, e.text, nextIntent)
+          : null;
+      if (fresh && !readerPending)
+        lastReading = { source: "local", tier: null, ms: 0 };
       intent = nextIntent;
       // A new task is a fresh decision: the hold against flip-flopping covers the
       // steps of one task, not the next prompt (the cache payback still applies).
@@ -878,6 +933,17 @@ export function register(on, config = {}) {
               : "inspect";
         await nativeActions($).open(view);
         return { text: "" };
+      }
+      if (verb === "reader") {
+        if (["auto", "local"].includes(value)) {
+          await change($, {
+            kind: "reader",
+            value,
+            expectedRevision: control.revision,
+          });
+          await sync($);
+        }
+        return { text: readerText(control.reader ?? "auto", lastReading) };
       }
       if (verb === "context") {
         const parsed = parseContextArg(value);
@@ -1053,6 +1119,8 @@ export function register(on, config = {}) {
               pins,
               ultracode: control.ultracode ?? "auto",
               context: control.context ?? 200000,
+              reader: control.reader ?? "auto",
+              lastReading,
               contextTokens,
               dataAgeHours: aa ? (now - aa.fetchedAt) / 3600000 : null,
               refreshError,
@@ -1245,6 +1313,17 @@ export function register(on, config = {}) {
       hostUsage = await $.session.usage();
       contextTokens = hostUsage.context?.tokens ?? null;
       if (!overhead) await refreshOverhead($);
+    }
+    if (!e.agentId && e.index === 0 && readerPending) {
+      const pending = readerPending;
+      readerPending = null;
+      const r = await pending.promise;
+      lastReading = { source: r.source, tier: null, ms: r.ms };
+      // Apply only if no newer prompt replaced the intent it was asked about.
+      if (r.reading && intent === pending.base) {
+        intent = mergeReading(intent, r.reading);
+        lastReading.tier = intent.readerTier;
+      }
     }
     const original = {
       model: e.model,
