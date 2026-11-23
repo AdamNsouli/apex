@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.16.0-beta.1
+
+New: large output guard. Every character of a tool result is re-read on every later request in that chat, and Bash was 53% of all tool output on the maintainer's 21 days. A successful Bash command whose output is over 8,000 characters and that did not bound itself is now saved whole to `$TMPDIR/apex-output/bash-<id>.txt`. Claude reads the first ~2,500 and last ~3,500 characters, up to 30 lines from the middle that look like errors or warnings, and the file path. Never cut: failed commands, commands with `head`, `tail`, `sed -n`, `grep -m`, `wc` or `awk NR`, deliberate dumps (`cat`, `sed`, `nl`, `bat`), diffs and patches (`git diff/show`, `git log -p`, `diff -u`), background commands, images, and reads of the saved file. If saving fails, nothing is cut. `/apex output trim|off` (shared); `/apex output` and `/apex doctor` show how many outputs were trimmed in this chat. The transcript shows the trimmed text too.
+
+On the same 21 days, the rule would have trimmed 171 outputs and cut 1.49M of 24.1M Bash characters, roughly 50M tokens of later re-reading before any compaction. This is an estimate from transcripts, not a measured saving.
+
+Compatibility: the saved-copy location uses `TMPDIR` because the oldest supported engine (2.1.292) refuses a module that names `$.session.info`.
+
 ## 0.15.0-beta.1
 
 New: a model-assisted task reader. The word rules matched the labelled tier on 96 of the maintainer's 200 hand-labelled prompts; 42 of 48 hard prompts were read as everyday, and 27 ordinary prompts were made critical by one risky word. Now each fresh prompt (not a continuation, slash command or under 20 characters) gets one Haiku call at low effort through Claude Code's own client: no tools, no history, the prompt cut to 3,000 characters, at most 300 output tokens and a 2.5 s limit. It is started when the prompt is submitted and awaited at the turn's first step. Haiku returns a tier, task kind and importance. Code keeps the safety rules: a prompt with a local high-risk word stays at least hard, an importance-4+ prompt is never quick, failed checks still escalate, and a specified implementation keeps its own steps. Any timeout, error or unreadable reply keeps the word rules. `/apex reader auto|local` (shared), `/apex doctor` shows the last reading.
