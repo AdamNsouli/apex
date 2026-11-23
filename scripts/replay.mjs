@@ -31,13 +31,23 @@ async function loadCore(dir) {
     import(url("router.mjs")),
     import(url("catalogue.mjs")),
   ]);
-  return { ...router, ...catalogue };
+  // 0.15+: the model-assisted reader. Older cores have none.
+  const reader = await import(url("reader.mjs")).catch(() => ({}));
+  return { ...router, ...catalogue, ...reader };
 }
 
 const keyOf = (p) => p.model + "|" + (p.effort ?? "default");
 
 // One replay: every chat in order, one routing decision per prompt.
-export function replayRun({ core, prompts, models, fetchedAt, mode, start }) {
+export function replayRun({
+  core,
+  prompts,
+  models,
+  fetchedAt,
+  mode,
+  start,
+  readings = null,
+}) {
   const control = {
     ...core.initialControl(),
     mode,
@@ -55,10 +65,10 @@ export function replayRun({ core, prompts, models, fetchedAt, mode, start }) {
   const startRec = byKey.get(keyOf(start));
   if (!startRec) throw new Error("start pair not routable: " + keyOf(start));
   const chats = new Map();
-  for (const p of prompts) {
+  prompts.forEach((p, i) => {
     if (!chats.has(p.chat)) chats.set(p.chat, []);
-    chats.get(p.chat).push(p);
-  }
+    chats.get(p.chat).push({ ...p, _i: i });
+  });
   const rows = [];
   for (const list of chats.values()) {
     list.sort((a, b) => a.turn - b.turn);
@@ -69,7 +79,17 @@ export function replayRun({ core, prompts, models, fetchedAt, mode, start }) {
       cacheModel = start.model;
     let cacheEffort = start.effort;
     for (const p of list) {
-      const next = core.classifyIntent(p.text, intent);
+      let next = core.classifyIntent(p.text, intent);
+      // Saved model readings (--readings), applied where the plugin would ask.
+      if (
+        readings?.[p._i] &&
+        core.mergeReading &&
+        core.readerWanted({ text: p.text, previous: intent })
+      )
+        next = core.mergeReading(
+          next,
+          core.parseReading(JSON.stringify(readings[p._i])),
+        );
       // As in the plugin: a new task resets the hold against flip-flopping.
       if (next !== intent) stepsOnModel = 2;
       intent = next;
@@ -164,6 +184,7 @@ export function summarise(rows) {
 }
 
 export async function replay({
+  readings = null,
   prompts,
   store,
   coreDir,
@@ -185,7 +206,15 @@ export async function replay({
         start: keyOf(start),
         mode,
         ...summarise(
-          replayRun({ core, prompts, models, fetchedAt, mode, start }),
+          replayRun({
+            core,
+            prompts,
+            models,
+            fetchedAt,
+            mode,
+            start,
+            readings,
+          }),
         ),
       });
   return out;
@@ -225,7 +254,7 @@ if (
   const storeFile = arg("store");
   if (!promptsFile || !storeFile) {
     console.error(
-      "Use: node scripts/replay.mjs --prompts <file> --store <apex store file> [--core <dir>] [--json]",
+      "Use: node scripts/replay.mjs --prompts <file> --store <apex store file> [--core <dir>] [--readings <file>] [--json]",
     );
     process.exit(2);
   }
@@ -245,6 +274,9 @@ if (
     store,
     coreDir: path.resolve(arg("core", path.join(here, "../plugins/apex/core"))),
     starts,
+    readings: arg("readings")
+      ? JSON.parse(await readFile(arg("readings"), "utf8"))
+      : null,
   });
   console.log(
     process.argv.includes("--json")

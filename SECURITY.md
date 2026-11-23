@@ -8,6 +8,6 @@ The bootstrap link remains valid for the lifetime of its companion. Treat it as 
 
 AA keys entered through Settings live in companion memory only. An environment-supplied AA key can be inherited by the child process. Do not share environment dumps, bootstrap links, private socket descriptors, local caches or real receipts publicly. No AA key or actual login credential is needed for the offline tests.
 
-The local classifier sees prompt text in memory but stores only its category/risk flags. Receipts contain model settings, benchmark scores, token counts and tool names, not transcript text, private reasoning, file paths or tool arguments. Receipts are bounded and session-only. Export is an explicit user action.
+The local classifier sees prompt text in memory but stores only its category/risk flags. With `/apex reader auto` (the default) the text of each fresh prompt, cut to 3,000 characters, is also sent once to Haiku through Claude Code's own API client (the same provider as the chat) for a tier rating; nothing else is sent and the reply is not stored. `/apex reader local` stops it. Receipts contain model settings, benchmark scores, token counts and tool names, not transcript text, private reasoning, file paths or tool arguments. Receipts are bounded and session-only. Export is an explicit user action.
 
 Report security concerns privately through GitHub's security advisory facility for this repository. Do not include keys, conversation text or private receipts in public issues. The beta has not had an independent security audit.
