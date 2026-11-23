@@ -135,6 +135,14 @@ export function applyControl(state, c) {
   )
     next.context = c.value;
   else if (
+    c.kind === "context" &&
+    (c.value === "off" ||
+      (Number.isInteger(c.value) &&
+        c.value >= CONTEXT_MIN &&
+        c.value <= CONTEXT_MAX))
+  )
+    next.context = c.value;
+  else if (
     c.kind === "routing" &&
     ["auto", "manual_hold", "disabled"].includes(c.value)
   )
