@@ -371,6 +371,20 @@ function renderReceipt(e) {
           ],
           ["Response model", e.responseModel ?? "unknown"],
           ["Effective effort", e.effectiveEffort ?? "not reported by Claude"],
+          [
+            "Anthropic API default",
+            snap?.modelGuidance?.apiDefaultEffort ?? "no reviewed profile",
+          ],
+          [
+            "Guidance reviewed",
+            snap?.modelGuidance?.reviewedAt ?? "not recorded",
+          ],
+          [
+            "Effort/cache transport",
+            snap?.effortCacheMode === "per_message"
+              ? "explicitly verified per-message"
+              : "per request: an effort change rewrites the cache",
+          ],
           ["Preference", e.mode ? modeSpec(e.mode).label : "native"],
           ["Task category", e.task ?? "unknown"],
           ["Scope", e.agentId ? "Agent " + e.agentId : "Main"],

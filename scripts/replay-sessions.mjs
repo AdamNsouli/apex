@@ -42,6 +42,7 @@ export function simulate({
   mode,
   start,
   counts,
+  effortCacheMode = "unknown",
 }) {
   const control = {
     ...core.initialControl(),
@@ -57,13 +58,22 @@ export function simulate({
   const startRec = byKey.get(keyOf(start));
   const out = {};
   for (const [name, sc] of Object.entries(SCENARIOS)) {
-    const agg = { usd: 0, startUsd: 0, switches: 0, steps: 0, topSteps: 0 };
+    const agg = {
+      usd: 0,
+      startUsd: 0,
+      switches: 0,
+      effortSwitches: 0,
+      cacheRewrites: 0,
+      steps: 0,
+      topSteps: 0,
+    };
     for (const p of prompts) {
       let intent = core.classifyIntent(p.text, null);
       let lastModel = null,
         lastEffort,
         stepsOnModel = 2,
         cacheModel = start.model,
+        cacheEffort = start.effort,
         errors = 0,
         counted = 0;
       for (let step = 1; step <= STEPS; step++) {
@@ -86,6 +96,7 @@ export function simulate({
           lastModel,
           lastEffort,
           stepsOnModel,
+          effortCacheMode,
         });
         const pick = byKey.get(keyOf(d.pair)) ?? startRec;
         if (lastModel === d.pair.model) stepsOnModel++;
@@ -93,7 +104,12 @@ export function simulate({
         lastModel = d.pair.model;
         lastEffort = d.pair.effort;
         const switched = pick.runtimeId !== cacheModel;
+        const effortChanged = pick.effort !== cacheEffort;
+        const rewritten =
+          switched || (effortChanged && effortCacheMode !== "per_message");
         if (switched && step > 1) agg.switches++;
+        if (!switched && effortChanged) agg.effortSwitches++;
+        if (rewritten) agg.cacheRewrites++;
         const price = (r, sw) =>
           (ctx *
             (sw
@@ -101,7 +117,7 @@ export function simulate({
               : (r.evidence.prices?.cacheRead ?? 0))) /
             1e6 +
           (r.evidence.benchmarkCostPerTask ?? 0) / STEPS;
-        agg.usd += price(pick, switched);
+        agg.usd += price(pick, rewritten);
         agg.startUsd += price(startRec, false);
         agg.steps++;
         if (
@@ -110,6 +126,7 @@ export function simulate({
         )
           agg.topSteps++;
         cacheModel = pick.runtimeId;
+        cacheEffort = pick.effort;
       }
     }
     out[name] = agg;

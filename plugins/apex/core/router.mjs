@@ -49,7 +49,14 @@ export const fanOutNote = () =>
 // Guidance, not a tool-level prohibition: APEX cannot disable native agent tools.
 export const executionNote = () =>
   "APEX: this is specified implementation work. Follow the supplied plan incrementally, reuse its existing research, and verify the relevant source rather than repeating a broad codebase audit. Use one main agent; do not launch Workflow, parallel research or subagents unless the user explicitly requested parallel work. If a material design gap or failing check needs deeper reasoning, report it and investigate that bounded issue. Keep all safety, approval and acceptance requirements.";
-export function wantsExecutionNote({ control, intent, fresh, text, origin, turnId }) {
+export function wantsExecutionNote({
+  control,
+  intent,
+  fresh,
+  text,
+  origin,
+  turnId,
+}) {
   return (
     intent?.execution === "specified" &&
     ["save", "balanced"].includes(effectiveMode(control)) &&
@@ -192,9 +199,15 @@ export function agentPlan({
     agentType === "workflow-subagent" &&
     typeof agentDescription === "string" &&
     (/^map:[a-z][\w-]*$/i.test(agentDescription.trim()) ||
-      (/^(?:read[- ]only\s+)?(?:map|search|lookup|locate|find files)\b/i.test(agentDescription.trim()) &&
-        /\b(?:existing|source|files?|fields?|definitions?|references?|call sites)\b/i.test(agentDescription))) &&
-    !/architect|review|audit|design|diagnos|security|decid|solution|strategy|safe (?:way|approach)|choose|compare|investigat|figure out|determine/i.test(agentDescription)
+      (/^(?:read[- ]only\s+)?(?:map|search|lookup|locate|find files)\b/i.test(
+        agentDescription.trim(),
+      ) &&
+        /\b(?:existing|source|files?|fields?|definitions?|references?|call sites)\b/i.test(
+          agentDescription,
+        ))) &&
+    !/architect|review|audit|design|diagnos|security|decid|solution|strategy|safe (?:way|approach)|choose|compare|investigat|figure out|determine/i.test(
+      agentDescription,
+    )
   )
     return {
       route: true,
@@ -208,7 +221,8 @@ export function agentPlan({
     };
   // Search and lookup agents are quick tasks. The legacy Save helper shortcut
   // cannot erase a specified parent's implementation floor or risk signal.
-  const save = effectiveMode(control) === "save" && mainIntent?.execution !== "specified";
+  const save =
+    effectiveMode(control) === "save" && mainIntent?.execution !== "specified";
   if (
     QUICK_AGENTS.includes(agentType) ||
     (save && tierFor(mainIntent ?? {}) !== "critical")
@@ -275,8 +289,10 @@ const isSimple = (t) =>
   (QUESTION_START.test(t) && t.trim().length <= 80 && !NEEDS_THOUGHT.test(t));
 // Specification detail reduces decisions, not the consequences of an error.
 // Require corroborating evidence; neither length nor a path alone establishes it.
-const SOURCE_PATH = /(?:^|[\s(\x60])(?:\.{0,2}\/|\/)?[\w@.-]+(?:\/[\w@.-]+)*\.(?:[cm]?[jt]sx?|py|rs|go|swift|jsonc?|md)\b/i;
-const CODE_PATH = /(?:^|[\s(\x60])(?:\.{0,2}\/|\/)?[\w@.-]+(?:\/[\w@.-]+)*\.(?:[cm]?[jt]sx?|py|rs|go|swift|jsonc?)\b/i;
+const SOURCE_PATH =
+  /(?:^|[\s(\x60])(?:\.{0,2}\/|\/)?[\w@.-]+(?:\/[\w@.-]+)*\.(?:[cm]?[jt]sx?|py|rs|go|swift|jsonc?|md)\b/i;
+const CODE_PATH =
+  /(?:^|[\s(\x60])(?:\.{0,2}\/|\/)?[\w@.-]+(?:\/[\w@.-]+)*\.(?:[cm]?[jt]sx?|py|rs|go|swift|jsonc?)\b/i;
 const SOFTWARE_REQUEST =
   /\b(?:implement|build|fix|refactor|debug|update|change|edit|add|remove|rewrite|migrate|design|architect|review|audit)\b[^.!?\n]{0,180}\b(?:code|bug|app|feature|function|component|endpoint|api|repo|website|test|ui|software|implementation)\b/i;
 const SPEC_REFERENCE =
@@ -285,8 +301,15 @@ const UNRESOLVED =
   /\b(?:choose|decide)\s+(?:(?:the|an?|between|which|our|best|right)\s+){0,3}(?:architecture|approach|strategy|design|solution|two|competing)\b|\b(?:architecture|approach|root cause|solution|diagnosis)\s+(?:is|remains)\s+(?:unknown|unclear|undecided)\b|\b(?:design|architect|investigate|diagnose|research|figure out|find|determine|debug)\b[^.!?\n]{0,70}\b(?:from scratch|root cause|unknown|conflicting|tradeoffs|trade-offs)\b|\b(?:work out|assess|evaluate|determine|decide|figure out)\s+(?:whether|which|how|if)\b|\bcompare\b[^.!?\n]{0,160}\b(?:select|choose|decide|tradeoffs|trade-offs)\b|\b(?:select|choose|decide|design)\b[^.!?\n]{0,80}\b(?:best|optimal|safest|appropriate)\b[^.!?\n]{0,50}\b(?:architecture|approach|strategy|design|solution|storage|migration)\b/i;
 function specifiedExecution(text, software) {
   if (!software || UNRESOLVED.test(text)) return false;
-  const lead = text.replace(/<[^>]*>/g, "").trim().slice(0, 400);
-  if (/^(?:please\s+)?(?:design|architect|investigate|diagnose|research|review|audit|choose|decide)\b/.test(lead))
+  const lead = text
+    .replace(/<[^>]*>/g, "")
+    .trim()
+    .slice(0, 400);
+  if (
+    /^(?:please\s+)?(?:design|architect|investigate|diagnose|research|review|audit|choose|decide)\b/.test(
+      lead,
+    )
+  )
     return false;
   const path = SOURCE_PATH.test(text);
   const evidence = [
@@ -298,9 +321,20 @@ function specifiedExecution(text, software) {
   // "change architecture to whatever is best" still requires judgment.
   const atom = "(?:\\x60[^\\x60\\n]+\\x60|\"[^\"\\n]+\"|'[^'\\n]+')";
   const exactEdit =
-    new RegExp("\\b(?:replace|rename|change)\\s+(?:the\\s+)?(?:(?:string|literal|text|label)\\s+)?" + atom + "\\s+(?:with|to)\\s+" + atom).test(text) ||
-    /\brename\s+(?:the\s+)?(?:identifier|function|variable|component|field|symbol)\s+[a-z_$][\w$]*\s+to\s+[a-z_$][\w$]*\b/.test(text);
-  return path && ((SPEC_REFERENCE.test(text) && evidence >= 2) || (exactEdit && evidence >= 1));
+    new RegExp(
+      "\\b(?:replace|rename|change)\\s+(?:the\\s+)?(?:(?:string|literal|text|label)\\s+)?" +
+        atom +
+        "\\s+(?:with|to)\\s+" +
+        atom,
+    ).test(text) ||
+    /\brename\s+(?:the\s+)?(?:identifier|function|variable|component|field|symbol)\s+[a-z_$][\w$]*\s+to\s+[a-z_$][\w$]*\b/.test(
+      text,
+    );
+  return (
+    path &&
+    ((SPEC_REFERENCE.test(text) && evidence >= 2) ||
+      (exactEdit && evidence >= 1))
+  );
 }
 export function classifyIntent(text, previous) {
   const full = String(text ?? "").toLowerCase();
@@ -308,10 +342,14 @@ export function classifyIntent(text, previous) {
   if (previous && /^\s*(yes|continue|go ahead|do it|ok|okay)[.!\s]*$/.test(t))
     return previous;
   const risk = RISK.test(full) ? "high" : "normal";
-  const lead = t.replace(/<[^>]*>/g, "").trim().slice(0, 1000);
+  const lead = t
+    .replace(/<[^>]*>/g, "")
+    .trim()
+    .slice(0, 1000);
   const software =
     SOFTWARE_REQUEST.test(lead) ||
-    (CODE_PATH.test(lead) && /\b(?:replace|rename|change|edit|update)\b/.test(lead));
+    (CODE_PATH.test(lead) &&
+      /\b(?:replace|rename|change|edit|update)\b/.test(lead));
   let task = "general";
   for (const [name, re] of [
     // Requested software work wins over domain vocabulary in its constraints.
@@ -438,13 +476,13 @@ export function switchPayback(
   inputTokens,
   objective = "value",
   wtp = null,
+  { cachePair = null, effortCacheMode = "unknown" } = {},
 ) {
   const w = winner.record?.evidence?.prices,
     s = stay.record?.evidence?.prices;
   const nums = [
     winner.costPerTaskUsd,
     stay.costPerTaskUsd,
-    w?.cacheWrite,
     w?.cacheRead,
     s?.cacheRead,
     inputTokens,
@@ -452,10 +490,26 @@ export function switchPayback(
   if (nums.some((x) => finite(x) === null || x < 0)) return null;
   const n = PAYBACK_REQUESTS,
     mtok = inputTokens / 1e6;
-  const stayUsd = n * (stay.costPerTaskUsd + mtok * s.cacheRead);
+  // Host transport is not implied by API model support. Unverified effort
+  // changes conservatively include rewriting the cached prompt prefix.
+  const cached = cachePair ?? { model: stay.model, effort: stay.effort };
+  const rewrite = (pair, moving = false) =>
+    cachePair === null
+      ? moving
+      : pair.model !== cached.model ||
+        (pair.effort !== cached.effort && effortCacheMode !== "per_message");
+  const rewriteUsd = (pair, prices, moving = false) => {
+    if (!rewrite(pair, moving)) return 0;
+    if (finite(prices?.cacheWrite) === null || prices.cacheWrite < 0)
+      return null;
+    return mtok * Math.max(0, prices.cacheWrite - prices.cacheRead);
+  };
+  const stayRewrite = rewriteUsd(stay, s),
+    moveRewrite = rewriteUsd(winner, w, true);
+  if (stayRewrite === null || moveRewrite === null) return null;
+  const stayUsd = n * (stay.costPerTaskUsd + mtok * s.cacheRead) + stayRewrite;
   const moveUsd =
-    n * (winner.costPerTaskUsd + mtok * w.cacheRead) +
-    mtok * (w.cacheWrite - w.cacheRead);
+    n * (winner.costPerTaskUsd + mtok * w.cacheRead) + moveRewrite;
   const pays =
     objective === "score"
       ? winner.rawScore > stay.rawScore
@@ -467,7 +521,15 @@ export function switchPayback(
           ? n * winner.rawScore - moveUsd / wtp >
             n * stay.rawScore - stayUsd / wtp
           : moveUsd < stayUsd * 0.95;
-  return { pays, stayUsd, moveUsd, requests: n };
+  return {
+    pays,
+    stayUsd,
+    moveUsd,
+    requests: n,
+    horizonAssumption: "five_benchmark_equivalent_tasks_not_observed_requests",
+    rewrite: rewrite(winner, true),
+    effortCacheMode,
+  };
 }
 export function route({
   original,
@@ -483,6 +545,7 @@ export function route({
   lastModel = null,
   lastEffort = undefined,
   stepsOnModel = 2,
+  effortCacheMode = "unknown",
 }) {
   if (control.routing !== "auto" || pinned)
     return hold(original, "manual_hold");
@@ -547,6 +610,8 @@ export function route({
     record: m,
   }));
   const cacheModel = lastModel ?? original.model;
+  const cacheEffort = lastModel ? lastEffort : original.effort;
+  const cachePair = { model: cacheModel, effort: cacheEffort };
   const mode = migrateMode(control.mode);
   const r = selectPair(
     candidates,
@@ -582,6 +647,7 @@ export function route({
   // A different model has to store the whole conversation again; the model that
   // holds it only reads it. The move is made when it pays back over the next few
   // requests, or when no effort of the current model reaches the task's floor.
+  let cacheAssessment = null;
   if (winner.model !== cacheModel) {
     const stay = r.ranked.find((p) => p.model === cacheModel);
     if (stay) {
@@ -592,9 +658,47 @@ export function route({
         (MODES[mode] ?? ONCE).payback,
         r.target.wtp,
       );
+      // Keep the model-switch barrier conservative: its current-model
+      // alternative gets the optimistic warm-cache price. Uncertain effort
+      // transport must not newly authorize a weaker cross-model move.
+      cacheAssessment = move
+        ? { ...move, comparison: "optimistic_current_model_alternative" }
+        : null;
       if (!(move?.pays === true)) {
         winner = stay;
         reason = move ? "switch_does_not_pay_back" : "switch_cost_unknown";
+      }
+    }
+  }
+  // An effort-only move is not automatically cache-free. If the actual cached
+  // pair still meets the same quality/wait floor, require the move to pay back.
+  // A pair below that floor cannot trap a necessary capability escalation.
+  if (winner.model === cacheModel && winner.effort !== cacheEffort) {
+    const current = r.ranked.find(
+      (p) => p.model === cacheModel && p.effort === cacheEffort,
+    );
+    if (current) {
+      cacheAssessment = switchPayback(
+        winner,
+        current,
+        inputTokens,
+        (MODES[mode] ?? ONCE).payback,
+        r.target.wtp,
+        { cachePair, effortCacheMode },
+      );
+      // Cache forecasts are weaker evidence than the selected task benchmark.
+      // Never block its measured capability improvement just to save a rewrite.
+      const improvesCapability = winner.rawScore > current.rawScore;
+      if (cacheAssessment && improvesCapability)
+        cacheAssessment = {
+          ...cacheAssessment,
+          qualityImprovementProtected: true,
+        };
+      if (!(cacheAssessment?.pays === true) && !improvesCapability) {
+        winner = current;
+        reason = cacheAssessment
+          ? "effort_change_does_not_pay_back"
+          : "effort_change_cost_unknown";
       }
     }
   }
@@ -621,6 +725,8 @@ export function route({
     scoreBasis: basis,
     tier: r.tier,
     risk: intent.risk,
+    cacheAssessment,
+    effortCacheMode,
   };
 }
 export class Ledger {

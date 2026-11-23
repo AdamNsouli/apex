@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.13.0-beta.1
+
+Fix: effort-only changes were assumed to keep the prompt cache. Claude Code 2.1.330's mod API documents effort as a setting of the whole request unless the user sets `CLAUDE_CODE_MODEL_CAPABILITIES=per_turn_effort` (first-party API only), and Anthropic's prompt-caching page lists an effort change as invalidating cached messages. APEX now prices an effort move as one conversation rewrite and makes it only when it repays that over five benchmark-equivalent requests, when it raises the task benchmark score, or when the current effort is below the floor. The cross-model barrier is unchanged and stays conservative. Receipts record `cacheAssessment`; new reasons `effort_change_does_not_pay_back` and `effort_change_cost_unknown`.
+
+New: `core/anthropic-guidance.mjs` and `/apex guidance [MODEL_ID]`: dated profiles for Haiku, Sonnet and Opus 5.5 (and Fable 5.2, which stays unconfirmed) with API default effort (Haiku and Opus medium, Sonnet high), starting-effort advice, thinking limits and source links, plus a 30-day review warning in `/apex doctor`. Advice never grants model access or replaces benchmark scores.
+
+Per-task scores refreshed from AA's public model pages. Both replay scripts count effort-related rewrites.
+
+Offline, 200 labelled prompts, three modes, two starting pairs: the important-below-proxy rate is unchanged in all six combinations. Balanced from Opus 5.5 high over a clean 14-step task: 199 → 172 modeled cache rewrites, about 6.7% lower estimated cost; single-prompt cost slightly higher; from Sonnet essentially no change. Simulations, not measured quality or subscription savings. Docs and README no longer say effort changes keep the cache; the README's six-mode hotkeys now read `s`, `b`, `e`.
+
 ## 0.12.0-beta.1
 
 New: `/apex overhead` and an inspector section, "What every message carries". They report what each chat re-reads before you type, from Claude Code's own context breakdown: system prompt and tools, memory files, MCP servers, the skill and command listings, agent descriptions, and the conversation so far. If one item is large (an MCP server over 3,000 tokens, a memory file over 4,000, a skill listing over 3,000) it says so in one line. APEX only reports; it changes no instruction file and disconnects nothing. Nothing is shown until the host has given a reading, and file paths are shortened to file names.

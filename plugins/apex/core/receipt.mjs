@@ -1,3 +1,5 @@
+import { guidanceForModel, guidanceStatus } from "./anthropic-guidance.mjs";
+
 // Immutable, deliberately small evidence snapshot. No prompts, tool arguments,
 // paths, credentials or provider reasoning are accepted here.
 const number = (x) => (typeof x === "number" && Number.isFinite(x) ? x : null);
@@ -38,6 +40,7 @@ export function freezeDecision({
   task,
   fetchedAt,
   baselineForecast = null,
+  now = null,
 }) {
   const find = (pair) =>
     models.find(
@@ -52,6 +55,10 @@ export function freezeDecision({
     baselineForecastUsd: number(baselineForecast),
     candidateForecastUsd: number(decision.estimate),
     reason: decision.reason,
+    modelGuidance: guidanceForModel(decision.pair.model),
+    guidance: guidanceStatus(now),
+    cacheAssessment: decision.cacheAssessment ?? null,
+    effortCacheMode: decision.effortCacheMode ?? "unknown",
     ranked: (decision.ranked ?? []).map((p) => ({ ...p })),
     accountCharge: null,
   });

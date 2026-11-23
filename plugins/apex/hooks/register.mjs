@@ -21,6 +21,11 @@ import {
 import { countsAsFailure, COUNTED_TOOLS } from "../core/scoring.mjs";
 import { summariseOverhead, overheadText } from "../core/overhead.mjs";
 import { freezeDecision } from "../core/receipt.mjs";
+import {
+  guidanceForModel,
+  guidanceStatus,
+  guidanceText,
+} from "../core/anthropic-guidance.mjs";
 import { VERSION, MODES as MODE_TEXT } from "../core/presentation.mjs";
 import {
   runtimeModels,
@@ -642,7 +647,7 @@ export function register(on, config = {}) {
       name: "apex",
       description: "APEX request routing, modes and receipts",
       argumentHint:
-        "mode save|balanced|best; dashboard; refresh; auto; hold; why; credits; map-efforts; confirm-models; overhead; ultracode auto|off; agents auto|off",
+        "mode save|balanced|best; dashboard; refresh; auto; hold; why; guidance [MODEL_ID]; credits; map-efforts; confirm-models; overhead; ultracode auto|off; agents auto|off",
       immediate: true,
     });
     now = await $.clock.now();
@@ -926,12 +931,23 @@ export function register(on, config = {}) {
             2,
           ),
         };
+      if (verb === "guidance")
+        return {
+          text: guidanceText({
+            model: value || null,
+            runtime,
+            verifiedIds: control.verifiedIds,
+            now,
+          }),
+        };
       if (verb === "models")
         return {
           text: JSON.stringify(
             models.map((m) => ({
               id: m.runtimeId,
               effort: m.effort,
+              officialApiDefaultEffort:
+                guidanceForModel(m.runtimeId)?.apiDefaultEffort ?? null,
               routable: m.routable,
               mapping: m.mappingSource,
               exclusions: m.exclusions,
@@ -946,6 +962,7 @@ export function register(on, config = {}) {
             {
               version: VERSION,
               hostVersion,
+              guidance: guidanceStatus(now),
               models: runtime.length,
               benchmarkModels: aa?.models.length ?? 0,
               backend: control.backend,
@@ -1263,6 +1280,7 @@ export function register(on, config = {}) {
       models,
       task: decision.scoreBasis ?? task,
       fetchedAt: aa?.fetchedAt,
+      now,
       baselineForecast: baseline
         ? forecastCost(baseline.evidence, contextTokens, baseline.outputCap)
         : null,
@@ -1375,7 +1393,8 @@ export function register(on, config = {}) {
       ) {
         const worker = e.agentId ? agentRoutes.get(e.agentId) : null;
         if (worker) worker.failures++;
-        else if (!e.agentId) intent = { ...intent, failures: intent.failures + 1 };
+        else if (!e.agentId)
+          intent = { ...intent, failures: intent.failures + 1 };
       }
       draw($);
       return result;
@@ -1384,7 +1403,8 @@ export function register(on, config = {}) {
       if (!COUNTED_TOOLS.has(e.tool)) {
         // A connector or browser tool that threw is not a failed check.
       } else if (worker) worker.failures++;
-      else if (!e.agentId) intent = { ...intent, failures: intent.failures + 1 };
+      else if (!e.agentId)
+        intent = { ...intent, failures: intent.failures + 1 };
       const row = ledger.events.find((x) => x.id === id);
       if (row) {
         row.status = "error";

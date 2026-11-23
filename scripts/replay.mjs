@@ -67,6 +67,7 @@ export function replayRun({ core, prompts, models, fetchedAt, mode, start }) {
       lastEffort = undefined,
       stepsOnModel = 2,
       cacheModel = start.model;
+    let cacheEffort = start.effort;
     for (const p of list) {
       const next = core.classifyIntent(p.text, intent);
       // As in the plugin: a new task resets the hold against flip-flopping.
@@ -92,16 +93,21 @@ export function replayRun({ core, prompts, models, fetchedAt, mode, start }) {
       lastEffort = d.pair.effort;
       // A different model stores the conversation again; the same model reads its cache.
       const switched = pick.runtimeId !== cacheModel;
+      const effortChanged = pick.effort !== cacheEffort;
+      // Host effort transport is not verified. Price the conservative rewrite
+      // for BOTH versions when comparing policies with this same evaluator.
+      const cacheRewritten = switched || effortChanged;
       const prices = pick.evidence.prices ?? {};
       const contextUsd =
         (inputTokens *
-          (switched
+          (cacheRewritten
             ? (prices.cacheWrite ?? prices.input)
             : (prices.cacheRead ?? 0))) /
         1e6;
       const startContextUsd =
         (inputTokens * (startRec.evidence.prices?.cacheRead ?? 0)) / 1e6;
       cacheModel = pick.runtimeId;
+      cacheEffort = pick.effort;
       const score = pick.evidence.scores.general;
       rows.push({
         chat: p.chat,
@@ -113,6 +119,8 @@ export function replayRun({ core, prompts, models, fetchedAt, mode, start }) {
         moved: keyOf(d.pair) !== keyOf(start),
         modelMoved: d.pair.model !== start.model,
         switched,
+        effortChanged,
+        cacheRewritten,
         share: score / best,
         under: score < NEED_SHARE[p.need] * best - 1e-9,
         usd: (pick.evidence.benchmarkCostPerTask ?? 0) + contextUsd,
@@ -138,6 +146,7 @@ export function summarise(rows) {
     prompts: rows.length,
     moved: sum((r) => r.moved) / n,
     modelMoved: sum((r) => r.modelMoved) / n,
+    cacheRewritten: sum((r) => r.cacheRewritten) / n,
     modelsUsed: new Set(rows.map((r) => r.pick.split("|")[0])).size,
     underserved: sum((r) => r.under) / n,
     underservedImportant:
