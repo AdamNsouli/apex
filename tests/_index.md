@@ -1,9 +1,10 @@
 # tests — Index
 
-Current status: APEX 0.22.0-beta.1 executable beta.
+Current status: APEX 0.23.0-beta.1 executable beta.
 Code and assets are public; dataset and inference fixtures are synthetic.
 See the root README and verification document for actual limits.
 
+- [steps.test.mjs](./steps.test.mjs) — step hints from the previous step, per-message effort detection and one-notch moves.
 - [learning.test.mjs](./learning.test.mjs) — complaint and retry detection, strikes, tier raise, forgiveness and malformed state.
 - [report.test.mjs](./report.test.mjs) — weekly report maths: dated IDs, mismatches, 7-day window and 35-day pruning.
 - [browser.cjs](./browser.cjs) — release source or supporting artifact.

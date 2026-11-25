@@ -1,3 +1,4 @@
+import { stepPair } from "./steps.mjs";
 import { CONTEXT_DEFAULT, CONTEXT_MIN, CONTEXT_MAX } from "./context.mjs";
 import {
   selectPair,
@@ -573,6 +574,7 @@ export function route({
   lastEffort = undefined,
   stepsOnModel = 2,
   effortCacheMode = "unknown",
+  stepHint = null,
 }) {
   if (control.routing !== "auto" || pinned)
     return hold(original, "manual_hold");
@@ -727,6 +729,25 @@ export function route({
           ? "effort_change_does_not_pay_back"
           : "effort_change_cost_unknown";
       }
+    }
+  }
+  // Effort step by step within a task (core/steps.mjs).
+  if (stepHint === "recover") {
+    const up = stepPair(winner, candidates, "recover");
+    if (up) {
+      winner = up;
+      reason = "step_effort_recover";
+    }
+  } else if (
+    stepHint === "routine" &&
+    effortCacheMode === "per_message" &&
+    r.tier !== "critical" &&
+    !risky
+  ) {
+    const down = stepPair(winner, r.ranked, "routine");
+    if (down) {
+      winner = down;
+      reason = "step_effort_routine";
     }
   }
   const changes =

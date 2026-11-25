@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.23.0-beta.1
+
+New: effort step by step within a task (main chat).
+
+- **Recover:** when a tool call in the previous step failed (returned an error or threw), this step runs one effort notch higher on the same model. Receipt reason `step_effort_recover`. It always applies, because a quality move is not blocked to save a cache rewrite. The next clean step goes back to the task's own effort.
+- **Routine:** when every tool call in the previous step was a clean read or search (Read, Grep, Glob, LS, read-only Bash), this step runs one notch lower on the same model, as long as that pair still meets the task's floor. Receipt reason `step_effort_routine`. It applies only when Claude Code sends effort per message (`CLAUDE_CODE_MODEL_CAPABILITIES=per_turn_effort`). Otherwise an effort change rewrites the cached conversation, and APEX keeps the effort. Never for critical tiers, complex or high-risk prompts, or after two failed checks.
+- Only named efforts move (low → medium → high → xhigh). A pair with the default/max effort is left alone. Subagents are unchanged.
+- The first step of a turn, and steps after other tools (edits, writes), are routed as before.
+
+Not measured: the session replay does not yet model step hints, so savings are not estimated.
+
+
 ## 0.22.0-beta.1
 
 New: learning from bad answers.

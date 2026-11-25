@@ -1,6 +1,6 @@
 import { duration, verdict } from "./receipt.mjs";
 import { migrateMode } from "./scoring.mjs";
-export const VERSION = "0.22.0-beta.1";
+export const VERSION = "0.23.0-beta.1";
 export const MODES = {
   save: {
     label: "Save",
@@ -35,6 +35,8 @@ export const modeSpec = (mode) => {
 };
 // A few words for the strip; the full sentence stays in REASONS for Inspect.
 export const SHORT_REASONS = {
+  step_effort_recover: "more effort after an error",
+  step_effort_routine: "less effort for a routine step",
   balanced_policy: "best value for the task",
   save_policy: "cheapest that is good enough",
   best_policy: "strongest worth the wait",
@@ -88,6 +90,10 @@ export function activityLine(state) {
     .join(" · ");
 }
 export const REASONS = {
+  step_effort_recover:
+    "One effort notch higher for this step: a tool call in the step before it failed.",
+  step_effort_routine:
+    "One effort notch lower for this step: the step before it only read and searched, and Claude Code sends effort per message, so the cache is kept.",
   specified_execution_policy:
     "The implementation has a concrete supplied contract. Selected against the current mode's implementation floor; safety constraints and high-risk classification remain visible.",
   execution_failure_escalation:
