@@ -268,3 +268,62 @@ export function hbars(elements, items, width, { max } = {}) {
 }
 export const pairShort = (state, p) =>
   p ? modelName(state, p.model) + " " + effortLabel(p.effort) : "unknown";
+
+// Requests per day as columns, each stacked by model (bottom to top in the
+// order the models were counted), with the weekday under it.
+export function dayColumns(elements, days, width, height = 5) {
+  const { Box, Text } = elements;
+  if (!days.length) return [];
+  const peak = Math.max(1, ...days.map((d) => d.total));
+  const colWidth = Math.max(
+    2,
+    Math.min(5, Math.floor((width - 4) / days.length) - 1),
+  );
+  // Cells per model per day, rounded so each day's stack keeps its height.
+  const stacks = days.map((d) => {
+    const cells = Math.round((d.total / peak) * height);
+    const parts = Object.entries(d.models);
+    let left = cells;
+    return parts
+      .map(([id, n], i) => {
+        const c =
+          i === parts.length - 1
+            ? left
+            : Math.min(left, Math.round((n / d.total) * cells));
+        left -= c;
+        return { id, cells: c };
+      })
+      .flatMap((p) => Array.from({ length: p.cells }, () => p.id));
+  });
+  const rows = [];
+  for (let r = height - 1; r >= 0; r--)
+    rows.push(
+      row(Box, [
+        Text({ children: "▕", dimColor: true }),
+        ...stacks.map((st) =>
+          Text({
+            children:
+              (st[r] ? "█".repeat(colWidth) : " ".repeat(colWidth)) + " ",
+            color: st[r] ? modelColor(st[r]) : undefined,
+          }),
+        ),
+      ]),
+    );
+  const wd = (day) =>
+    ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"][
+      new Date(day + "T12:00:00Z").getUTCDay()
+    ];
+  rows.push(
+    Text({
+      children: " " + days.map((d) => wd(d.day).padEnd(colWidth + 1)).join(""),
+      dimColor: true,
+      wrap: "truncate",
+    }),
+    Text({
+      children:
+        " " + days.map((d) => String(d.total).padEnd(colWidth + 1)).join(""),
+      wrap: "truncate",
+    }),
+  );
+  return rows;
+}

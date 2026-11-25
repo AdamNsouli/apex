@@ -21,6 +21,7 @@ import {
   sparkline,
   hbars,
   modelColor,
+  dayColumns,
 } from "./charts.mjs";
 // The lean note alone, for the row under the meters.
 function leanNote(state) {
@@ -152,14 +153,14 @@ function overview(k, elements, state, d, width) {
   if (Object.keys(readLimits(rl)).length)
     out.push(
       k.rule("PLAN USAGE"),
-      ...usageGauges(elements, rl, width, state.now ?? Date.now()),
+      k.stack(usageGauges(elements, rl, width, state.now ?? Date.now())),
     );
   if (main.length) {
     out.push(
       k.rule("MODELS IN THIS CHAT"),
-      ...mixChart(elements, state, main, width),
+      k.stack(mixChart(elements, state, main, width)),
       k.rule("RECENT REQUESTS"),
-      ...requestColumns(elements, main, Math.min(width, 50), 4),
+      k.stack(requestColumns(elements, main, Math.min(width, 50), 4)),
       k.muted("one column per request · colour = model · height = effort"),
     );
   }
@@ -173,13 +174,15 @@ function tradeoff(k, elements, state, e, width) {
   const color = modelColor(e.apexRequested?.model);
   const out = [k.rule("THIS PICK VS YOUR SETTING"), k.muted("Task score")];
   out.push(
-    ...hbars(
-      elements,
-      [
-        { label: "APEX pick", value: sel.taskScore, color, strong: true },
-        { label: "Your setting", value: base.taskScore },
-      ],
-      width,
+    k.stack(
+      hbars(
+        elements,
+        [
+          { label: "APEX pick", value: sel.taskScore, color, strong: true },
+          { label: "Your setting", value: base.taskScore },
+        ],
+        width,
+      ),
     ),
   );
   if (
@@ -188,23 +191,25 @@ function tradeoff(k, elements, state, e, width) {
   )
     out.push(
       k.muted("Benchmark cost per task (shorter is cheaper)"),
-      ...hbars(
-        elements,
-        [
-          {
-            label: "APEX pick",
-            value: sel.benchmarkCostPerTask,
-            text: "$" + sel.benchmarkCostPerTask.toFixed(3),
-            color,
-            strong: true,
-          },
-          {
-            label: "Your setting",
-            value: base.benchmarkCostPerTask,
-            text: "$" + base.benchmarkCostPerTask.toFixed(3),
-          },
-        ],
-        width,
+      k.stack(
+        hbars(
+          elements,
+          [
+            {
+              label: "APEX pick",
+              value: sel.benchmarkCostPerTask,
+              text: "$" + sel.benchmarkCostPerTask.toFixed(3),
+              color,
+              strong: true,
+            },
+            {
+              label: "Your setting",
+              value: base.benchmarkCostPerTask,
+              text: "$" + base.benchmarkCostPerTask.toFixed(3),
+            },
+          ],
+          width,
+        ),
       ),
     );
   return out;
@@ -215,19 +220,21 @@ function candidates(k, elements, state, e, width) {
   return [
     k.rule("CANDIDATES"),
     k.muted("Task score · forecast cost for this request"),
-    ...hbars(
-      elements,
-      list.map((p) => ({
-        label:
-          short(modelName(state, p.model), 12) + " " + effortLabel(p.effort),
-        value: p.rawScore,
-        note: money(p.costUpperUsd),
-        color: modelColor(p.model),
-        strong:
-          p.model === e.apexRequested?.model &&
-          (p.effort ?? null) === (e.apexRequested?.effort ?? null),
-      })),
-      width,
+    k.stack(
+      hbars(
+        elements,
+        list.map((p) => ({
+          label:
+            short(modelName(state, p.model), 12) + " " + effortLabel(p.effort),
+          value: p.rawScore,
+          note: money(p.costUpperUsd),
+          color: modelColor(p.model),
+          strong:
+            p.model === e.apexRequested?.model &&
+            (p.effort ?? null) === (e.apexRequested?.effort ?? null),
+        })),
+        width,
+      ),
     ),
   ];
 }
@@ -451,6 +458,71 @@ export function dock(elements, props, state, actions) {
   if (state.ui.modeMenu && width >= 30) rows.push(chooser(k, state, actions));
   return k.stack(rows, { paddingX: 1 });
 }
+// The weekly report: which model really answered, how often APEX changed the
+// model, and requests per day as columns stacked by model.
+function reportRows(k, elements, state, width) {
+  const r = state.report,
+    out = [k.text("This week", { bold: true })];
+  if (!r || !r.total)
+    return [
+      ...out,
+      k.muted(
+        "No finished requests recorded in the last 7 days yet. APEX records them from 0.21 on, in every chat.",
+      ),
+    ];
+  const pct = (n) => Math.round((n / r.total) * 100) + "%";
+  out.push(
+    k.muted(
+      (r.demo ? "Includes demo data · " : "") +
+        r.total +
+        " requests in the last 7 days",
+    ),
+    k.rule("MODEL THAT ANSWERED"),
+    k.stack(
+      mixChart(
+        elements,
+        state,
+        r.models.flatMap((m) =>
+          Array.from({ length: m.count }, () => ({
+            apexRequested: { model: m.id },
+          })),
+        ),
+        width,
+      ),
+    ),
+    k.rule("DID APEX CHANGE THE MODEL?"),
+    k.stack(
+      hbars(
+        elements,
+        [
+          {
+            label: "Changed",
+            value: r.changed,
+            text: pct(r.changed) + " (" + r.changed + ")",
+            color: "claude",
+            strong: true,
+          },
+          {
+            label: "Kept setting",
+            value: r.kept,
+            text: pct(r.kept) + " (" + r.kept + ")",
+          },
+        ],
+        width,
+        { max: r.total },
+      ),
+    ),
+    k.rule("REQUESTS PER DAY"),
+    k.stack(dayColumns(elements, r.days, width)),
+    k.muted(
+      (r.mismatched
+        ? r.mismatched + " answered by a different model than APEX asked for. "
+        : "Every answer came from the model APEX asked for. ") +
+        "Local record only; nothing leaves this computer.",
+    ),
+  );
+  return out;
+}
 function evidenceRows(k, state, actions, elements, width = 60) {
   const out = [
       k.text("Evidence", { bold: true }),
@@ -465,35 +537,39 @@ function evidenceRows(k, state, actions, elements, width = 60) {
     const w = Math.max(30, width);
     out.push(
       k.rule("INTELLIGENCE"),
-      ...hbars(
-        elements,
-        list.map((m) => ({
-          label:
-            short(modelName(state, m.runtimeId), 12) +
-            " " +
-            effortLabel(m.effort),
-          value: m.evidence?.scores?.general,
-          color: modelColor(m.runtimeId),
-          strong: m.routable,
-        })),
-        w,
+      k.stack(
+        hbars(
+          elements,
+          list.map((m) => ({
+            label:
+              short(modelName(state, m.runtimeId), 12) +
+              " " +
+              effortLabel(m.effort),
+            value: m.evidence?.scores?.general,
+            color: modelColor(m.runtimeId),
+            strong: m.routable,
+          })),
+          w,
+        ),
       ),
       k.rule("BENCHMARK COST PER TASK"),
-      ...hbars(
-        elements,
-        list.map((m) => ({
-          label:
-            short(modelName(state, m.runtimeId), 12) +
-            " " +
-            effortLabel(m.effort),
-          value: m.evidence?.benchmarkCostPerTask,
-          text: Number.isFinite(m.evidence?.benchmarkCostPerTask)
-            ? "$" + m.evidence.benchmarkCostPerTask.toFixed(3)
-            : "unknown",
-          color: modelColor(m.runtimeId),
-          strong: m.routable,
-        })),
-        w,
+      k.stack(
+        hbars(
+          elements,
+          list.map((m) => ({
+            label:
+              short(modelName(state, m.runtimeId), 12) +
+              " " +
+              effortLabel(m.effort),
+            value: m.evidence?.benchmarkCostPerTask,
+            text: Number.isFinite(m.evidence?.benchmarkCostPerTask)
+              ? "$" + m.evidence.benchmarkCostPerTask.toFixed(3)
+              : "unknown",
+            color: modelColor(m.runtimeId),
+            strong: m.routable,
+          })),
+          w,
+        ),
       ),
       k.muted("◆ = eligible on your plan"),
     );
@@ -823,6 +899,7 @@ export function pane(elements, props, state, actions) {
       k.row([
         modeButton(k, state, actions, width),
         k.button("inspect", "Inspect", () => actions.view("inspect")),
+        k.button("report", "This week", () => actions.report?.()),
       ]),
       k.muted(
         whyShort(d.latest) ||
@@ -862,6 +939,8 @@ export function pane(elements, props, state, actions) {
     body.push(...settings(k, elements, state, actions, props));
   else if (view === "credits")
     body.push(...credits(k, elements, state, actions));
+  else if (view === "report")
+    body.push(...reportRows(k, elements, state, width));
   else if (view === "evidence")
     body.push(...evidenceRows(k, state, actions, elements, width));
   else {

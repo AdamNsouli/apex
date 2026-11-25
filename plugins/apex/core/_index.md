@@ -1,9 +1,10 @@
 # core — Index
 
-Current status: APEX 0.20.0-beta.1 executable beta.
+Current status: APEX 0.21.0-beta.1 executable beta.
 Code and assets are public; dataset and inference fixtures are synthetic.
 See the root README and verification document for actual limits.
 
+- [report.mjs](./report.mjs) — the local request record and the weekly `/apex report` summary.
 - [catalogue.mjs](./catalogue.mjs) — release source or supporting artifact.
 - [overhead.mjs](./overhead.mjs) — turns the host's context breakdown into the fixed-load report and plain advice; report only.
 - [router.mjs](./router.mjs) — release source or supporting artifact.

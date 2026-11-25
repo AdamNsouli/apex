@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.21.0-beta.1
+
+New: `/apex report`, the "is it working" view.
+
+- Each finished request adds one row to a local record in APEX's store, shared by every chat: time, the chat's model setting, the model and effort APEX asked for, the model Claude reports answered, the tier, and whether it was a subagent. No prompt text, paths or outputs. Rows older than 35 days are dropped; at most 4,000 rows.
+- `/apex report` prints the last 7 days as block charts: model that answered (dated IDs count as their model), APEX changed the model vs kept your setting, and requests per day. It says when an answer came from a different model than APEX asked for.
+- The rail gets a "This week" view with the same charts drawn natively: stacked model bar, changed/kept bars, and a column per day stacked by model. Open it from the "This week" button or `/apex report`.
+- Counts start once 0.21 is installed. Earlier chats are not read.
+
+
 ## 0.20.0-beta.1
 
 Charts instead of plain text, drawn with Claude's native boxes and text (no images, no frames), checked in a real terminal:

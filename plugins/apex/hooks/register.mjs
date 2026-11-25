@@ -27,6 +27,12 @@ import {
   COMPACT_INSTRUCTIONS,
 } from "../core/context.mjs";
 import { freezeDecision } from "../core/receipt.mjs";
+import {
+  historyRow,
+  appendHistory,
+  summariseHistory,
+  reportText,
+} from "../core/report.mjs";
 import { wantsTrim, trimmedOutput, outputText } from "../core/output.mjs";
 import { limitLean, leanMode, limitsText } from "../core/limits.mjs";
 import { exploreStep, wantsReview, reviewNote } from "../core/delegation.mjs";
@@ -46,7 +52,11 @@ import {
   guidanceStatus,
   guidanceText,
 } from "../core/anthropic-guidance.mjs";
-import { VERSION, MODES as MODE_TEXT } from "../core/presentation.mjs";
+import {
+  VERSION,
+  MODES as MODE_TEXT,
+  modelName,
+} from "../core/presentation.mjs";
 import {
   runtimeModels,
   joinCatalogue,
@@ -55,6 +65,31 @@ import {
   withNamedEffort,
   describeRefresh,
 } from "../core/catalogue.mjs";
+// Weekly report: the last summary drawn in the rail's report view.
+let reportSummary = null;
+// Appends one finished request to the shared history. Re-reads just before the
+// write so another chat's rows are kept.
+async function recordHistory($, row) {
+  try {
+    const at = await $.clock.now();
+    const stored = await $.store.get("history");
+    await $.store.set("history", appendHistory(stored, row, at));
+  } catch {}
+}
+async function loadReport($) {
+  const at = await $.clock.now();
+  let stored = [];
+  try {
+    stored = (await $.store.get("history")) ?? [];
+  } catch {}
+  reportSummary = summariseHistory(
+    [...(Array.isArray(stored) ? stored : []), ...(demo?.history ?? [])],
+    at,
+    7,
+  );
+  reportSummary.demo = Boolean(demo?.history);
+  return reportSummary;
+}
 let control = initialControl(),
   intent = {
     task: "general",
@@ -192,6 +227,7 @@ const publicState = () => ({
     ? { ...(hostUsage ?? {}), rateLimits: demo.rateLimits }
     : hostUsage,
   overhead,
+  report: reportSummary,
   demo: Boolean(demo),
   activity: {
     trimmed: outputStats.count + (demo?.trimmed ?? 0),
@@ -611,6 +647,13 @@ function nativeActions($) {
       draw($);
     },
     close: () => $.ui.close({ id: "apex" }),
+    report: async () => {
+      await loadReport($);
+      nativeUi.view = "report";
+      nativeUi.notice = "";
+      nativeUi.modeMenu = false;
+      draw($);
+    },
     modeMenu: () => {
       nativeUi.modeMenu = !nativeUi.modeMenu;
       draw($);
@@ -818,7 +861,7 @@ export function register(on, config = {}) {
       name: "apex",
       description: "APEX request routing, modes and receipts",
       argumentHint:
-        "mode save|balanced|best; dashboard; refresh; auto; hold; why; guidance [MODEL_ID]; credits; map-efforts; confirm-models; overhead; demo [off]; context on|off|<N>k; reader auto|local; output trim|off; limits auto|off; ultracode auto|off; agents auto|off",
+        "mode save|balanced|best; dashboard; refresh; auto; hold; why; guidance [MODEL_ID]; credits; map-efforts; confirm-models; overhead; report; demo [off]; context on|off|<N>k; reader auto|local; output trim|off; limits auto|off; ultracode auto|off; agents auto|off",
       immediate: true,
     });
     now = await $.clock.now();
@@ -1011,6 +1054,18 @@ export function register(on, config = {}) {
               : "inspect";
         await nativeActions($).open(view);
         return { text: "" };
+      }
+      if (verb === "report") {
+        const summary = await loadReport($);
+        // The text stands on its own where no pane can open (print mode, SDK).
+        try {
+          await nativeActions($).open("report");
+        } catch {}
+        return {
+          text:
+            (summary.demo ? "Includes demo data. " : "") +
+            reportText(summary, (id) => modelName({ runtime }, id)),
+        };
       }
       if (verb === "limits") {
         if (["auto", "off"].includes(value)) {
@@ -1270,6 +1325,17 @@ export function register(on, config = {}) {
           ],
           trimmed: 2,
           notes: { explore: 1, review: 0, team: 0 },
+          // A made-up week for /apex report: 3–11 requests a day.
+          history: Array.from({ length: 49 }, (_, i) => {
+            const [m, eff] = plan[i % plan.length];
+            return historyRow(now - (i % 7) * 86400000 - i * 600000, {
+              original: { model: "claude-opus-5-5" },
+              requested: { model: m, effort: eff },
+              answered: m,
+              tier: "everyday",
+              agent: i % 9 === 0,
+            });
+          }).filter((_, i) => i % 7 !== 3 || i < 20),
         };
         draw($);
         return {
@@ -1724,6 +1790,16 @@ export function register(on, config = {}) {
             )
           : null;
       ledger.finish(id, u, cost, "complete", await $.clock.now());
+      void recordHistory(
+        $,
+        historyRow(now, {
+          original,
+          requested: decision.pair,
+          answered: reported,
+          tier: decision.tier,
+          agent: e.agentId,
+        }),
+      );
       draw($);
       void sync($);
       return result;
