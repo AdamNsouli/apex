@@ -158,7 +158,7 @@ test("finished requests are recorded and /apex report charts them", async ($, on
   await h.submit(ORDINARY);
   await h.step("t1");
   await h.clock.advance(10);
-  await h.submit(ORDINARY);
+  await h.submit("Please rename the importer's helper and update its callers.");
   await h.step("t2");
   await h.clock.advance(10);
   const rows = h.writes.history;

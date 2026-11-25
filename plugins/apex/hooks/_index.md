@@ -1,9 +1,10 @@
 # hooks — Index
 
-Current status: APEX 0.21.0-beta.1, premium native rail and route workspace.
+Current status: APEX 0.22.0-beta.1, premium native rail and route workspace.
 Code and assets are public; dataset and inference fixtures are synthetic.
 See the root README and verification document for actual limits.
 
+- [learning.test.ts](./learning.test.ts) — native tests: a complaint or resend raises the next pick, clean answers wear strikes off, `/apex learning reset`.
 - [report.test.ts](./report.test.ts) — native tests that finished requests are recorded without prompt text and `/apex report` charts them.
 - [specified.test.ts](./specified.test.ts) — native synthetic specified-execution routing, bounded guidance, independent mapper budgets and critical/reviewer protection.
 - [failures.test.ts](./failures.test.ts) — native tests that searches with no match and refused calls do not raise the tier, and real failed checks do, with the receipt reason.

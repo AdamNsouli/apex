@@ -1,6 +1,6 @@
 import { duration, verdict } from "./receipt.mjs";
 import { migrateMode } from "./scoring.mjs";
-export const VERSION = "0.21.0-beta.1";
+export const VERSION = "0.22.0-beta.1";
 export const MODES = {
   save: {
     label: "Save",
@@ -57,7 +57,11 @@ const TIER_WORDS = {
 // "Hard task · best value for the task" for the latest main request.
 export function whyShort(e) {
   if (!e) return "";
-  return [TIER_WORDS[e.tier], SHORT_REASONS[e.reason]]
+  return [
+    TIER_WORDS[e.tier],
+    e.learnedSteps ? "raised after a bad answer" : null,
+    SHORT_REASONS[e.reason],
+  ]
     .filter(Boolean)
     .join(" · ");
 }

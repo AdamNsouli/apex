@@ -1,3 +1,4 @@
+import { raiseTier } from "./learning.mjs";
 // Pure ranking core for comparable evidence. The adapter applies availability,
 // risk, manual override, budget, cache-payback and freshness gates BEFORE this.
 //
@@ -84,7 +85,12 @@ export const migrateMode = (name) => modeName(name) ?? "balanced";
 // A broad tier from the local intent classification. High risk or repeated failure
 // make a task critical, complexity makes it at least "hard". An unclear request (unknown risk)
 // stays "everyday"; the router still stops it falling below the native pair.
+// Strikes from bad answers (core/learning.mjs) raise the tier for that kind of
+// task by `learnedSteps`, on top of every other reason.
 export function tierFor(intent = {}) {
+  return raiseTier(baseTier(intent), intent.learnedSteps ?? 0);
+}
+function baseTier(intent = {}) {
   const complex = intent.difficulty === "complex";
   const risky = intent.risk === "high";
   // Unresolved high-risk work stays critical. A concrete implementation contract
