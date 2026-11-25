@@ -135,6 +135,7 @@ test("main request routes through the actual host hook chain; stream retained", 
       revision: 0,
       mode: "best",
       routing: "auto",
+      main: "auto",
       creditsConsent: true,
       budgetUsd: 10,
       taskOverride: null,
@@ -222,7 +223,10 @@ test("main request routes through the actual host hook chain; stream retained", 
   await inspector.press({ key: "inspect" });
   await inspector.press({ key: "receipt-turn-1:0:main" });
   expect(
-    await inspector.find({ type: "Text", text: "APEX asked for: model-b / High" }),
+    await inspector.find({
+      type: "Text",
+      text: "APEX asked for: model-b / High",
+    }),
   ).toBeDefined();
   expect(
     await inspector.find({ type: "Text", text: "Answered by: model-b" }),
@@ -319,6 +323,7 @@ test("mode changed during a stream affects the next request and changes effort",
       revision: 0,
       mode: "best",
       routing: "auto",
+      main: "auto",
       creditsConsent: false,
       budgetUsd: 0,
       taskOverride: null,
@@ -445,6 +450,7 @@ test("effort variants of a confirmed model join by themselves; map-efforts still
       revision: 0,
       mode: "balanced",
       routing: "auto",
+      main: "auto",
       backend: "subscription",
       verifiedIds: ["m5"],
       mappings: [],

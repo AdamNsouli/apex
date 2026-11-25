@@ -37,6 +37,7 @@ function harness($, on, tokens = 1000, mode = "balanced", agents: any[] = []) {
       revision: 0,
       mode,
       routing: "auto",
+      main: "auto",
       backend: "subscription",
       verifiedIds: runtime.map((m) => m.id),
       mappings: [],

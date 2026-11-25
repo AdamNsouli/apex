@@ -19,6 +19,7 @@ test("the daily refresh records a new model, the rail names it and confirm-model
       revision: 0,
       mode: "balanced",
       routing: "auto",
+      main: "auto",
       backend: "subscription",
       verifiedIds: ["m1"],
       mappings: [],
@@ -123,6 +124,7 @@ test("confirm-models needs a confirmed backend first", async ($, on) => {
       revision: 0,
       mode: "balanced",
       routing: "auto",
+      main: "auto",
       backend: "unknown",
       verifiedIds: [],
       mappings: [],
@@ -157,6 +159,111 @@ test("confirm-models needs a confirmed backend first", async ($, on) => {
 });
 
 test("a quick request takes the cheaper pair, an ordinary one keeps the strong pair, and the receipt says why", async ($, on) => {
+  const runtime = ["fixture-alpha", "fixture-beta"].map((id) => ({
+    ...runtimeModel(id),
+    context: 100000,
+  }));
+  // alpha: 75 points, cheap and quick; beta: 100 points, dear and slow.
+  const row = (slug, score, cost, seconds, price) => ({
+    slug: slug + "-high",
+    id: slug + "-high",
+    name: slug + " (High)",
+    effort: "high",
+    benchmarkVersion: "synthetic",
+    scores: { general: score },
+    prices: {
+      input: price,
+      output: price * 2,
+      cacheRead: 0.1,
+      cacheWrite: price,
+    },
+    benchmarkCostPerTask: cost,
+    latencyMs: seconds * 1000,
+  });
+  const aa = {
+    models: [
+      row("fixture-alpha", 75, 0.3, 5, 0.5),
+      row("fixture-beta", 100, 3, 60, 1),
+    ],
+    fetchedAt: NOW,
+  };
+  mock.store(on, {
+    control: {
+      revision: 0,
+      mode: "balanced",
+      routing: "auto",
+      main: "auto",
+      backend: "subscription",
+      verifiedIds: runtime.map((m) => m.id),
+      mappings: [],
+      taskOverride: null,
+    },
+    catalogue: { runtime, aa, lastRefresh: NOW, lastAARefresh: NOW },
+  });
+  mock.clock(on, { now: NOW });
+  mock.env(on, {});
+  on("session.version", () => ({ value: { version: "2.1.292" } }));
+  on("settings.read", () => ({ value: {} }));
+  on("command.register", () => ({ value: {} }));
+  on("session.start", (_$, e) => ({ cwd: e.cwd }));
+  on("session.usage", () => ({
+    value: { context: { tokens: 1000, window: 100000 }, rateLimits: [] },
+  }));
+  on("prompt.submit", (_$, e) => ({ text: e.text }));
+  const forwarded: any[] = [];
+  on("turn.step", async function* (_$, e) {
+    forwarded.push(e);
+    return {
+      turnId: e.turnId,
+      index: e.index,
+      answer: "ok",
+      toolUses: [],
+      stopReason: "end_turn",
+      usage: {
+        model: e.model,
+        input_tokens: 10,
+        output_tokens: 2,
+        cache_read_input_tokens: 0,
+        cache_creation_input_tokens: 0,
+      },
+    };
+  });
+  await $.session.start({
+    cwd: "/tmp/apex-policy-route-test",
+    surface: "terminal",
+    isInteractive: true,
+  });
+  const step = async (turnId: string, text: string) => {
+    await $.prompt.submit({ text, wait: false, origin: { kind: "composer" } });
+    const s = $.turn.step({
+      turnId,
+      index: 0,
+      model: "fixture-beta",
+      effort: "high",
+      messageCount: 2,
+    });
+    let item = await s.next();
+    while (!item.done) item = await s.next();
+  };
+  await step("quick", "format this list");
+  expect(forwarded[0].model).toBe("fixture-alpha");
+  const quick = JSON.parse(
+    (await $.command.run({ command: "apex", args: "why" })).text,
+  );
+  expect(quick.reason).toBe("balanced_policy");
+  expect(quick.tier).toBe("quick");
+  expect(quick.scoreBasis).toBe("general");
+  await step("ordinary", "Please explain a general concept clearly");
+  expect(forwarded[1].model).toBe("fixture-beta");
+  const ordinary = JSON.parse(
+    (await $.command.run({ command: "apex", args: "why" })).text,
+  );
+  expect(ordinary.tier).toBe("everyday");
+});
+
+// The default lock keeps the main chat on its model: the cheaper model would have
+// to store the whole conversation again.
+test("by default the main chat stays on its model even for a quick request", async ($, on) => {
   const runtime = ["fixture-alpha", "fixture-beta"].map((id) => ({
     ...runtimeModel(id),
     context: 100000,
@@ -243,17 +350,10 @@ test("a quick request takes the cheaper pair, an ordinary one keeps the strong p
     while (!item.done) item = await s.next();
   };
   await step("quick", "format this list");
-  expect(forwarded[0].model).toBe("fixture-alpha");
-  const quick = JSON.parse(
-    (await $.command.run({ command: "apex", args: "why" })).text,
-  );
-  expect(quick.reason).toBe("balanced_policy");
-  expect(quick.tier).toBe("quick");
-  expect(quick.scoreBasis).toBe("general");
-  await step("ordinary", "Please explain a general concept clearly");
-  expect(forwarded[1].model).toBe("fixture-beta");
-  const ordinary = JSON.parse(
-    (await $.command.run({ command: "apex", args: "why" })).text,
-  );
-  expect(ordinary.tier).toBe("everyday");
+  expect(forwarded[0].model).toBe("fixture-beta");
+  const settings = await $.command.run({ command: "apex", args: "main" });
+  expect(settings.text).toContain("is lock");
+  await $.command.run({ command: "apex", args: "main auto" });
+  await step("quick-2", "format this other list");
+  expect(forwarded[1].model).toBe("fixture-alpha");
 });

@@ -30,6 +30,7 @@ function harness($, on, env: Record<string, string> = {}) {
       revision: 0,
       mode: "balanced",
       routing: "auto",
+      main: "auto",
       backend: "subscription",
       verifiedIds: ["fixture-a"],
       mappings: [],

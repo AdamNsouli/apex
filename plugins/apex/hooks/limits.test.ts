@@ -43,6 +43,7 @@ function harness(
       revision: 0,
       mode,
       routing: "auto",
+      main: "auto",
       backend: "subscription",
       verifiedIds: runtime.map((m) => m.id),
       mappings: [],
