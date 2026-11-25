@@ -897,7 +897,7 @@ export function register(on, config = {}) {
       name: "apex",
       description: "APEX request routing, modes and receipts",
       argumentHint:
-        "mode save|balanced|best; dashboard; refresh; auto; hold; why; guidance [MODEL_ID]; credits; map-efforts; confirm-models; overhead; report; learning [reset]; demo [off]; context on|off|<N>k; reader auto|local; output trim|off; limits auto|off; ultracode auto|off; agents auto|off",
+        "mode save|balanced|best; dashboard; refresh; auto; hold; why; guidance [MODEL_ID]; credits; map-efforts; confirm-models; overhead; report; learning [reset]; demo [off]; context on|off|<N>k; reader auto|local; output trim|off; limits auto|off; ultracode auto|off; agents auto|off; main lock|auto",
       immediate: true,
     });
     now = await $.clock.now();
@@ -1248,6 +1248,27 @@ export function register(on, config = {}) {
             value === "auto"
               ? "APEX routes subagents under the current mode; an agent given its own model keeps it."
               : "Subagents keep their own model and effort.",
+        };
+      }
+      if (verb === "main") {
+        if (!["lock", "auto"].includes(value))
+          return {
+            text:
+              "APEX main-chat model is " +
+              (control.main ?? "lock") +
+              ". Use /apex main lock|auto. Lock keeps the main chat on the model it is on, so the conversation is never stored again on another model; APEX still changes effort and routes subagents. Auto lets the main chat move when the move pays for that rewrite over the next few requests.",
+          };
+        await change($, {
+          kind: "main",
+          value,
+          expectedRevision: control.revision,
+        });
+        await sync($);
+        return {
+          text:
+            value === "lock"
+              ? "The main chat stays on its model. APEX still changes effort and routes subagents."
+              : "The main chat may move to another model when the move pays back.",
         };
       }
       if (verb === "quality-once") {
@@ -1785,6 +1806,7 @@ export function register(on, config = {}) {
           stepsOnModel,
           effortCacheMode,
           stepHint: hint,
+          lockModel: (control.main ?? "lock") === "lock",
         });
     if (!e.agentId) stepTools = emptyStep();
     if (!e.agentId && lastModel === decision.pair.model) stepsOnModel++;

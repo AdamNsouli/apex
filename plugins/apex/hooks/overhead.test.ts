@@ -22,6 +22,7 @@ async function setup($, on, usage) {
       revision: 0,
       mode: "balanced",
       routing: "auto",
+      main: "auto",
       backend: "subscription",
       verifiedIds: [],
       mappings: [],

@@ -15,6 +15,7 @@ function sharedSettingsHarness($, on) {
       revision: 0,
       mode: "save",
       routing: "auto",
+      main: "auto",
       backend: "unknown",
       verifiedIds: [],
       mappings: [],

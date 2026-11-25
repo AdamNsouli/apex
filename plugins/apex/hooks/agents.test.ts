@@ -32,6 +32,7 @@ test("subagents are routed, search agents cheaply, and agents with their own mod
       revision: 0,
       mode: "balanced",
       routing: "auto",
+      main: "auto",
       creditsConsent: false,
       budgetUsd: 0,
       taskOverride: null,

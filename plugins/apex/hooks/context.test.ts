@@ -8,6 +8,7 @@ function setup(on, usage: { tokens: number }, agents: any[] = []) {
       revision: 0,
       mode: "balanced",
       routing: "auto",
+      main: "auto",
       backend: "subscription",
       verifiedIds: [],
       mappings: [],

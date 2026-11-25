@@ -37,6 +37,7 @@ function harness($, on, agents: any[] = []) {
       revision: 0,
       mode: "balanced",
       routing: "auto",
+      main: "auto",
       backend: "subscription",
       verifiedIds: runtime.map((m) => m.id),
       mappings: [],
@@ -50,10 +51,7 @@ function harness($, on, agents: any[] = []) {
       runtime,
       aa: {
         // Mid qualifies for ordinary work; critical work needs the strong pair.
-        models: [
-          row("fixture-mid", 75, 0.2),
-          row("fixture-strong", 100, 5),
-        ],
+        models: [row("fixture-mid", 75, 0.2), row("fixture-strong", 100, 5)],
         fetchedAt: NOW,
       },
       lastRefresh: NOW,
@@ -232,7 +230,10 @@ test("failed checks escalate specified worker and main tiers independently", asy
   await failCheck("failure-2");
   await h.step("mapper-after-two", "mapper");
   expect((await h.receipt()).tier).toBe("critical");
-  for (const [n, tier] of [[1, "hard"], [2, "critical"]]) {
+  for (const [n, tier] of [
+    [1, "hard"],
+    [2, "critical"],
+  ]) {
     await ($ as any).tool.call({
       tool: "Bash",
       tool_use_id: "main-failure-" + n,

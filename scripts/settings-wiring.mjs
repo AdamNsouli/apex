@@ -66,6 +66,13 @@ export const WIRING = {
     web: false,
     companion: false,
   },
+  main: {
+    key: "main",
+    verb: "main",
+    command: true,
+    web: false,
+    companion: false,
+  },
   limits: {
     key: "limits",
     verb: "limits",

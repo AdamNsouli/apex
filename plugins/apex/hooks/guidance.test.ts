@@ -6,6 +6,7 @@ test("Anthropic guidance is available through the native command without authori
       revision: 0,
       mode: "balanced",
       routing: "auto",
+      main: "auto",
       backend: "subscription",
       verifiedIds: ["claude-haiku-5-5"],
       mappings: [],

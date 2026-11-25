@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.24.0-beta.1
+
+New: the main chat stays on its model (`/apex main lock|auto`).
+
+- **Why:** every model keeps its own cache of the chat. Moving the main chat to another model stores the whole conversation again at the cache-write price, which is a real cost late in a long chat.
+- **Lock (default):** the main chat only chooses among efforts of the model it is on. Effort changes keep their own cache check, and subagents are still routed by their own task, so cheap work still goes to cheaper models there.
+- **Auto:** the previous behaviour: a move is made when it pays back that rewrite over the next five requests.
+- The setting is shared by every chat, like the other `/apex` settings.
+
 ## 0.23.0-beta.1
 
 New: effort step by step within a task (main chat).

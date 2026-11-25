@@ -25,6 +25,9 @@ export const initialControl = () => ({
   qualityOnce: null,
   ultracode: "auto",
   agents: "auto",
+  // "lock" keeps the main chat on the model holding its cache: a different model
+  // would store the whole conversation again. Effort and subagents are still routed.
+  main: "lock",
   context: CONTEXT_DEFAULT,
   reader: "auto",
   output: "trim",
@@ -127,6 +130,8 @@ export function applyControl(state, c) {
     next.ultracode = c.value;
   else if (c.kind === "agents" && ["off", "auto"].includes(c.value))
     next.agents = c.value;
+  else if (c.kind === "main" && ["lock", "auto"].includes(c.value))
+    next.main = c.value;
   else if (c.kind === "limits" && ["auto", "off"].includes(c.value))
     next.limits = c.value;
   else if (c.kind === "output" && ["trim", "off"].includes(c.value))
@@ -575,6 +580,7 @@ export function route({
   stepsOnModel = 2,
   effortCacheMode = "unknown",
   stepHint = null,
+  lockModel = false,
 }) {
   if (control.routing !== "auto" || pinned)
     return hold(original, "manual_hold");
@@ -588,7 +594,11 @@ export function route({
   // quality floor. When it has no evidence (an effort the benchmarks do not name, a
   // model they do not cover), the pair now holding the cache stands in, then the
   // strongest routable pair.
-  const routable = models.filter((m) => m.routable && m.evidence);
+  // A locked main chat only chooses among the efforts of the model holding its cache.
+  const held = lastModel ?? original.model;
+  const routable = models.filter(
+    (m) => m.routable && m.evidence && (!lockModel || m.runtimeId === held),
+  );
   const same = (model, effort) => (m) =>
     m.runtimeId === model && m.effort === (effort ?? null);
   const baseline =

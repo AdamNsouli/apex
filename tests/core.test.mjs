@@ -63,6 +63,22 @@ const options = () => ({
 });
 test("real pair selection changes model", () =>
   assert.equal(route(options()).pair.model, "b"));
+test("a locked main chat stays on the model holding its cache", () => {
+  assert.equal(route({ ...options(), lockModel: true }).pair.model, "a");
+  assert.equal(
+    route({ ...options(), lockModel: true, lastModel: "b", lastEffort: "high" })
+      .pair.model,
+    "b",
+  );
+});
+test("the main lock is on by default and can be turned off", () => {
+  const c = initialControl();
+  assert.equal(c.main, "lock");
+  const change = (value) =>
+    applyControl(c, { kind: "main", value, expectedRevision: c.revision });
+  assert.equal(change("auto").main, "auto");
+  assert.throws(() => change("bogus"), /invalid_control/);
+});
 test("manual hold dominates quality", () => {
   const o = options();
   o.control.routing = "manual_hold";

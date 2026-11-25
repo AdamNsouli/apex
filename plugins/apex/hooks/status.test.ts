@@ -10,6 +10,7 @@ test("bare /apex opens the panel and prints the version and routing status; doct
       revision: 0,
       mode: "balanced",
       routing: "auto",
+      main: "auto",
       backend: "subscription",
       verifiedIds: ["m1"],
       mappings: [],
