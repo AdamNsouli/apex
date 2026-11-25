@@ -1,6 +1,6 @@
 # hooks — Index
 
-Current status: APEX 0.19.0-beta.1, premium native rail and route workspace.
+Current status: APEX 0.20.0-beta.1, premium native rail and route workspace.
 Code and assets are public; dataset and inference fixtures are synthetic.
 See the root README and verification document for actual limits.
 
@@ -13,6 +13,8 @@ See the root README and verification document for actual limits.
 - [router.test.ts](./router.test.ts) — release source or supporting artifact.
 
 - [interface.mjs](./interface.mjs) — native prompt dock and inspector rendering with host primitives.
+- [charts.mjs](./charts.mjs) — native charts (bars, gauges, stacked mix, request columns) built from Box and Text.
+- [charts.test.ts](./charts.test.ts) — native tests that the rail and inspector draw their charts, and draw none when empty.
 - [interface.test.ts](./interface.test.ts) — official native UI harness tests for dock, integrated views, setup, consent and surfaces.
 - [ultracode.test.ts](./ultracode.test.ts) — official native harness tests for holding a critical task, switching ultracode on and off, and the `/apex ultracode` command.
 - [agents.test.ts](./agents.test.ts) — official native harness test for routing subagents and `/apex agents auto|off`.

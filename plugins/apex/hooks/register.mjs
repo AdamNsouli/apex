@@ -1191,25 +1191,73 @@ export function register(on, config = {}) {
           draw($);
           return { text: "APEX demo data removed." };
         }
-        const pick = (model, effort, tier, reason, i) => ({
+        // Made-up benchmark figures for the receipt's charts (labelled demo).
+        const demoScore = {
+          "claude-haiku-5-5": [38, 0.04],
+          "claude-sonnet-5-5": [52, 0.11],
+          "claude-opus-5-5": [64, 0.42],
+        };
+        const cand = (model, effort, bump = 0) => ({
+          model,
+          effort,
+          rawScore: demoScore[model][0] + bump,
+          costUpperUsd: demoScore[model][1] * (1 + bump / 10),
+          costPerTaskUsd: demoScore[model][1],
+        });
+        const pick = (model, effort, tier, reason, i, n = 3) => ({
           id: "demo:" + i,
           demo: true,
           sequence: ++ledger.sequence,
-          timestamp: now - (4 - i) * 60000,
-          startedAt: now - (4 - i) * 60000,
-          completedAt: now - (4 - i) * 60000 + 9000,
+          timestamp: now - (n + 1 - i) * 60000,
+          startedAt: now - (n + 1 - i) * 60000,
+          completedAt: now - (n + 1 - i) * 60000 + 9000,
           kind: "request",
           status: "complete",
           agentId: null,
+          task: "coding",
+          risk: "normal",
+          revision: 1,
           tier,
           reason,
           original: { model: "claude-opus-5-5", effort: "high" },
           apexRequested: { model, effort },
+          ranked: [
+            cand("claude-opus-5-5", "high", 4),
+            cand("claude-opus-5-5", "medium"),
+            cand("claude-sonnet-5-5", "medium", 2),
+            cand("claude-sonnet-5-5", "low"),
+            cand("claude-haiku-5-5", "medium"),
+          ],
+          decisionSnapshot: {
+            fetchedAt: now - 3600000,
+            selected: {
+              taskScore: demoScore[model][0] + 2,
+              benchmarkCostPerTask: demoScore[model][1],
+              intelligence: demoScore[model][0],
+              aaSlug: model + "-" + effort,
+              effort,
+              benchmarkVersion: "demo",
+            },
+            baseline: {
+              taskScore: demoScore["claude-opus-5-5"][0] + 4,
+              benchmarkCostPerTask: demoScore["claude-opus-5-5"][1],
+            },
+          },
         });
+        const plan = [
+          ["claude-sonnet-5-5", "medium", "everyday"],
+          ["claude-haiku-5-5", "low", "quick"],
+          ["claude-opus-5-5", "high", "hard"],
+          ["claude-opus-5-5", "xhigh", "critical"],
+          ["claude-sonnet-5-5", "low", "everyday"],
+          ["claude-haiku-5-5", "medium", "quick"],
+          ["claude-opus-5-5", "medium", "hard"],
+          ["claude-sonnet-5-5", "medium", "everyday"],
+        ];
         ledger.events.push(
-          pick("claude-sonnet-5-5", "medium", "everyday", "balanced_policy", 1),
-          pick("claude-opus-5-5", "high", "hard", "balanced_policy", 2),
-          pick("claude-sonnet-5-5", "medium", "everyday", "balanced_policy", 3),
+          ...plan.map(([m, eff, tier], i) =>
+            pick(m, eff, tier, "balanced_policy", i + 1, plan.length),
+          ),
         );
         demo = {
           rateLimits: [
@@ -1225,7 +1273,7 @@ export function register(on, config = {}) {
         };
         draw($);
         return {
-          text: "APEX demo: three made-up requests and a made-up plan reading are shown in the strip and rail. Nothing was sent. /apex demo off removes them.",
+          text: "APEX demo: eight made-up requests and a made-up plan reading are shown in the strip and rail. Nothing was sent. /apex demo off removes them.",
         };
       }
       if (verb === "why")

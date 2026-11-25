@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.20.0-beta.1
+
+Charts instead of plain text, drawn with Claude's native boxes and text (no images, no frames), checked in a real terminal:
+
+- **Plan usage gauges (rail):** 5-hour and week as coloured bars (green; amber at the lean line, 80% / 90%; red at the Save line, 95% / 97%) with the percentage, the reset time and where APEX starts leaning cheaper.
+- **Model mix (rail):** one stacked bar of the models APEX asked for in this chat, with a colour key and each share (`Sonnet 5.5 38% (3)`).
+- **Recent requests (rail):** a column chart, one column per request: colour = model (Haiku green, Sonnet blue, Opus orange), height = effort.
+- **Strip:** small 5-hour and week meters replace `5h 82% · week 41%`, and a six-request track sits next to APEX. Extras join only while the next pick's name still fits; "near limit: cheaper" sits beside the meters in amber.
+- **Inspector:** "This pick vs your setting" bars for task score and benchmark cost per task, and the top five candidates as bars on one scale with the forecast cost; the chosen one is marked ◆.
+- **Evidence:** intelligence and benchmark cost per task as bars for each model; ◆ marks models eligible on your plan.
+- **`/apex demo`** now shows eight made-up requests across Haiku, Sonnet and Opus with made-up candidate figures, so every chart can be checked without spending usage.
+- Terminal screenshots replaced.
+
+
 ## 0.19.0-beta.1
 
 Interface refresh (strip above the prompt and the compact rail), checked in a real terminal at 144, 80 and 44 columns:
