@@ -44,8 +44,12 @@ test("demo fills the strip with labelled sample data, and off removes it", async
   expect(
     await ui.find({ type: "Text", text: /Sonnet 5\.5 \/ Medium/ }),
   ).toBeDefined();
+  // Plan usage is two meters: a coloured fill, a dim track and the figure.
+  expect(await ui.find({ type: "Text", text: "82%" })).toBeDefined();
+  expect(await ui.find({ type: "Text", text: "41%" })).toBeDefined();
+  expect(await ui.find({ type: "Text", text: /^█{6}/ })).toBeDefined();
   expect(
-    await ui.find({ type: "Text", text: /5h 82% · week 41% · near limit/ }),
+    await ui.find({ type: "Text", text: "near limit: cheaper" }),
   ).toBeDefined();
   expect(
     await ui.find({
@@ -56,11 +60,12 @@ test("demo fills the strip with labelled sample data, and off removes it", async
   expect(
     await ui.find({
       type: "Text",
-      text: /2 model switches · 2 outputs trimmed · 1 subagent hint/,
+      text: /6 model switches · 2 outputs trimmed · 1 subagent hint/,
     }),
   ).toBeDefined();
   await ui.redraw(strip(64));
-  expect(await ui.find({ type: "Text", text: "5h 82%" })).toBeDefined();
+  expect(await ui.find({ type: "Text", text: /^████/ })).toBeDefined();
+  expect(await ui.find({ type: "Text", text: "82%" })).toBeDefined();
   await $.command.run({ command: "apex", args: "demo off" });
   await ui.redraw(strip(120));
   expect(await ui.find({ type: "Text", text: /Demo data/ })).toBeUndefined();

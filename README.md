@@ -8,6 +8,8 @@
 
 APEX is executable middleware, not just instructions to Claude. It wraps the official `turn.step` hook and forwards the selected model and effort while preserving the streamed response and conversation. Three modes (Save, Balanced and Best) can be selected while work is running.
 
+**0.20.0-beta.1:** charts instead of plain text. The rail draws your plan usage as two coloured gauges (green, then amber from 80%, red from 95%) with the reset time, the model mix of this chat as one stacked bar with a colour key, and recent requests as a column chart (colour = model, height = effort). The strip carries small usage meters and a six-request track. The inspector charts the pick against your own setting (task score and benchmark cost per task) and the top candidates as bars; the evidence view charts intelligence and cost per task for each model. Every chart keeps its figure beside it. All drawn with Claude's own native boxes and text, no images.
+
 **0.19.0-beta.1:** a clearer strip and rail. They show the next model by name ("Sonnet 5.5 / Medium"), your plan usage ("5h 82% · week 41%", and when APEX is leaning cheaper), why the last pick was made ("Hard task · best value for the task") and what APEX did in this chat ("2 model switches · 3 outputs trimmed · 1 subagent hint"). Status words are plain (Routing, Paused, Watching only, Old benchmarks), and the inspector drops benchmark jargon. `/apex demo` fills both with labelled sample data so the look can be checked without using any usage.
 
 **0.18.0-beta.1:** smarter delegation. When a long chat (100k+ tokens) keeps searching (four reads or searches in a row), APEX suggests, once per prompt, handing the rest to one Explore subagent that returns paths and conclusions on a cheaper model. A critical code change in Balanced or Best gets one reviewer subagent before it is called done. Best's team note now says how to split work: Explore agents for reading, edits to shared files kept in the main chat, a fresh reviewer at the end. `/apex agents off` stops all of it.
@@ -118,11 +120,11 @@ A qualifying task typed at an idle prompt is held for a moment: APEX runs `/effo
 
 ## Interface
 
-`/apex rail` opens the **compact native rail**: current pair, last three main requests, one mode selector and Inspect. It requests 34 body columns; Claude chooses docking, inline placement and height. A wide terminal places it beside the conversation. A narrow terminal places it above the composer. Hide it and reopen with `/apex`; no browser is required.
+`/apex rail` opens the **compact native rail**: current pair, one mode selector and Inspect, plan-usage gauges, the model mix as a stacked bar, a column per recent request, and the last three main requests. It requests 34 body columns; Claude chooses docking, inline placement and height. A wide terminal places it beside the conversation. A narrow terminal places it above the composer. Hide it and reopen with `/apex`; no browser is required.
 
 ![Actual Claude terminal rail, rasterized from host PTY output; isolated dummy credential, no inference](docs/screenshots/native-terminal-rail.png)
 
-This is actual Claude Code 2.1.330 ANSI output converted to an image, with local font rendering. The three requests and the plan reading come from `/apex demo` (made-up, labelled data); no inference ran. [Narrow terminal](docs/screenshots/native-terminal-inline.png) · [Acknowledged pending mode](docs/screenshots/native-terminal-inline-pending.png).
+This is actual Claude Code 2.1.330 ANSI output converted to an image, with local font rendering. The eight requests and the plan reading come from `/apex demo` (made-up, labelled data); no inference ran. [Narrow terminal](docs/screenshots/native-terminal-inline.png) · [Acknowledged pending mode](docs/screenshots/native-terminal-inline-pending.png).
 
 The **prompt strip** is the two-row fallback. Its expanded, compact or hidden preference is saved locally. It yields to native surveys, preserves other mods, and suppresses duplicate controls while the rail is docked. Focus it with Claude's `ctrl+x tab`; `m` opens modes and `i` opens the rail. The mode chooser uses `s`, `b`, `e` (Save, Balanced, Best) while its site has focus. Host fonts, button chrome, scrolling and focus remain native. Desktop panes have harness coverage; live desktop rendering is unverified.
 

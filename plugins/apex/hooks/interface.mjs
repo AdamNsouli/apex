@@ -12,7 +12,28 @@ import {
   whyShort,
   activityLine,
 } from "../core/presentation.mjs";
-import { limitLabel, limitLean } from "../core/limits.mjs";
+import { limitLabel, limitLean, readLimits } from "../core/limits.mjs";
+import {
+  meters,
+  usageGauges,
+  mixChart,
+  requestColumns,
+  sparkline,
+  hbars,
+  modelColor,
+} from "./charts.mjs";
+// The lean note alone, for the row under the meters.
+function leanNote(state) {
+  const lean = limitLean(
+    state.hostUsage?.rateLimits,
+    state.control.limits ?? "auto",
+  );
+  return lean.steps === 2
+    ? "near limit: Save"
+    : lean.steps
+      ? "near limit: cheaper"
+      : "";
+}
 // One plain line on plan usage: the reading, and the lean when one applies.
 function usageLine(state) {
   const rl = state.hostUsage?.rateLimits;
@@ -21,9 +42,7 @@ function usageLine(state) {
   if (!label) return "";
   return lean.steps
     ? label +
-        (lean.steps === 2
-          ? " · near limit: Save"
-          : " · near limit: one step cheaper")
+        (lean.steps === 2 ? " · near limit: Save" : " · near limit: cheaper")
     : label;
 }
 // The second strip row when nothing needs attention: why the last pick, and what
@@ -31,7 +50,7 @@ function usageLine(state) {
 function summaryLine(state, d, withUsage) {
   return [
     state.demo ? "Demo data" : "",
-    withUsage ? usageLine(state) : "",
+    withUsage === "lean" ? leanNote(state) : withUsage ? usageLine(state) : "",
     whyShort(d.latest),
     activityLine(state),
   ]
@@ -124,7 +143,95 @@ function eventLabel(state, e, width) {
     short(modelName(state, e.apexRequested?.model), Math.max(6, width - 8))
   );
 }
-function receipt(k, state, e, actions) {
+// The rail's picture of this chat: plan usage gauges, the model mix and a
+// column per recent request. Each chart sits under a plain heading.
+function overview(k, elements, state, d, width) {
+  const out = [],
+    rl = state.hostUsage?.rateLimits,
+    main = d.scoped.filter((e) => e.kind !== "tool");
+  if (Object.keys(readLimits(rl)).length)
+    out.push(
+      k.rule("PLAN USAGE"),
+      ...usageGauges(elements, rl, width, state.now ?? Date.now()),
+    );
+  if (main.length) {
+    out.push(
+      k.rule("MODELS IN THIS CHAT"),
+      ...mixChart(elements, state, main, width),
+      k.rule("RECENT REQUESTS"),
+      ...requestColumns(elements, main, Math.min(width, 50), 4),
+      k.muted("one column per request · colour = model · height = effort"),
+    );
+  }
+  return out;
+}
+// Two bar pairs: the pick against your own setting, on task score and on cost.
+function tradeoff(k, elements, state, e, width) {
+  const sel = e.decisionSnapshot?.selected,
+    base = e.decisionSnapshot?.baseline;
+  if (!sel || !base) return [];
+  const color = modelColor(e.apexRequested?.model);
+  const out = [k.rule("THIS PICK VS YOUR SETTING"), k.muted("Task score")];
+  out.push(
+    ...hbars(
+      elements,
+      [
+        { label: "APEX pick", value: sel.taskScore, color, strong: true },
+        { label: "Your setting", value: base.taskScore },
+      ],
+      width,
+    ),
+  );
+  if (
+    Number.isFinite(sel.benchmarkCostPerTask) &&
+    Number.isFinite(base.benchmarkCostPerTask)
+  )
+    out.push(
+      k.muted("Benchmark cost per task (shorter is cheaper)"),
+      ...hbars(
+        elements,
+        [
+          {
+            label: "APEX pick",
+            value: sel.benchmarkCostPerTask,
+            text: "$" + sel.benchmarkCostPerTask.toFixed(3),
+            color,
+            strong: true,
+          },
+          {
+            label: "Your setting",
+            value: base.benchmarkCostPerTask,
+            text: "$" + base.benchmarkCostPerTask.toFixed(3),
+          },
+        ],
+        width,
+      ),
+    );
+  return out;
+}
+function candidates(k, elements, state, e, width) {
+  const list = (e.ranked ?? []).slice(0, 5);
+  if (!list.length) return [];
+  return [
+    k.rule("CANDIDATES"),
+    k.muted("Task score · forecast cost for this request"),
+    ...hbars(
+      elements,
+      list.map((p) => ({
+        label:
+          short(modelName(state, p.model), 12) + " " + effortLabel(p.effort),
+        value: p.rawScore,
+        note: money(p.costUpperUsd),
+        color: modelColor(p.model),
+        strong:
+          p.model === e.apexRequested?.model &&
+          (p.effort ?? null) === (e.apexRequested?.effort ?? null),
+      })),
+      width,
+    ),
+  ];
+}
+function receipt(k, state, e, actions, elements, width = 60) {
   if (!e) return [k.muted("Select a request once work begins.")];
   const ms = duration(e),
     out = [
@@ -164,6 +271,7 @@ function receipt(k, state, e, actions) {
         (e.onceRevision && e.mode !== "best_once" ? " · Max Power once" : ""),
     ),
     k.muted("Risk " + e.risk + " · revision " + e.revision),
+    ...(elements ? tradeoff(k, elements, state, e, width) : []),
     k.rule("COST"),
     k.text("Observed " + money(e.observedUsd)),
     k.muted("Request forecast " + money(e.estimateUsd)),
@@ -203,21 +311,23 @@ function receipt(k, state, e, actions) {
     out.push(
       k.muted("This historical receipt has no frozen evidence snapshot."),
     );
-  for (const p of (e.ranked ?? []).slice(0, 5))
-    out.push(
-      k.muted(
-        short(p.model, 32) +
-          " / " +
-          effortLabel(p.effort) +
-          " · task " +
-          p.rawScore +
-          " · forecast " +
-          money(p.costUpperUsd) +
-          (p.costPerTaskUsd == null
-            ? ""
-            : " · AA " + money(p.costPerTaskUsd) + "/task"),
-      ),
-    );
+  if (elements) out.push(...candidates(k, elements, state, e, width));
+  else
+    for (const p of (e.ranked ?? []).slice(0, 5))
+      out.push(
+        k.muted(
+          short(p.model, 32) +
+            " / " +
+            effortLabel(p.effort) +
+            " · task " +
+            p.rawScore +
+            " · forecast " +
+            money(p.costUpperUsd) +
+            (p.costPerTaskUsd == null
+              ? ""
+              : " · AA " + money(p.costPerTaskUsd) + "/task"),
+        ),
+      );
   out.push(
     k.button("receipt-json", "Print JSON receipt", () => actions.print(e)),
   );
@@ -268,36 +378,54 @@ export function dock(elements, props, state, actions) {
   else if (width < 48)
     rows.push(k.row([k.text("APEX", { bold: true }), mode, inspect]));
   else if (width < 78) {
-    const five = limitLabel(state.hostUsage?.rateLimits).split(" · ")[0];
+    // The 5-hour window as a small meter when there is room.
+    const five = meters(elements, state.hostUsage?.rateLimits, 5)[0];
     const room = width - modeSpec(state.control.mode).label.length - 26;
-    const showUsage = Boolean(five) && room - five.length - 1 >= 14;
+    const showUsage = Boolean(five) && room - 13 >= 14;
     rows.push(
       k.row([
         k.text("APEX", { bold: true }),
-        k.text(
-          short(pair, Math.max(8, showUsage ? room - five.length - 1 : room)),
-          { bold: true },
-        ),
-        ...(showUsage ? [k.muted(five)] : []),
+        k.text(short(pair, Math.max(8, showUsage ? room - 13 : room)), {
+          bold: true,
+        }),
+        ...(showUsage ? [five] : []),
         mode,
         inspect,
       ]),
     );
   } else {
-    const usage = usageLine(state),
-      status = d.status === "Routing" ? "" : d.status;
-    const room =
+    // Plan usage as two small meters, and the last few picks as a coloured
+    // track (colour = model, height = effort).
+    const status = d.status === "Routing" ? "" : d.status,
+      allGauges = meters(elements, state.hostUsage?.rateLimits, 8),
+      main = d.scoped.filter((e) => e.kind !== "tool"),
+      lean = leanNote(state);
+    // The pair is never cut for decoration: extras join in priority order
+    // (5-hour meter, lean note, week meter, track) while they fit.
+    let room =
       width -
       modeSpec(state.control.mode).label.length -
       22 -
       (status ? status.length + 1 : 0) -
-      (usage ? usage.length + 1 : 0);
+      pair.length;
+    const take = (cells) => (room >= cells ? ((room -= cells), true) : false);
+    const gauges = [];
+    if (allGauges[0] && take(16)) gauges.push(allGauges[0]);
+    const showLean = Boolean(lean) && take(lean.length + 1);
+    if (allGauges[1] && take(18)) gauges.push(allGauges[1]);
+    const track =
+      main.length && take(Math.min(6, main.length) + 1)
+        ? sparkline(elements, main, 6)
+        : null;
+    room += pair.length;
     rows.push(
       k.row([
         k.text("APEX", { bold: true }),
+        ...(track ? [track] : []),
         ...(status ? [k.muted(status)] : []),
         k.text(short(pair, Math.max(12, room)), { bold: true }),
-        ...(usage ? [k.muted(usage)] : []),
+        ...gauges,
+        ...(showLean ? [k.text(lean, { color: "warning" })] : []),
         mode,
         inspect,
       ]),
@@ -323,7 +451,7 @@ export function dock(elements, props, state, actions) {
   if (state.ui.modeMenu && width >= 30) rows.push(chooser(k, state, actions));
   return k.stack(rows, { paddingX: 1 });
 }
-function evidenceRows(k, state, actions) {
+function evidenceRows(k, state, actions, elements, width = 60) {
   const out = [
       k.text("Evidence", { bold: true }),
       k.muted(
@@ -333,6 +461,43 @@ function evidenceRows(k, state, actions) {
     page = state.ui.evidencePage ?? 0,
     list = state.catalogue.slice(page * 15, page * 15 + 15),
     task = state.control.taskOverride ?? state.intent.task;
+  if (list.length && elements) {
+    const w = Math.max(30, width);
+    out.push(
+      k.rule("INTELLIGENCE"),
+      ...hbars(
+        elements,
+        list.map((m) => ({
+          label:
+            short(modelName(state, m.runtimeId), 12) +
+            " " +
+            effortLabel(m.effort),
+          value: m.evidence?.scores?.general,
+          color: modelColor(m.runtimeId),
+          strong: m.routable,
+        })),
+        w,
+      ),
+      k.rule("BENCHMARK COST PER TASK"),
+      ...hbars(
+        elements,
+        list.map((m) => ({
+          label:
+            short(modelName(state, m.runtimeId), 12) +
+            " " +
+            effortLabel(m.effort),
+          value: m.evidence?.benchmarkCostPerTask,
+          text: Number.isFinite(m.evidence?.benchmarkCostPerTask)
+            ? "$" + m.evidence.benchmarkCostPerTask.toFixed(3)
+            : "unknown",
+          color: modelColor(m.runtimeId),
+          strong: m.routable,
+        })),
+        w,
+      ),
+      k.muted("◆ = eligible on your plan"),
+    );
+  }
   if (!state.catalogue.length)
     out.push(
       k.muted(
@@ -659,12 +824,12 @@ export function pane(elements, props, state, actions) {
         modeButton(k, state, actions, width),
         k.button("inspect", "Inspect", () => actions.view("inspect")),
       ]),
-      ...(usageLine(state) ? [k.text(usageLine(state))] : []),
       k.muted(
         whyShort(d.latest) ||
           ((d.active ?? d.latest)?.status ?? "Nothing routed yet"),
       ),
       ...(activityLine(state) ? [k.muted(activityLine(state))] : []),
+      ...overview(k, elements, state, d, width),
       k.rule(),
     );
     let previous;
@@ -697,7 +862,8 @@ export function pane(elements, props, state, actions) {
     body.push(...settings(k, elements, state, actions, props));
   else if (view === "credits")
     body.push(...credits(k, elements, state, actions));
-  else if (view === "evidence") body.push(...evidenceRows(k, state, actions));
+  else if (view === "evidence")
+    body.push(...evidenceRows(k, state, actions, elements, width));
   else {
     body.push(
       k.row([
@@ -769,7 +935,7 @@ export function pane(elements, props, state, actions) {
         ]),
       );
     body.push(
-      ...receipt(k, state, d.selected, actions),
+      ...receipt(k, state, d.selected, actions, elements, width),
       k.rule("INTERVENE"),
       k.button(
         "auto",
