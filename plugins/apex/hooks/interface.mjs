@@ -144,6 +144,34 @@ function eventLabel(state, e, width) {
     short(modelName(state, e.apexRequested?.model), Math.max(6, width - 8))
   );
 }
+// Strikes from bad answers, one dot each: "Learning · coding ●○○ +1 tier".
+function learningRow(k, elements, state) {
+  const kinds = Object.entries(state.learning?.kinds ?? {}).filter(
+    ([, v]) => v?.strikes > 0,
+  );
+  if (!kinds.length) return [];
+  const { Text } = elements;
+  return [
+    k.row(
+      [
+        Text({ children: "Learning", bold: true }),
+        ...kinds.flatMap(([task, v]) => [
+          Text({ children: task.replaceAll("_", " ") }),
+          Text({
+            children:
+              "●".repeat(v.strikes) + "○".repeat(Math.max(0, 3 - v.strikes)),
+            color: "warning",
+          }),
+          Text({
+            children: "+" + (v.strikes >= 3 ? 2 : 1) + " tier",
+            dimColor: true,
+          }),
+        ]),
+      ],
+      { columnGap: 1 },
+    ),
+  ];
+}
 // The rail's picture of this chat: plan usage gauges, the model mix and a
 // column per recent request. Each chart sits under a plain heading.
 function overview(k, elements, state, d, width) {
@@ -275,7 +303,10 @@ function receipt(k, state, e, actions, elements, width = 60) {
         " · " +
         (e.mode ? modeSpec(e.mode).label : "Native") +
         (e.tier ? " · " + e.tier + " tier" : "") +
-        (e.onceRevision && e.mode !== "best_once" ? " · Max Power once" : ""),
+        (e.onceRevision && e.mode !== "best_once" ? " · Max Power once" : "") +
+        (e.learnedSteps
+          ? " · +" + e.learnedSteps + " tier after bad answers"
+          : ""),
     ),
     k.muted("Risk " + e.risk + " · revision " + e.revision),
     ...(elements ? tradeoff(k, elements, state, e, width) : []),
@@ -906,6 +937,7 @@ export function pane(elements, props, state, actions) {
           ((d.active ?? d.latest)?.status ?? "Nothing routed yet"),
       ),
       ...(activityLine(state) ? [k.muted(activityLine(state))] : []),
+      ...learningRow(k, elements, state),
       ...overview(k, elements, state, d, width),
       k.rule(),
     );

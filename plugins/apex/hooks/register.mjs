@@ -28,6 +28,14 @@ import {
 } from "../core/context.mjs";
 import { freezeDecision } from "../core/receipt.mjs";
 import {
+  badSignal,
+  addStrike,
+  addClean,
+  learnedSteps,
+  learningText,
+  emptyLearning,
+} from "../core/learning.mjs";
+import {
   historyRow,
   appendHistory,
   summariseHistory,
@@ -67,6 +75,23 @@ import {
 } from "../core/catalogue.mjs";
 // Weekly report: the last summary drawn in the rail's report view.
 let reportSummary = null;
+// Strikes from bad answers, shared by every chat (core/learning.mjs), and the
+// last main prompt this chat sent, to spot a resend.
+let learning = emptyLearning(),
+  lastPromptText = null;
+async function loadLearning($) {
+  try {
+    learning = (await $.store.get("learning")) ?? emptyLearning();
+  } catch {}
+  return learning;
+}
+async function saveLearning($, fn) {
+  await loadLearning($);
+  learning = fn(learning);
+  try {
+    await $.store.set("learning", learning);
+  } catch {}
+}
 // Appends one finished request to the shared history. Re-reads just before the
 // write so another chat's rows are kept.
 async function recordHistory($, row) {
@@ -228,6 +253,7 @@ const publicState = () => ({
     : hostUsage,
   overhead,
   report: reportSummary,
+  learning,
   demo: Boolean(demo),
   activity: {
     trimmed: outputStats.count + (demo?.trimmed ?? 0),
@@ -861,10 +887,11 @@ export function register(on, config = {}) {
       name: "apex",
       description: "APEX request routing, modes and receipts",
       argumentHint:
-        "mode save|balanced|best; dashboard; refresh; auto; hold; why; guidance [MODEL_ID]; credits; map-efforts; confirm-models; overhead; report; demo [off]; context on|off|<N>k; reader auto|local; output trim|off; limits auto|off; ultracode auto|off; agents auto|off",
+        "mode save|balanced|best; dashboard; refresh; auto; hold; why; guidance [MODEL_ID]; credits; map-efforts; confirm-models; overhead; report; learning [reset]; demo [off]; context on|off|<N>k; reader auto|local; output trim|off; limits auto|off; ultracode auto|off; agents auto|off",
       immediate: true,
     });
     now = await $.clock.now();
+    await loadLearning($);
     refreshTimer = $.clock.every(600000, async () => {
       now = await $.clock.now();
       await refresh($);
@@ -913,7 +940,30 @@ export function register(on, config = {}) {
   });
   on("prompt.submit", async ($, e, next) => {
     if (["composer", "bridge", "sdk"].includes(e.origin?.kind)) {
-      const nextIntent = classifyIntent(e.text, intent);
+      // A message saying the last answer was wrong, or the same prompt again,
+      // counts a strike against the task the last pick answered. The message
+      // continues that task one tier higher (a fresh hold, so it can switch).
+      const lastPick = ledger.events.findLast(
+        (x) => x.kind === "request" && !x.agentId && x.status === "complete",
+      );
+      const signal = lastPick ? badSignal(e.text, lastPromptText) : null;
+      lastPromptText = e.text;
+      if (signal) {
+        const task = intent.task ?? "general",
+          at = await $.clock.now();
+        await saveLearning($, (l) =>
+          addStrike(l, { task, signal, pick: lastPick.apexRequested, at }),
+        );
+        intent = { ...intent, learnedSteps: learnedSteps(learning, task) };
+        readerPending = null;
+        stepsOnModel = 2;
+        draw($);
+        return next(e);
+      }
+    }
+    if (["composer", "bridge", "sdk"].includes(e.origin?.kind)) {
+      const previousIntent = intent;
+      let nextIntent = classifyIntent(e.text, intent);
       if (nextIntent !== intent && control.taskOverride !== null)
         await change($, {
           kind: "task",
@@ -921,6 +971,16 @@ export function register(on, config = {}) {
           expectedRevision: control.revision,
         });
       const fresh = nextIntent !== intent;
+      if (fresh) {
+        // A new task after an answer nobody complained about wears a strike off
+        // the previous kind; the new kind starts at its own learned level.
+        const prev = previousIntent.task ?? "general";
+        if (learning.kinds?.[prev]?.strikes)
+          await saveLearning($, (l) => addClean(l, prev));
+        const steps = learnedSteps(learning, nextIntent.task ?? "general");
+        if (steps || nextIntent.learnedSteps)
+          nextIntent = { ...nextIntent, learnedSteps: steps };
+      }
       // A fresh prompt gets one small Haiku rating, started now and awaited (with
       // its own timeout) at the turn's first step. Word rules decide meanwhile.
       readerPending =
@@ -1054,6 +1114,15 @@ export function register(on, config = {}) {
               : "inspect";
         await nativeActions($).open(view);
         return { text: "" };
+      }
+      if (verb === "learning") {
+        if (value === "reset") {
+          await saveLearning($, () => emptyLearning());
+          intent = { ...intent, learnedSteps: 0 };
+          draw($);
+          return { text: "APEX learning cleared. Routing is back to normal." };
+        }
+        return { text: learningText(await loadLearning($)) };
       }
       if (verb === "report") {
         const summary = await loadReport($);
@@ -1752,6 +1821,7 @@ export function register(on, config = {}) {
         task,
         scoreBasis: decision.scoreBasis ?? null,
         tier: decision.tier ?? null,
+        learnedSteps: e.agentId ? 0 : (intent.learnedSteps ?? 0),
         risk: e.agentId ? "unknown" : intent.risk,
         execution: (e.agentId ? plan.intent : intent)?.execution ?? null,
         original,

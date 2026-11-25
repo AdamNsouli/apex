@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.22.0-beta.1
+
+New: learning from bad answers.
+
+- **Signals:** a short message that opens by rejecting the last answer ("that's wrong", "that's not what I asked", "it still doesn't work", "still broken", "you missed …", "try again"), or the same prompt sent again in the same chat. A task that only mentions something wrong ("fix the wrong date in the footer") is not a complaint. Tagged machine prompts such as scheduled tasks are never retries. Interrupting a turn is not counted. Nothing counts before APEX has answered once in the chat.
+- **Effect:** the strike goes against the task kind the last pick answered. That message continues the same task one tier higher, with a fresh hold so the model can switch at once. Later prompts of that kind route one tier higher (two from the third strike), up to critical.
+- **Forgiving:** every 3 clean answers of a kind (a new task follows without a complaint) take a strike off.
+- **Visible:** saved in APEX's store and shared by every chat. The rail shows "Learning · <kind> ●○○ +1 tier", the strip's why reads "raised after a bad answer", and receipts carry `learnedSteps`. `/apex learning` explains and lists recent strikes; `/apex learning reset` clears them.
+- Measured: on the 200 labelled prompts the complaint rule fired once (a real "Try again"). Before the tag exclusion, the same-prompt rule fired 7 times, 6 of them on scheduled-task or probe repeats.
+
+
 ## 0.21.0-beta.1
 
 New: `/apex report`, the "is it working" view.
