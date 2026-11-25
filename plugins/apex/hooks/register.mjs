@@ -28,6 +28,12 @@ import {
 } from "../core/context.mjs";
 import { freezeDecision } from "../core/receipt.mjs";
 import {
+  emptyStep,
+  addTool,
+  stepHint,
+  effortCacheModeFrom,
+} from "../core/steps.mjs";
+import {
   badSignal,
   addStrike,
   addClean,
@@ -79,6 +85,10 @@ let reportSummary = null;
 // last main prompt this chat sent, to spot a resend.
 let learning = emptyLearning(),
   lastPromptText = null;
+// Effort step by step: the main chat's tools since the last step, and whether
+// Claude Code sends effort per message (read once at session start).
+let stepTools = emptyStep(),
+  effortCacheMode = "per_request";
 async function loadLearning($) {
   try {
     learning = (await $.store.get("learning")) ?? emptyLearning();
@@ -892,6 +902,11 @@ export function register(on, config = {}) {
     });
     now = await $.clock.now();
     await loadLearning($);
+    try {
+      effortCacheMode = effortCacheModeFrom(
+        await $.env.get("CLAUDE_CODE_MODEL_CAPABILITIES"),
+      );
+    } catch {}
     refreshTimer = $.clock.every(600000, async () => {
       now = await $.clock.now();
       await refresh($);
@@ -1729,6 +1744,8 @@ export function register(on, config = {}) {
         ? { ...c, mode: leanMode(c.mode, lean.steps) }
         : c;
     if (!captured?.onceRevision) dispatchControl = leaned(dispatchControl);
+    // Main chat only: the previous step's tools decide this step's effort hint.
+    const hint = e.agentId ? null : stepHint(e.index, stepTools);
     const decision = e.agentId
       ? plan.route
         ? route({
@@ -1766,7 +1783,10 @@ export function register(on, config = {}) {
           lastModel,
           lastEffort,
           stepsOnModel,
+          effortCacheMode,
+          stepHint: hint,
         });
+    if (!e.agentId) stepTools = emptyStep();
     if (!e.agentId && lastModel === decision.pair.model) stepsOnModel++;
     else if (!e.agentId) {
       lastModel = decision.pair.model;
@@ -1911,6 +1931,13 @@ export function register(on, config = {}) {
         row.status = result.isError || result.deny ? "error" : "complete";
         row.completedAt = await $.clock.now();
       }
+      if (!e.agentId)
+        stepTools = addTool(stepTools, {
+          tool: e.tool,
+          command: e.command,
+          isReadOnly: result.isReadOnly,
+          isError: Boolean(result.isError),
+        });
       if (
         countsAsFailure({
           tool: e.tool,
@@ -1949,6 +1976,8 @@ export function register(on, config = {}) {
       }
       return result;
     } catch (error) {
+      if (!e.agentId)
+        stepTools = addTool(stepTools, { tool: e.tool, isError: true });
       const worker = e.agentId ? agentRoutes.get(e.agentId) : null;
       if (!COUNTED_TOOLS.has(e.tool)) {
         // A connector or browser tool that threw is not a failed check.
